@@ -14,7 +14,7 @@ for root, dirs, files in os.walk(this_file_path):
             lib_path = os.path.join(root, f)
             break
 
-libpotter = CDLL(lib_path)
+libpotter = cdll.LoadLibrary(lib_path)
 ARGTYPES = [c_char_p, POINTER(c_size_t), c_size_t]
 RESTYPE = POINTER(c_ulonglong)
 
