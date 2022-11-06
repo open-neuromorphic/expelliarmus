@@ -6,8 +6,8 @@ import os
 import pathlib
 
 # Searching for the shared library. 
-this_file_path = pathlib.Path(__file__).parent.resolve()
-lib_re = r"^potter\..*\.(so|dll)$"
+this_file_path = pathlib.Path(__file__).parent.parent.resolve()
+lib_re = r"^potter\..*\.(so|pyd)$"
 for root, dirs, files in os.walk(this_file_path):
     for f in files:
         if re.match(lib_re, f):
