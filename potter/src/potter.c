@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
-
+#include <Python.h>
 
 #define CHECK_ALLOCATION(pt) {\
 	if (pt == NULL){\
@@ -16,6 +16,9 @@
 		fprintf(stderr, "Error while opening the file \"%s\".\n", fpath);\
 		exit(2);\
 	}\
+}
+
+PyMODINIT_FUNC_PyInit_potter(void){
 }
 
 void free_event_array(event_array_t arr){
