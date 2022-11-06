@@ -11,6 +11,13 @@
 	}\
 }
 
+#define CHECK_FILE(fp, fpath){\
+	if (fp==NULL){\
+		fprintf(stderr, "Error while opening the file \"%s\".\n", fpath);\
+		exit(2);\
+	}\
+}
+
 void free_event_array(event_array_t arr){
 	free(arr); 
 	return; 
@@ -36,10 +43,7 @@ void append_event(const struct event_s* event, event_array_t* arr, size_t* alloc
 
 event_array_t read_dat(const char* fpath, size_t* dim, size_t buff_size){
 	FILE* fp = fopen(fpath, "rb"); 
-	if (fp==NULL){
-		fprintf(stderr, "Error: file \"%s\" not found.\n", fpath); 
-		exit(1); 
-	}
+	CHECK_FILE(fp, fpath); 
 
 	// Jumping over the headers.
 	uint8_t pt; 
@@ -108,10 +112,7 @@ event_array_t read_dat(const char* fpath, size_t* dim, size_t buff_size){
 }	
 event_array_t read_evt2(const char* fpath, size_t* dim, size_t buff_size){
 	FILE* fp = fopen(fpath, "rb"); 
-	if (fp==NULL){
-		fprintf(stderr, "Error: file \"%s\" not found.\n", fpath); 
-		exit(1); 
-	}
+	CHECK_FILE(fp, fpath); 
 
 	// Jumping over the headers.
 	uint8_t pt; 
@@ -189,10 +190,7 @@ event_array_t read_evt2(const char* fpath, size_t* dim, size_t buff_size){
 
 event_array_t read_evt3(const char* fpath, size_t* dim, size_t buff_size){
 	FILE* fp = fopen(fpath, "rb"); 
-	if (fp==NULL){
-		fprintf(stderr, "Error: file \"%s\" not found.\n", fpath); 
-		exit(1); 
-	}
+	CHECK_FILE(fp, fpath); 
 
 	// Jumping over the headers.
 	uint8_t pt; 
