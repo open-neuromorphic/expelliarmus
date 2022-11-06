@@ -6,7 +6,7 @@
 
 #define CHECK_ALLOCATION(pt) {\
 	if (pt == NULL){\
-		fprintf(stderr, "Errore nell'allocazione di memoria.\n");\
+		fprintf(stderr, "Error during dinamic array memory allocation.\n");\
 		exit(1);\
 	}\
 }
@@ -90,22 +90,10 @@ event_array_t read_dat(const char* fpath, size_t* dim, size_t buff_size){
 			event_tmp.t = (time_ovfs<<32) | time_val; 
 			// Event polarity.
 			event_tmp.p = (event_t) ((buff[j+1] >> 28) & mask_4b); 
-			if (event_tmp.p > 1){
-				fprintf(stderr, "Error: polarity not correct: %u.\n", event_tmp.p);
-			   	exit(1);
-			}
 			// Event y address.
 			event_tmp.y = (event_t) ((buff[j+1] >> 14) & mask_14b); 
-			if (event_tmp.y >= 480){
-				fprintf(stderr, "Error: Y coordinate too large: %u>=480.\n", event_tmp.y); 
-				exit(1); 
-			}
 			// Event x address. 
 			event_tmp.x = (event_t) (buff[j+1] & mask_14b); 
-			if (event_tmp.x >= 640){
-				fprintf(stderr, "Error: X coordinate too large: %u>=640.\n", event_tmp.x); 
-				exit(1); 
-			}
 			append_event(&event_tmp, &arr, &allocated_space, &i); 
 		}
 	}
@@ -155,7 +143,7 @@ event_array_t read_evt2(const char* fpath, size_t* dim, size_t buff_size){
 	struct event_s event_tmp; event_tmp.t=0; event_tmp.p=0; event_tmp.x=0; event_tmp.y=0;   
 	size_t i=0, j=0, values_read=0; 
 	const uint32_t mask_6b=0x3FU, mask_11b=0x7FFU, mask_28b=0xFFFFFFFU;
-	event_t time_high=0, time_low=0, time_bias=0; 
+	event_t time_high=0, time_low=0; 
 	while ((values_read = fread(buff, sizeof(*buff), buff_size, fp)) > 0){
 		for (j=0; j<values_read; j++){
 			// Getting the event type. 
@@ -164,15 +152,9 @@ event_array_t read_evt2(const char* fpath, size_t* dim, size_t buff_size){
 				case EVT2_CD_ON:
 				case EVT2_CD_OFF:
 					event_tmp.p = (event_t) event_type; 
-					if (event_tmp.p > 1){
-						fprintf(stderr, "Error: polarity not valid: %u.\n", event_tmp.p); 
-						exit(1); 
-					}
 					// Getting 6LSBs of the time stamp. 
 					time_low = ((event_t)((buff[j] >> 22) & mask_6b)); 
-					if (i==0)
-						time_bias = (time_high << 6) | time_low; 
-					event_tmp.t = ((time_high << 6) | time_low) - time_bias; 
+					event_tmp.t = ((time_high << 6) | time_low); 
 					// Getting event addresses.
 					event_tmp.x = (event_t) ((buff[j] >> 11) & mask_11b); 
 					event_tmp.y = (event_t) (buff[j] & mask_11b); 
@@ -245,7 +227,7 @@ event_array_t read_evt3(const char* fpath, size_t* dim, size_t buff_size){
 
 	event_t buff_tmp=0, base_x=0, k=0, num_vect_events=0; 
 	const uint16_t mask_11b=0x7FFU, mask_12b=0xFFFU, mask_8b=0xFFU; 
-	event_t time_high=0, time_low=0, time_stamp=0, time_high_ovfs=0, time_low_ovfs=0, time_bias=0; 
+	event_t time_high=0, time_low=0, time_stamp=0, time_high_ovfs=0, time_low_ovfs=0; 
 	while ((values_read = fread(buff, sizeof(*buff), buff_size, fp)) > 0){
 		for (j=0; j<values_read; j++){
 			// Getting the event type. 
@@ -292,13 +274,7 @@ event_array_t read_evt3(const char* fpath, size_t* dim, size_t buff_size){
 						time_low_ovfs++; 
 					time_low = buff_tmp; 
 					time_stamp = (time_high_ovfs<<24) + ((time_high+time_low_ovfs)<<12) + time_low;
-					if (time_stamp < event_tmp.t){
-						fprintf(stderr, "Error in TIME_LOW: non monotonic events: 0x%x < 0x%x.\n", time_stamp, event_tmp.t); 
-						exit(1); 
-					}
-					if (i==0)
-						time_bias = time_stamp; 
-					event_tmp.t = time_stamp - time_bias; 
+					event_tmp.t = time_stamp; 
 					break; 
 
 				case EVT3_TIME_HIGH:
@@ -307,13 +283,7 @@ event_array_t read_evt3(const char* fpath, size_t* dim, size_t buff_size){
 						time_high_ovfs++; 
 					time_high = buff_tmp; 
 					time_stamp = (time_high_ovfs<<24) + ((time_high+time_low_ovfs)<<12) + time_low;
-					if (time_stamp < event_tmp.t){
-						fprintf(stderr, "Error in TIME_HIGH: non monotonic events: 0x%x < 0x%x.\n", time_stamp, event_tmp.t); 
-						exit(1); 
-					}
-					if (i==0)
-						time_bias = time_stamp; 
-					event_tmp.t = time_stamp - time_bias; 
+					event_tmp.t = time_stamp; 
 					break; 
 
 				case EVT3_EXT_TRIGGER:
