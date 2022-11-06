@@ -7,9 +7,9 @@ setup(
         author_email="fabriziottati@gmail.com", 
         maintainer="Fabrizio Ottati",
         maintainer_email="fabriziottati@gmail.com", 
-        py_modules=["decoders"],
+        py_modules=[os.path.join("potter", "decoders")],
         license="GPL V2",
-        include_dirs=["potter/src"],
+        include_dirs=[os.path.join("potter", "src")],
         ext_modules=[
             Extension(
                 name="potter", 
