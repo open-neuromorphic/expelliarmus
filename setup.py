@@ -12,7 +12,7 @@ setup(
         include_dirs=[os.path.join("potter", "src")],
         ext_modules=[
             Extension(
-                name="potter", 
+                name="decoders", 
                 sources=[os.path.join("potter", "src", "potter.c")],
                 language="c",
                 ), 
