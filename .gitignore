@@ -1,6 +1,9 @@
 *.so
+*.dll
 __pycache__
 dist
 build
 *.egg-info
 *.swp
+*.tar.gz
+*.whl
