@@ -1,5 +1,5 @@
-#ifndef POTTER_H
-#define POTTER_H
+#ifndef EXPELLIARMUS_H
+#define EXPELLIARMUS_H
 
 #include <stdio.h> 
 #include <stdint.h>
