@@ -16,7 +16,6 @@ setup(
                 name="expelliarmus", 
                 sources=[os.path.join("expelliarmus", "src", "expelliarmus.c"), os.path.join("expelliarmus", "src", "python_wrapper.c")],
                 language="c",
-                extra_compile_args=["static", "shared"],
                 ), 
             ],
         )
