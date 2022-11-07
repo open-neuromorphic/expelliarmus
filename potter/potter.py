@@ -18,24 +18,39 @@ if lib_path.endswith(".so"):
 else:
     libpotter = WinDLL(lib_path)
 
-ARGTYPES = [c_char_p, POINTER(c_size_t), c_size_t]
-RESTYPE = POINTER(c_ulonglong)
+ARGTYPES_READ = [c_char_p, POINTER(c_size_t), c_size_t]
+RESTYPE_READ = POINTER(c_ulonglong)
+
+ARGTYPES_CUT = [c_char_p, c_char_p, c_size_t, c_size_t]
+RESTYPE_CUT = c_size_t
 
 c_read_dat = libpotter.read_dat
-c_read_dat.restype = RESTYPE 
-c_read_dat.argtypes = ARGTYPES
+c_read_dat.restype = RESTYPE_READ 
+c_read_dat.argtypes = ARGTYPES_READ
 
 c_read_evt2 = libpotter.read_evt2
-c_read_evt2.restype = RESTYPE
-c_read_evt2.argtypes = ARGTYPES
+c_read_evt2.restype = RESTYPE_READ
+c_read_evt2.argtypes = ARGTYPES_READ
 
 c_read_evt3 = libpotter.read_evt3
-c_read_evt3.restype = RESTYPE
-c_read_evt3.argtypes = ARGTYPES
+c_read_evt3.restype = RESTYPE_READ
+c_read_evt3.argtypes = ARGTYPES_READ
 
-DTYPE = np.dtype([('t', np.int64), ('x', np.int32), ('y', np.int32), ('p', np.int8)])
+c_cut_dat = libpotter.cut_dat
+c_cut_dat.restype = RESTYPE_CUT 
+c_cut_dat.argtypes = ARGTYPES_CUT
 
-def c_wrapper(p_fun, fpath, buff_size, dtype):
+c_cut_evt2 = libpotter.cut_evt2
+c_cut_evt2.restype = RESTYPE_CUT
+c_cut_evt2.argtypes = ARGTYPES_CUT
+
+c_cut_evt3 = libpotter.cut_evt3
+c_cut_evt3.restype = RESTYPE_CUT
+c_cut_evt3.argtypes = ARGTYPES_CUT
+
+DTYPE = np.dtype([('t', np.int64), ('x', np.int16), ('y', np.int16), ('p', np.uint8)])
+
+def c_read_wrapper(p_fun, fpath, buff_size, dtype):
     c_fpath = c_char_p(bytes(fpath, 'utf-8'))
     c_dim = c_size_t(0)
     c_buff_size = c_size_t(buff_size)
@@ -48,25 +63,42 @@ def c_wrapper(p_fun, fpath, buff_size, dtype):
     else:
         raise "Function not defined."
     np_arr = np.ctypeslib.as_array(c_arr, shape=(c_dim.value, )).reshape((c_dim.value//4, 4))
-    return unstructured_to_structured(np_arr, dtype=dtype)   
+    np_arr = unstructured_to_structured(np_arr, dtype=dtype)   
+    np_arr["t"] -= np_arr["t"][0] # Eliminating the bias of the first sample.
+    return np_arr
 
 
 def read_dat(fpath, buff_size=4096, dtype=DTYPE):
-    return c_wrapper(read_dat, fpath, buff_size, dtype)
+    return c_read_wrapper(read_dat, fpath, buff_size, dtype)
 
 def read_evt2(fpath, buff_size=4096, dtype=DTYPE):
-    return c_wrapper(read_evt2, fpath, buff_size, dtype)
+    return c_read_wrapper(read_evt2, fpath, buff_size, dtype)
 
 def read_evt3(fpath, buff_size=4096, dtype=DTYPE):
-    return c_wrapper(read_evt3, fpath, buff_size, dtype)
+    return c_read_wrapper(read_evt3, fpath, buff_size, dtype)
 
-if __name__ == "__main__":
-    print("Testing DAT.")
-    arr = read_dat("./spinner.dat")
-    print(arr[0], arr[-1], arr.shape)
-    print("Testing EVT2.")
-    arr = read_evt2("./spinner.raw")
-    print(arr[0], arr[-1], arr.shape)
-    print("Testing EVT3.")
-    arr = read_evt3("./pedestrians.raw")
-    print(arr[0], arr[-1], arr.shape)
+def c_cut_wrapper(p_fun, fpath_in, fpath_out, max_nevents, buff_size):
+    c_fpath_in = c_char_p(bytes(fpath_in, 'utf-8'))
+    c_fpath_out = c_char_p(bytes(fpath_out, 'utf-8'))
+    c_max_nevents = c_size_t(max_nevents)
+    c_buff_size = c_size_t(buff_size)
+    if p_fun == cut_dat:
+        c_arr = c_cut_dat(c_fpath_in, c_fpath_out, c_max_nevents, c_buff_size)
+    elif p_fun == cut_evt2:
+        c_arr = c_cut_evt2(c_fpath_in, c_fpath_out, c_max_nevents, c_buff_size)
+    elif p_fun == cut_evt3:
+        c_arr = c_cut_evt3(c_fpath_in, c_fpath_out, c_max_nevents, c_buff_size)
+    else:
+        raise "Function not defined."
+    return 
+
+
+def cut_dat(fpath_in, fpath_out, max_nevents=1000, buff_size=4096):
+    return c_cut_wrapper(cut_dat, fpath_in, fpath_out, max_nevents, buff_size)
+
+def cut_evt2(fpath_in, fpath_out, max_nevents=1000, buff_size=4096):
+    return c_cut_wrapper(cut_evt2, fpath_in, fpath_out, max_nevents, buff_size)
+
+def cut_evt3(fpath_in, fpath_out, max_nevents=1000, buff_size=4096):
+    return c_cut_wrapper(cut_evt3, fpath_in, fpath_out, max_nevents, buff_size)
+

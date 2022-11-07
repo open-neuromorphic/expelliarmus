@@ -44,6 +44,9 @@ struct event_s {
 	event_t p; 
 }; 
 
+size_t cut_dat(const char*, const char*, size_t, size_t);
+size_t cut_evt2(const char*, const char*, size_t, size_t);
+size_t cut_evt3(const char*, const char*, size_t, size_t);
 event_array_t read_dat(const char*, size_t*, size_t); 
 event_array_t read_evt2(const char*, size_t*, size_t);
 event_array_t read_evt3(const char*, size_t*, size_t);
