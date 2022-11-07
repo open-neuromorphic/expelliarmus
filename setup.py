@@ -14,7 +14,7 @@ setup(
         ext_modules=[
             Extension(
                 name="expelliarmus", 
-                sources=[os.path.join("expelliarmus", "src", "expelliarmus.c")],
+                sources=[os.path.join("expelliarmus", "src", "expelliarmus.c"), os.path.join("expelliarmus", "src", "python_wrapper.c")],
                 language="c",
                 ), 
             ],
