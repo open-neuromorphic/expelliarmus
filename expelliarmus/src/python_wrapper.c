@@ -8,7 +8,7 @@ PyMODINIT_FUNC PyInit_expelliarmus(void){
 		"expelliarmus", 
 		NULL, 
 		-1, 
-		{
+		(char**) {
 			"read_dat", 
 			"read_evt2", 
 			"read_evt3", 
