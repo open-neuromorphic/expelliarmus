@@ -1,3 +1,4 @@
+#define PY_SSIZE_T_CLEAN
 #include "potter.h"
 #include <stdio.h>
 #include <stdint.h>
@@ -18,8 +19,24 @@
 	}\
 }
 
-// PyMODINIT_FUNC PyInit_potter(void){
-// }
+// Some Python stuff.
+
+static PyMethodDef potter_methods = {
+	{"read_dat", read_dat, METH_VARARGS, "Read a DAT file to a structured NumPy array."},
+	{NULL, NULL, 0, NULL}
+}
+
+static struct PyModuleDef potter_module = {
+	PyModuleDef_HEAD_INIT, 
+	"potter", 
+	NULL, 
+	-1, 
+	potter_methods
+}; 
+
+PyMODINIT_FUNC PyInit_potter(void){
+	return PyModule_Create(&potter_module); 
+}
 
 void free_event_array(event_array_t arr){
 	free(arr); 
