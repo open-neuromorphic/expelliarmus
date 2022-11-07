@@ -21,10 +21,10 @@
 
 // Some Python stuff.
 
-static PyMethodDef potter_methods = {
+static PyMethodDef potter_methods[] = {
 	{"read_dat", read_dat, METH_VARARGS, "Read a DAT file to a structured NumPy array."},
 	{NULL, NULL, 0, NULL}
-}
+};
 
 static struct PyModuleDef potter_module = {
 	PyModuleDef_HEAD_INIT, 
