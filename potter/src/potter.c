@@ -1,9 +1,7 @@
-#define PY_SSIZE_T_CLEAN
 #include "potter.h"
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
-#include <Python.h>
 
 #define CHECK_ALLOCATION(pt) {\
 	if (pt == NULL){\
@@ -18,28 +16,6 @@
 		exit(2);\
 	}\
 }
-
-/*
-// Some Python stuff.
-static PyMethodDef potter_methods[] = {
-	{"read_dat", read_dat, METH_VARARGS, "Read a DAT file to a structured NumPy array."},
-	{"read_evt2", read_evt2, METH_VARARGS, "Read an EVT2 file to a structured NumPy array."},
-	{"read_evt3", read_evt3, METH_VARARGS, "Read an EVT3 file to a structured NumPy array."},
-	{NULL, NULL, 0, NULL}
-};
-
-static struct PyModuleDef potter_module = {
-	PyModuleDef_HEAD_INIT, 
-	"potter", 
-	NULL, 
-	-1, 
-	potter_methods
-}; 
-
-PyMODINIT_FUNC PyInit_potter(void){
-	return PyModule_Create(&potter_module); 
-}
-*/
 
 void free_event_array(event_array_t arr){
 	free(arr); 
@@ -77,24 +53,12 @@ event_array_t read_dat(const char* fpath, size_t* dim, size_t buff_size){
 	 do {
 	   	do { 
 			fread(&pt, 1, 1, fp); 
-#ifdef VERBOSE
-			printf("%c", pt); 
-#endif
 		} while (pt != 0x0A); 
 		fread(&pt, 1, 1, fp); 
 		if (pt != 0x25) break; 
-#ifdef VERBOSE
-		printf("%c", pt); 
-#endif
 	} while (1); 
 
-#ifdef VERBOSE
-	printf("Binary event type: 0x%x.\n", pt); 
-#endif
-	fread(&pt, 1, 1, fp); 
-#ifdef VERBOSE
-	printf("Binary event size: 0x%x.\n", pt); 
-#endif
+	fseek(fp, 1, SEEK_CUR); 
 
 	// Now we can start to have some fun.
 	event_array_t arr; 
@@ -112,7 +76,7 @@ event_array_t read_dat(const char* fpath, size_t* dim, size_t buff_size){
 	size_t values_read=0, j=0, i=0; 
 	const uint32_t mask_4b=0xFU, mask_14b=0x3FFFU;
 	event_t time_ovfs=0, time_val=0; 
-	while ((values_read = fread(buff, sizeof(*buff), 2*buff_size, fp)) > 0){
+	while ((values_read = fread(buff, sizeof(buff[0]), 2*buff_size, fp)) > 0){
 		for (j=0; j<values_read; j+=2){
 			// Event timestamp.
 			if (((event_t)buff[j]) < time_val) // Overflow.
@@ -147,15 +111,9 @@ event_array_t read_evt2(const char* fpath, size_t* dim, size_t buff_size){
 	 do {
 	   	do { 
 			fread(&pt, 1, 1, fp); 
-#ifdef VERBOSE
-			printf("%c", pt); 
-#endif
 		} while (pt != 0x0A); 
 		fread(&pt, 1, 1, fp); 
 		if (pt != 0x25) break; 
-#ifdef VERBOSE
-		printf("%c", pt); 
-#endif
 	} while (1); 
 	
 	// Coming back to previous byte.
@@ -173,7 +131,7 @@ event_array_t read_evt2(const char* fpath, size_t* dim, size_t buff_size){
 	size_t i=0, j=0, values_read=0; 
 	const uint32_t mask_6b=0x3FU, mask_11b=0x7FFU, mask_28b=0xFFFFFFFU;
 	event_t time_high=0, time_low=0; 
-	while ((values_read = fread(buff, sizeof(*buff), buff_size, fp)) > 0){
+	while ((values_read = fread(buff, sizeof(buff[0]), buff_size, fp)) > 0){
 		for (j=0; j<values_read; j++){
 			// Getting the event type. 
 			event_type = (uint8_t) (buff[j] >> 28); 
@@ -225,15 +183,9 @@ event_array_t read_evt3(const char* fpath, size_t* dim, size_t buff_size){
 	 do {
 	   	do { 
 			fread(&pt, 1, 1, fp); 
-#ifdef VERBOSE
-			printf("%c", pt); 
-#endif
 		} while (pt != 0x0A); 
 		fread(&pt, 1, 1, fp); 
 		if (pt != 0x25) break; 
-#ifdef VERBOSE
-		printf("%c", pt); 
-#endif
 	} while (1); 
 	
 	// Coming back to previous byte.
@@ -254,7 +206,7 @@ event_array_t read_evt3(const char* fpath, size_t* dim, size_t buff_size){
 	event_t buff_tmp=0, base_x=0, k=0, num_vect_events=0; 
 	const uint16_t mask_11b=0x7FFU, mask_12b=0xFFFU, mask_8b=0xFFU; 
 	event_t time_high=0, time_low=0, time_stamp=0, time_high_ovfs=0, time_low_ovfs=0; 
-	while ((values_read = fread(buff, sizeof(*buff), buff_size, fp)) > 0){
+	while ((values_read = fread(buff, sizeof(buff[0]), buff_size, fp)) > 0){
 		for (j=0; j<values_read; j++){
 			// Getting the event type. 
 			event_type = (buff[j] >> 12); 
@@ -360,16 +312,23 @@ size_t cut_dat(const char* fpath_in, const char* fpath_out, size_t max_nevents, 
 	fwrite(&pt, 1, 1, fp_out);  
 
 	// Buffer to read binary data.
-	uint32_t* buff = (uint32_t*) malloc(2*buff_size * sizeof(uint32_t));
+	// In this case, every 64 bits correspond to an event. Hence, 
+	// to read at most max_nevents, we need to choose min(buff_size, max_nevents)
+	// as size for the read and write buffers.
+	buff_size = (buff_size > max_nevents) ? max_nevents : buff_size;
+	uint64_t* buff = (uint64_t*) malloc(buff_size * sizeof(uint64_t));
 	CHECK_ALLOCATION(buff); 
 	
-	size_t i=0, values_read=0, j=0; 
-	while (i < max_nevents && (values_read = fread(buff, sizeof(*buff), 2*buff_size, fp_in)) > 0){
-		for (j=0; i < max_nevents && j < values_read; j++){
-			fwrite(&buff[j], sizeof(*buff), 1, fp_out); 
-			i++; 
+	size_t i=0, values_read=0, values_written=0; 
+	while (i < max_nevents && (values_read = fread(buff, sizeof(buff[0]), buff_size, fp_in)) > 0){
+		values_written = fwrite(buff, sizeof(buff[0]), values_read, fp_out); 
+		i += values_read; 
+		if (values_written != values_read){
+			fprintf(stderr, "Error: the number of events read (%lu) does not correspond to the number written (%lu)", values_read, values_written); 
+			exit(3); 
 		}
 	}
+
 	free(buff); 
 	fclose(fp_in); 
 	fclose(fp_out); 
@@ -403,7 +362,7 @@ size_t cut_evt2(const char* fpath_in, const char* fpath_out, size_t max_nevents,
 	size_t i=0, j=0, values_read=0; 
 	while (i < max_nevents && (values_read = fread(buff, sizeof(*buff), buff_size, fp_in)) > 0){
 		for (j=0; i < max_nevents && j<values_read; j++){
-			fwrite(&buff[j], sizeof(*buff), 1, fp_out); 
+			fwrite(&buff[j], sizeof(buff[0]), 1, fp_out); 
 			// Getting the event type. 
 			event_type = (uint8_t) (buff[j] >> 28); 
 			switch (event_type){
@@ -464,7 +423,7 @@ size_t cut_evt3(const char* fpath_in, const char* fpath_out, size_t max_nevents,
 	uint8_t event_type=0; 
 	while (i < max_nevents && (values_read = fread(buff, sizeof(*buff), buff_size, fp_in)) > 0){
 		for (j=0; i < max_nevents && j<values_read; j++){
-			fwrite(&buff[j], sizeof(*buff), 1, fp_out); 
+			fwrite(&buff[j], sizeof(buff[0]), 1, fp_out); 
 			// Getting the event type. 
 			event_type = (buff[j] >> 12); 
 			switch (event_type){

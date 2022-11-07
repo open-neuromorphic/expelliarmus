@@ -3,6 +3,7 @@ import os
 
 setup(
         name="potter",
+        install_requires=["numpy"],
         author="Fabrizio Ottati", 
         author_email="fabriziottati@gmail.com", 
         maintainer="Fabrizio Ottati",
@@ -16,6 +17,6 @@ setup(
                 sources=[os.path.join("potter", "src", "potter.c")],
                 language="c",
                 ), 
-            ]
+            ],
         )
 

@@ -1,0 +1,11 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build-meta"
+
+[project]
+name = "potter"
+version = "0.0.0"
+dependencies = [
+	"numpy", 
+	"ctypes",
+]
