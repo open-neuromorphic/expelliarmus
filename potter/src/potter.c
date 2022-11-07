@@ -18,8 +18,8 @@
 	}\
 }
 
-PyMODINIT_FUNC PyInit_potter(void){
-}
+// PyMODINIT_FUNC PyInit_potter(void){
+// }
 
 void free_event_array(event_array_t arr){
 	free(arr); 
