@@ -56,14 +56,3 @@ def read_evt2(fpath, buff_size=4096, dtype=DTYPE):
 
 def read_evt3(fpath, buff_size=4096, dtype=DTYPE):
     return c_wrapper(read_evt3, fpath, buff_size, dtype)
-
-if __name__ == "__main__":
-    print("Testing DAT.")
-    arr = read_dat("./spinner.dat")
-    print(arr[0], arr[-1], arr.shape)
-    print("Testing EVT2.")
-    arr = read_evt2("./spinner.raw")
-    print(arr[0], arr[-1], arr.shape)
-    print("Testing EVT3.")
-    arr = read_evt3("./pedestrians.raw")
-    print(arr[0], arr[-1], arr.shape)
