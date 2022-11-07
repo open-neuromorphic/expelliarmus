@@ -13,8 +13,11 @@ for root, dirs, files in os.walk(this_file_path):
         if re.match(lib_re, f):
             lib_path = os.path.join(root, f)
             break
+if lib_path.endswith(".so"):
+    libpotter = CDLL(lib_path)
+else:
+    libpotter = WinDLL(lib_path)
 
-libpotter = cdll.LoadLibrary(lib_path)
 ARGTYPES = [c_char_p, POINTER(c_size_t), c_size_t]
 RESTYPE = POINTER(c_ulonglong)
 

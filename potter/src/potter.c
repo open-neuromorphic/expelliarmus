@@ -20,7 +20,7 @@
 }
 
 // Some Python stuff.
-
+/*
 static PyMethodDef potter_methods[] = {
 	{"read_dat", read_dat, METH_VARARGS, "Read a DAT file to a structured NumPy array."},
 	{"read_evt2", read_evt2, METH_VARARGS, "Read an EVT2 file to a structured NumPy array."},
@@ -39,6 +39,7 @@ static struct PyModuleDef potter_module = {
 PyMODINIT_FUNC PyInit_potter(void){
 	return PyModule_Create(&potter_module); 
 }
+*/
 
 void free_event_array(event_array_t arr){
 	free(arr); 
