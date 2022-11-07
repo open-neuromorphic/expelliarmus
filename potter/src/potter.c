@@ -23,6 +23,8 @@
 
 static PyMethodDef potter_methods[] = {
 	{"read_dat", read_dat, METH_VARARGS, "Read a DAT file to a structured NumPy array."},
+	{"read_evt2", read_evt2, METH_VARARGS, "Read an EVT2 file to a structured NumPy array."},
+	{"read_evt3", read_evt3, METH_VARARGS, "Read an EVT3 file to a structured NumPy array."},
 	{NULL, NULL, 0, NULL}
 };
 
