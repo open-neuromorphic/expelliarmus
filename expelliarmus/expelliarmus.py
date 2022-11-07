@@ -16,10 +16,12 @@ for root, dirs, files in os.walk(this_file_path):
 if lib_path.endswith(".so"):    
     libpotter = CDLL(lib_path)
 else:
-    import win32api
-    import win32con
-    dll_handle = win32api.LoadLibraryEx(lib_path, win32con.LOAD_WITH_ALTERED_SEARCH_PATH)
-    libpotter = WinDLL(lib_path, handle=dll_handle)
+    # import win32api
+    # import win32con
+    # dll_handle = win32api.LoadLibraryEx(lib_path, win32con.LOAD_WITH_ALTERED_SEARCH_PATH)
+    # libpotter = WinDLL(lib_path, handle=dll_handle)
+    os.chdir(lib_path.parent)
+    libpotter = cdll.LoadLibrary(lib_path.name)
 
 # Setting up C wrappers.
 ARGTYPES_READ = [c_char_p, POINTER(c_size_t), c_size_t]
