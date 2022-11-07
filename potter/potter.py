@@ -30,7 +30,7 @@ c_read_evt3 = libpotter.read_evt3
 c_read_evt3.restype = RESTYPE
 c_read_evt3.argtypes = ARGTYPES
 
-DTYPE = np.dtype([('t', np.uint64), ('x', np.int32), ('y', np.int32), ('p', np.int8)])
+DTYPE = np.dtype([('t', np.int64), ('x', np.int32), ('y', np.int32), ('p', np.int8)])
 
 def c_wrapper(p_fun, fpath, buff_size, dtype):
     c_fpath = c_char_p(bytes(fpath, 'utf-8'))
