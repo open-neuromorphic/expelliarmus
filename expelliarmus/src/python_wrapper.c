@@ -8,13 +8,13 @@ PyMODINIT_FUNC PyInit_expelliarmus(void){
 		"expelliarmus", 
 		NULL, 
 		-1, 
-		(char**) {
-			"read_dat", 
-			"read_evt2", 
-			"read_evt3", 
-			"cut_dat", 
-			"cut_evt2", 
-			"cut_evt3"
+		(PyMethodDef*) {
+			{"read_dat", read_dat, 0, NULL}, 
+			{"read_evt2", read_evt2, 0, NULL},
+			{"read_evt3", read_evt3, 0, NULL}, 
+			{"cut_dat", cut_dat, 0, NULL}, 
+			{"cut_evt2", cut_evt2, 0, NULL}, 
+			{"cut_evt3", cut_evt3, 0, NULL} 
 		}, 
 		NULL, 
 		NULL, 
