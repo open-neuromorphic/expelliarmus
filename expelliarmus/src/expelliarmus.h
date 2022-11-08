@@ -1,6 +1,10 @@
 #ifndef EXPELLIARMUS_H
 #define EXPELLIARMUS_H
 
+#ifdef _WIN32
+#define DllExport __declspec( dllexport )
+#endif
+
 #include <stdio.h> 
 #include <stdint.h>
 

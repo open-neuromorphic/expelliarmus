@@ -13,10 +13,7 @@ for root, dirs, files in os.walk(this_file_path):
         if re.match(lib_re, f):
             lib_path = pathlib.Path(os.path.join(root, f))
             break
-# root = os.getcwd()
-# os.chdir(lib_path.parent)
-libexpelliarmus = CDLL(str(lib_path))
-# os.chdir(root)
+c_lib_expelliarmus = CDLL(str(lib_path))
 
 # Setting up C wrappers.
 ARGTYPES_READ = [c_char_p, POINTER(c_size_t), c_size_t]
@@ -25,27 +22,27 @@ RESTYPE_READ = POINTER(c_ulonglong)
 ARGTYPES_CUT = [c_char_p, c_char_p, c_size_t, c_size_t]
 RESTYPE_CUT = c_size_t
 
-c_read_dat = libexpelliarmus.read_dat
+c_read_dat = c_lib_expelliarmus.read_dat
 c_read_dat.restype = RESTYPE_READ 
 c_read_dat.argtypes = ARGTYPES_READ
 
-c_read_evt2 = libexpelliarmus.read_evt2
+c_read_evt2 = c_lib_expelliarmus.read_evt2
 c_read_evt2.restype = RESTYPE_READ
 c_read_evt2.argtypes = ARGTYPES_READ
 
-c_read_evt3 = libexpelliarmus.read_evt3
+c_read_evt3 = c_lib_expelliarmus.read_evt3
 c_read_evt3.restype = RESTYPE_READ
 c_read_evt3.argtypes = ARGTYPES_READ
 
-c_cut_dat = libexpelliarmus.cut_dat
+c_cut_dat = c_lib_expelliarmus.cut_dat
 c_cut_dat.restype = RESTYPE_CUT 
 c_cut_dat.argtypes = ARGTYPES_CUT
 
-c_cut_evt2 = libexpelliarmus.cut_evt2
+c_cut_evt2 = c_lib_expelliarmus.cut_evt2
 c_cut_evt2.restype = RESTYPE_CUT
 c_cut_evt2.argtypes = ARGTYPES_CUT
 
-c_cut_evt3 = libexpelliarmus.cut_evt3
+c_cut_evt3 = c_lib_expelliarmus.cut_evt3
 c_cut_evt3.restype = RESTYPE_CUT
 c_cut_evt3.argtypes = ARGTYPES_CUT
 
