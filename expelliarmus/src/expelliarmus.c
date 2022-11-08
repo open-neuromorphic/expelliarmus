@@ -44,7 +44,7 @@ void append_event(const struct event_s* event, event_array_t* arr, size_t* alloc
  * Functions for reading events to arrays.
  */
 
-event_array_t read_dat(const char* fpath, size_t* dim, size_t buff_size){
+DLLEXPORT event_array_t read_dat(const char* fpath, size_t* dim, size_t buff_size){
 	FILE* fp = fopen(fpath, "rb"); 
 	CHECK_FILE(fp, fpath); 
 
@@ -102,7 +102,7 @@ event_array_t read_dat(const char* fpath, size_t* dim, size_t buff_size){
 	return arr; 
 }	
 
-event_array_t read_evt2(const char* fpath, size_t* dim, size_t buff_size){
+DLLEXPORT event_array_t read_evt2(const char* fpath, size_t* dim, size_t buff_size){
 	FILE* fp = fopen(fpath, "rb"); 
 	CHECK_FILE(fp, fpath); 
 
@@ -174,7 +174,7 @@ event_array_t read_evt2(const char* fpath, size_t* dim, size_t buff_size){
 	return arr; 
 }
 
-event_array_t read_evt3(const char* fpath, size_t* dim, size_t buff_size){
+DLLEXPORT event_array_t read_evt3(const char* fpath, size_t* dim, size_t buff_size){
 	FILE* fp = fopen(fpath, "rb"); 
 	CHECK_FILE(fp, fpath); 
 
@@ -289,7 +289,7 @@ event_array_t read_evt3(const char* fpath, size_t* dim, size_t buff_size){
  * Functions for cutting DAT and RAW files to a certain number of events.
  */
 
-size_t cut_dat(const char* fpath_in, const char* fpath_out, size_t max_nevents, size_t buff_size){
+DLLEXPORT size_t cut_dat(const char* fpath_in, const char* fpath_out, size_t max_nevents, size_t buff_size){
 	FILE* fp_in = fopen(fpath_in, "rb"); 
 	CHECK_FILE(fp_in, fpath_in); 
 	FILE* fp_out = fopen(fpath_out, "wb"); 
@@ -335,7 +335,7 @@ size_t cut_dat(const char* fpath_in, const char* fpath_out, size_t max_nevents, 
 	return i; 
 }
 
-size_t cut_evt2(const char* fpath_in, const char* fpath_out, size_t max_nevents, size_t buff_size){
+DLLEXPORT size_t cut_evt2(const char* fpath_in, const char* fpath_out, size_t max_nevents, size_t buff_size){
 	FILE* fp_in = fopen(fpath_in, "rb"); 
 	CHECK_FILE(fp_in, fpath_in); 
 	FILE* fp_out = fopen(fpath_out, "wb"); 
@@ -391,7 +391,7 @@ size_t cut_evt2(const char* fpath_in, const char* fpath_out, size_t max_nevents,
 	return i; 
 }
 
-size_t cut_evt3(const char* fpath_in, const char* fpath_out, size_t max_nevents, size_t buff_size){
+DLLEXPORT size_t cut_evt3(const char* fpath_in, const char* fpath_out, size_t max_nevents, size_t buff_size){
 	FILE* fp_in = fopen(fpath_in, "rb"); 
 	CHECK_FILE(fp_in, fpath_in); 
 	FILE* fp_out = fopen(fpath_out, "w+b"); 

@@ -1,10 +1,14 @@
 #ifndef EXPELLIARMUS_H
 #define EXPELLIARMUS_H
 
-#define DllExport __declspec( dllexport )
-
 #include <stdio.h> 
 #include <stdint.h>
+
+#ifdef _WIN32
+#define DLLEXPORT __declspec(dllexport)
+#else 
+#define DLLEXPORT
+#endif
 
 #define DEFAULT_ARRAY_DIM 16000
 
@@ -46,12 +50,12 @@ struct event_s {
 	event_t p; 
 }; 
 
-size_t cut_dat(const char*, const char*, size_t, size_t);
-size_t cut_evt2(const char*, const char*, size_t, size_t);
-size_t cut_evt3(const char*, const char*, size_t, size_t);
-event_array_t read_dat(const char*, size_t*, size_t); 
-event_array_t read_evt2(const char*, size_t*, size_t);
-event_array_t read_evt3(const char*, size_t*, size_t);
+DLLEXPORT size_t cut_dat(const char*, const char*, size_t, size_t);
+DLLEXPORT size_t cut_evt2(const char*, const char*, size_t, size_t);
+DLLEXPORT size_t cut_evt3(const char*, const char*, size_t, size_t);
+DLLEXPORT event_array_t read_dat(const char*, size_t*, size_t); 
+DLLEXPORT event_array_t read_evt2(const char*, size_t*, size_t);
+DLLEXPORT event_array_t read_evt3(const char*, size_t*, size_t);
 void append_event(const struct event_s*, event_array_t*, size_t*, size_t*); 
 void free_event_array(event_array_t);
 
