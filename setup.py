@@ -44,7 +44,7 @@ setup(
         author="Fabrizio Ottati", 
         author_email="fabriziottati@gmail.com", 
         version="0.0.0",
-        py_modules=["expelliarmus.expelliarmus"],
+        py_modules=["expelliarmus.expelliarmus_mod"],
         ext_modules=[
             CTypesExtension(
                 "expelliarmus.expelliarmus", 
