@@ -111,7 +111,16 @@ def read_dat(
     fpath: Union[pathlib.Path, str],
     buff_size: Optional[int] = 4096,
     dtype: Optional[np.dtype] = DTYPE,
-):
+) -> np.ndarray:
+    """
+    Function that reads a DAT binary file to a structured NumPy array.
+    Args:
+        - fpath: path to the DAT file. 
+        - buff_size: size of the buffer used to read the binary file.
+        - dtype: the types for the structured array.
+    Returns:
+        - arr: a structured NumPy array that encodes (timestamp, x_address, y_address, polarity).
+    """
     return c_read_wrapper(read_dat, fpath, buff_size, dtype)
 
 
@@ -119,7 +128,16 @@ def read_evt2(
     fpath: Union[pathlib.Path, str],
     buff_size: Optional[int] = 4096,
     dtype: Optional[np.dtype] = DTYPE,
-):
+) -> np.ndarray:
+    """
+    Function that reads a EVT2 binary file to a structured NumPy array.
+    Args:
+        - fpath: path to the EVT2 file. 
+        - buff_size: size of the buffer used to read the binary file.
+        - dtype: the types for the structured array.
+    Returns:
+        - arr: a structured NumPy array that encodes (timestamp, x_address, y_address, polarity).
+    """
     return c_read_wrapper(read_evt2, fpath, buff_size, dtype)
 
 
@@ -127,7 +145,16 @@ def read_evt3(
     fpath: Union[pathlib.Path, str],
     buff_size: Optional[int] = 4096,
     dtype: Optional[np.dtype] = DTYPE,
-):
+) -> np.ndarray:
+    """
+    Function that reads a EVT3 binary file to a structured NumPy array.
+    Args:
+        - fpath: path to the DAT file. 
+        - buff_size: size of the buffer used to read the binary file.
+        - dtype: the types for the structured array.
+    Returns:
+        - arr: a structured NumPy array that encodes (timestamp, x_address, y_address, polarity).
+    """
     return c_read_wrapper(read_evt3, fpath, buff_size, dtype)
 
 
@@ -136,7 +163,17 @@ def cut_dat(
     fpath_out: Union[pathlib.Path, str],
     max_nevents: Optional[int] = 1000,
     buff_size: Optional[int] = 4096,
-):
+) -> np.ndarray:
+    """
+    Function that reads a DAT binary file and cuts it to a limited number of events.
+    Args:
+        - fpath_in: path to the input DAT file. 
+        - fpath_out: path to the output DAT file. 
+        - max_nevents: number of events to be written in the output file.
+        - buff_size: size of the buffer used to read the binary file.
+    Returns:
+        - arr: a structured NumPy array that encodes (timestamp, x_address, y_address, polarity).
+    """
     return c_cut_wrapper(cut_dat, fpath_in, fpath_out, max_nevents, buff_size)
 
 
@@ -145,7 +182,17 @@ def cut_evt2(
     fpath_out: Union[pathlib.Path, str],
     max_nevents: Optional[int] = 1000,
     buff_size: Optional[int] = 4096,
-):
+) -> np.ndarray:
+    """
+    Function that reads a EVT2 binary file and cuts it to a limited number of events.
+    Args:
+        - fpath_in: path to the input EVT2 file. 
+        - fpath_out: path to the output EVT2 file. 
+        - max_nevents: number of events to be written in the output file.
+        - buff_size: size of the buffer used to read the binary file.
+    Returns:
+        - arr: a structured NumPy array that encodes (timestamp, x_address, y_address, polarity).
+    """
     return c_cut_wrapper(cut_evt2, fpath_in, fpath_out, max_nevents, buff_size)
 
 
@@ -154,5 +201,15 @@ def cut_evt3(
     fpath_out: Union[pathlib.Path, str],
     max_nevents: Optional[int] = 1000,
     buff_size: Optional[int] = 4096,
-):
+) -> np.ndarray:
+    """
+    Function that reads a EVT3 binary file and cuts it to a limited number of events.
+    Args:
+        - fpath_in: path to the input EVT3 file. 
+        - fpath_out: path to the output EVT3 file. 
+        - max_nevents: number of events to be written in the output file.
+        - buff_size: size of the buffer used to read the binary file.
+    Returns:
+        - arr: a structured NumPy array that encodes (timestamp, x_address, y_address, polarity).
+    """
     return c_cut_wrapper(cut_evt3, fpath_in, fpath_out, max_nevents, buff_size)
