@@ -15,7 +15,7 @@ for root, dirs, files in os.walk(this_file_path):
             break
 # root = os.getcwd()
 # os.chdir(lib_path.parent)
-libexpelliarmus = CDLL(str(lib_path.name))
+libexpelliarmus = CDLL(str(lib_path))
 # os.chdir(root)
 
 # Setting up C wrappers.
