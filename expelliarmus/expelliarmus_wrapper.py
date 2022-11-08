@@ -15,7 +15,7 @@ for root, dirs, files in os.walk(this_file_path):
             break
 root = os.getcwd()
 os.chdir(lib_path.parent)
-libpotter = cdll.LoadLibrary(os.path.join(".", lib_path.name))
+libexpelliarmus = cdll.LoadLibrary(os.path.join(".", lib_path.name))
 os.chdir(root)
 
 # Setting up C wrappers.
@@ -25,27 +25,27 @@ RESTYPE_READ = POINTER(c_ulonglong)
 ARGTYPES_CUT = [c_char_p, c_char_p, c_size_t, c_size_t]
 RESTYPE_CUT = c_size_t
 
-c_read_dat = libpotter.read_dat
+c_read_dat = libexpelliarmus.read_dat
 c_read_dat.restype = RESTYPE_READ 
 c_read_dat.argtypes = ARGTYPES_READ
 
-c_read_evt2 = libpotter.read_evt2
+c_read_evt2 = libexpelliarmus.read_evt2
 c_read_evt2.restype = RESTYPE_READ
 c_read_evt2.argtypes = ARGTYPES_READ
 
-c_read_evt3 = libpotter.read_evt3
+c_read_evt3 = libexpelliarmus.read_evt3
 c_read_evt3.restype = RESTYPE_READ
 c_read_evt3.argtypes = ARGTYPES_READ
 
-c_cut_dat = libpotter.cut_dat
+c_cut_dat = libexpelliarmus.cut_dat
 c_cut_dat.restype = RESTYPE_CUT 
 c_cut_dat.argtypes = ARGTYPES_CUT
 
-c_cut_evt2 = libpotter.cut_evt2
+c_cut_evt2 = libexpelliarmus.cut_evt2
 c_cut_evt2.restype = RESTYPE_CUT
 c_cut_evt2.argtypes = ARGTYPES_CUT
 
-c_cut_evt3 = libpotter.cut_evt3
+c_cut_evt3 = libexpelliarmus.cut_evt3
 c_cut_evt3.restype = RESTYPE_CUT
 c_cut_evt3.argtypes = ARGTYPES_CUT
 
