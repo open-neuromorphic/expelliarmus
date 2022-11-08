@@ -13,10 +13,10 @@ for root, dirs, files in os.walk(this_file_path):
         if re.match(lib_re, f):
             lib_path = pathlib.Path(os.path.join(root, f))
             break
-root = os.getcwd()
-os.chdir(lib_path.parent)
-libexpelliarmus = cdll.LoadLibrary(os.path.join(".", lib_path.name))
-os.chdir(root)
+# root = os.getcwd()
+# os.chdir(lib_path.parent)
+libexpelliarmus = CDLL(str(lib_path.name))
+# os.chdir(root)
 
 # Setting up C wrappers.
 ARGTYPES_READ = [c_char_p, POINTER(c_size_t), c_size_t]
