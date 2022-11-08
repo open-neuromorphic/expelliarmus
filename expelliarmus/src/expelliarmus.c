@@ -315,18 +315,19 @@ DLLEXPORT size_t cut_dat(const char* fpath_in, const char* fpath_out, size_t max
 	// In this case, every 64 bits correspond to an event. Hence, 
 	// to read at most max_nevents, we need to choose min(buff_size, max_nevents)
 	// as size for the read and write buffers.
-	buff_size = (buff_size > max_nevents) ? max_nevents : buff_size;
 	uint64_t* buff = (uint64_t*) malloc(buff_size * sizeof(uint64_t));
 	CHECK_ALLOCATION(buff); 
 	
-	size_t i=0, values_read=0, values_written=0; 
-	while (i < max_nevents && (values_read = fread(buff, sizeof(buff[0]), buff_size, fp_in)) > 0){
+	size_t i=0, values_read=0, values_written=0, nevents_to_read=0;
+   	nevents_to_read = (buff_size > max_nevents) ? max_nevents : buff_size; 	
+	while (i < max_nevents && (values_read = fread(buff, sizeof(buff[0]), nevents_to_read, fp_in)) > 0){
 		values_written = fwrite(buff, sizeof(buff[0]), values_read, fp_out); 
 		i += values_read; 
 		if (values_written != values_read){
 			fprintf(stderr, "Error: the number of events read (%lu) does not correspond to the number written (%lu)", values_read, values_written); 
 			exit(3); 
 		}
+		nevents_to_read = (values_read+nevents_to_read > max_nevents) ? max_nevents-values_read : nevents_to_read;
 	}
 
 	free(buff); 
