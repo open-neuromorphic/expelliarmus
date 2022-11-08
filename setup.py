@@ -34,8 +34,8 @@ class build_ext(build_ext_orig):
         return super().get_export_symbols(ext)
 
     def get_ext_filename(self, ext_name):
-        if self._ctypes:
-            return ext_name + ".so"
+        # if self._ctypes:
+        #     return ext_name + ".so"
         return super().get_ext_filename(ext_name)
 
 setup(
