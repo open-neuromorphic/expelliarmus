@@ -1,3 +1,4 @@
+#define PY_SSIZE_T_CLEAN
 #include <Python.h>
 #include "expelliarmus.h"
 
@@ -8,7 +9,7 @@ PyMODINIT_FUNC PyInit_expelliarmus(void){
 		"expelliarmus", 
 		NULL, 
 		-1, 
-		(PyMethodDef*) {
+		(const PyMethodDef*) {
 			{"read_dat", read_dat, 0, NULL}, 
 			{"read_evt2", read_evt2, 0, NULL},
 			{"read_evt3", read_evt3, 0, NULL}, 
