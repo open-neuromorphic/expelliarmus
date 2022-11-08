@@ -12,11 +12,11 @@ Given an EVT3 file called `pedestrians.raw`, which can be dowloaded from [here](
 
 ```python
 import expelliarmus
-arr = expelliarmus.read_evt3("./pedestrians.raw")
+arr = expelliarmus.read_dat("./spinner.dat")
 print(arr.shape) # Number of events encoded to the NumPy array.
 ```
 
-    (39297796,)
+    (54165303,)
 
 
 The array is a collection of `(timestamp, x_address, y_address, polarity)` tuples. 
@@ -36,14 +36,14 @@ A typical sample looks like this:
 print(arr[0])
 ```
 
-    (0, 707, 297, 0)
+    (0, 237, 121, 1)
 
 
 If we would like to reduce the EVT3 file size, we can use the `cut_evt3` function:
 
 
 ```python
-n_events = expelliarmus.cut_evt3("./pedestrians.raw", "./pedestrians_cut.raw", max_nevents=5000)
+n_events = expelliarmus.cut_dat("./spinner.dat", "./spinner_cut.dat", max_nevents=5000)
 print(n_events) # The number of events embedded in the output file.
 ```
 
@@ -54,7 +54,7 @@ This can be verified by reading the new file in an array.
 
 
 ```python
-cut_arr = expelliarmus.read_evt3("./pedestrians_cut.raw")
+cut_arr = expelliarmus.read_dat("./spinner_cut.dat")
 print(cut_arr.shape)
 ```
 
@@ -69,6 +69,6 @@ print(arr[0], cut_arr[0])
 print(arr[4999], cut_arr[-1])
 ```
 
-    (0, 707, 297, 0) (0, 707, 297, 0)
-    (90266, 598, 260, 0) (90266, 598, 260, 0)
+    (0, 237, 121, 1) (0, 237, 121, 1)
+    (450, 248, 130, 1) (450, 248, 130, 1)
 
