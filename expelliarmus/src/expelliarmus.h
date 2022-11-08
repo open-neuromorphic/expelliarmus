@@ -4,6 +4,8 @@
 #include <stdio.h> 
 #include <stdint.h>
 
+// Thank you http://wolfprojects.altervista.org/articles/dll-in-c-for-python/ :)
+// Thanks to this lines, also Windows DLL works.
 #ifdef _WIN32
 #define DLLEXPORT __declspec(dllexport)
 #else 
