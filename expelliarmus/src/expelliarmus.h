@@ -1,6 +1,12 @@
 #ifndef EXPELLIARMUS_H
 #define EXPELLIARMUS_H
 
+#ifdef _WIN32
+#define LIBRARY_API extern "C" __declspec(dllexport)
+#else
+#define LIBRARY_API extern "C"
+#endif
+
 #include <stdio.h> 
 #include <stdint.h>
 
@@ -44,12 +50,12 @@ struct event_s {
 	event_t p; 
 }; 
 
-size_t cut_dat(const char*, const char*, size_t, size_t);
-size_t cut_evt2(const char*, const char*, size_t, size_t);
-size_t cut_evt3(const char*, const char*, size_t, size_t);
-event_array_t read_dat(const char*, size_t*, size_t); 
-event_array_t read_evt2(const char*, size_t*, size_t);
-event_array_t read_evt3(const char*, size_t*, size_t);
+LIBRARY_API size_t cut_dat(const char*, const char*, size_t, size_t);
+LIBRARY_API size_t cut_evt2(const char*, const char*, size_t, size_t);
+LIBRARY_API size_t cut_evt3(const char*, const char*, size_t, size_t);
+LIBRARY_API event_array_t read_dat(const char*, size_t*, size_t); 
+LIBRARY_API event_array_t read_evt2(const char*, size_t*, size_t);
+LIBRARY_API event_array_t read_evt3(const char*, size_t*, size_t);
 void append_event(const struct event_s*, event_array_t*, size_t*, size_t*); 
 void free_event_array(event_array_t);
 
