@@ -7,7 +7,7 @@ import pathlib
 
 # Searching for the shared library. 
 this_file_path = pathlib.Path(__file__).resolve().parent
-lib_re = r"^expelliarmus\.(so|pyd)$"
+lib_re = r"^expelliarmus\..*\.(so|pyd)$"
 for root, dirs, files in os.walk(this_file_path):
     for f in files:
         if re.match(lib_re, f):
