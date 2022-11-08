@@ -1,13 +1,15 @@
 from setuptools import Extension, setup
-import os
 
 # Inspired by https://github.com/himbeles/ctypes-example.
-
 from distutils.command.build_ext import build_ext as build_ext_orig
-class CTypesExtension(Extension): pass
-class build_ext(build_ext_orig):
 
-    def build_extension(self, ext): 
+
+class CTypesExtension(Extension):
+    pass
+
+
+class build_ext(build_ext_orig):
+    def build_extension(self, ext):
         self._ctypes = isinstance(ext, CTypesExtension)
         return super().build_extension(ext)
 
@@ -19,20 +21,21 @@ class build_ext(build_ext_orig):
     def get_ext_filename(self, ext_name):
         return super().get_ext_filename(ext_name)
 
+
 setup(
-        name="expelliarmus", 
-        install_requires=["numpy"], 
-        author="Fabrizio Ottati, Gregor Lenz", 
-        author_email="fabriziottati@gmail.com, mail@lenzgregor.com",
-        maintainer="Fabrizio Ottati, Gregor Lenz", 
-        maintainer_email="fabriziottati@gmail.com, mail@lenzgregor.com",
-        version="0.0.0",
-        py_modules=["expelliarmus.expelliarmus_wrapper"],
-        ext_modules=[
-            CTypesExtension(
-                "expelliarmus.expelliarmus", 
-                [os.path.join("expelliarmus", "src", "expelliarmus.c")],
-                ), 
-            ], 
-        cmdclass = {'build_ext': build_ext}, 
-        )
+    name="expelliarmus",
+    install_requires=["numpy"],
+    author="Fabrizio Ottati, Gregor Lenz",
+    author_email="fabriziottati@gmail.com, mail@lenzgregor.com",
+    maintainer="Fabrizio Ottati, Gregor Lenz",
+    maintainer_email="fabriziottati@gmail.com, mail@lenzgregor.com",
+    version="0.0.0",
+    py_modules=["expelliarmus.expelliarmus_wrapper"],
+    ext_modules=[
+        CTypesExtension(
+            "expelliarmus.expelliarmus",
+            [os.path.join("expelliarmus", "src", "expelliarmus.c")],
+        ),
+    ],
+    cmdclass={"build_ext": build_ext},
+)

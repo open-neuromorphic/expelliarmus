@@ -4,8 +4,11 @@ from numpy.lib.recfunctions import unstructured_to_structured
 import re
 import os
 import pathlib
+from typing import Union, Optional
 
-# Searching for the shared library. 
+# Stuff you do not need to worry about :)
+
+# Searching for the shared library.
 this_file_path = pathlib.Path(__file__).resolve().parent
 lib_re = r"^expelliarmus\..*\.(so|pyd)$"
 for root, dirs, files in os.walk(this_file_path):
@@ -23,7 +26,7 @@ ARGTYPES_CUT = [c_char_p, c_char_p, c_size_t, c_size_t]
 RESTYPE_CUT = c_size_t
 
 c_read_dat = c_lib_expelliarmus.read_dat
-c_read_dat.restype = RESTYPE_READ 
+c_read_dat.restype = RESTYPE_READ
 c_read_dat.argtypes = ARGTYPES_READ
 
 c_read_evt2 = c_lib_expelliarmus.read_evt2
@@ -35,7 +38,7 @@ c_read_evt3.restype = RESTYPE_READ
 c_read_evt3.argtypes = ARGTYPES_READ
 
 c_cut_dat = c_lib_expelliarmus.cut_dat
-c_cut_dat.restype = RESTYPE_CUT 
+c_cut_dat.restype = RESTYPE_CUT
 c_cut_dat.argtypes = ARGTYPES_CUT
 
 c_cut_evt2 = c_lib_expelliarmus.cut_evt2
@@ -47,14 +50,15 @@ c_cut_evt3.restype = RESTYPE_CUT
 c_cut_evt3.argtypes = ARGTYPES_CUT
 
 # Default data type for structured array.
-DTYPE = np.dtype([('t', np.int64), ('x', np.int16), ('y', np.int16), ('p', np.uint8)])
+DTYPE = np.dtype([("t", np.int64), ("x", np.int16), ("y", np.int16), ("p", np.uint8)])
+
 
 def c_read_wrapper(p_fun, fpath, buff_size, dtype):
     fpath = pathlib.Path(fpath).resolve()
-    assert fpath.is_file(), f"Error: the file provided \"{str(fpath)}\" does not exist."
+    assert fpath.is_file(), f'Error: the file provided "{str(fpath)}" does not exist.'
     assert buff_size > 0, "Error: a minimum buffer size of 1 is required."
 
-    c_fpath = c_char_p(bytes(str(fpath), 'utf-8'))
+    c_fpath = c_char_p(bytes(str(fpath), "utf-8"))
     c_dim = c_size_t(0)
     c_buff_size = c_size_t(buff_size)
     if p_fun == read_dat:
@@ -65,31 +69,28 @@ def c_read_wrapper(p_fun, fpath, buff_size, dtype):
         c_arr = c_read_evt3(c_fpath, byref(c_dim), c_buff_size)
     else:
         raise "Function not defined."
-    np_arr = np.ctypeslib.as_array(c_arr, shape=(c_dim.value, )).reshape((c_dim.value//4, 4))
-    np_arr = unstructured_to_structured(np_arr, dtype=dtype)   
-    np_arr["t"] -= np_arr["t"][0] # Eliminating the bias of the first sample.
+    np_arr = np.ctypeslib.as_array(c_arr, shape=(c_dim.value,)).reshape(
+        (c_dim.value // 4, 4)
+    )
+    np_arr = unstructured_to_structured(np_arr, dtype=dtype)
+    np_arr["t"] -= np_arr["t"][0]  # Eliminating the bias of the first sample.
     return np_arr
 
-
-def read_dat(fpath, buff_size=4096, dtype=DTYPE):
-    return c_read_wrapper(read_dat, fpath, buff_size, dtype)
-
-def read_evt2(fpath, buff_size=4096, dtype=DTYPE):
-    return c_read_wrapper(read_evt2, fpath, buff_size, dtype)
-
-def read_evt3(fpath, buff_size=4096, dtype=DTYPE):
-    return c_read_wrapper(read_evt3, fpath, buff_size, dtype)
 
 def c_cut_wrapper(p_fun, fpath_in, fpath_out, max_nevents, buff_size):
     fpath_in = pathlib.Path(fpath_in).resolve()
     fpath_out = pathlib.Path(fpath_out).resolve()
-    assert fpath_in.is_file(), f"Error: the input file provided \"{str(fpath_in)}\" does not exist."
-    assert fpath_out.parent.is_dir(), f"Error: the output file path provided \"{str(fpath_out)}\" does not exist."
+    assert (
+        fpath_in.is_file()
+    ), f'Error: the input file provided "{str(fpath_in)}" does not exist.'
+    assert (
+        fpath_out.parent.is_dir()
+    ), f'Error: the output file path provided "{str(fpath_out)}" does not exist.'
     assert buff_size > 0, "Error: a minimum buffer size of 1 is required."
     assert max_nevents > 0, "Error: a minimum number of events of 1 is required."
 
-    c_fpath_in = c_char_p(bytes(str(fpath_in), 'utf-8'))
-    c_fpath_out = c_char_p(bytes(str(fpath_out), 'utf-8'))
+    c_fpath_in = c_char_p(bytes(str(fpath_in), "utf-8"))
+    c_fpath_out = c_char_p(bytes(str(fpath_out), "utf-8"))
     c_max_nevents = c_size_t(max_nevents)
     c_buff_size = c_size_t(buff_size)
     if p_fun == cut_dat:
@@ -100,15 +101,58 @@ def c_cut_wrapper(p_fun, fpath_in, fpath_out, max_nevents, buff_size):
         c_dim = c_cut_evt3(c_fpath_in, c_fpath_out, c_max_nevents, c_buff_size)
     else:
         raise "Function not defined."
-    return c_dim 
+    return c_dim
 
 
-def cut_dat(fpath_in, fpath_out, max_nevents=1000, buff_size=4096):
+# Actual stuff you should care about.
+
+
+def read_dat(
+    fpath: Union[pathlib.Path, str],
+    buff_size: Optional[int] = 4096,
+    dtype: Optional[np.dtype] = DTYPE,
+):
+    return c_read_wrapper(read_dat, fpath, buff_size, dtype)
+
+
+def read_evt2(
+    fpath: Union[pathlib.Path, str],
+    buff_size: Optional[int] = 4096,
+    dtype: Optional[np.dtype] = DTYPE,
+):
+    return c_read_wrapper(read_evt2, fpath, buff_size, dtype)
+
+
+def read_evt3(
+    fpath: Union[pathlib.Path, str],
+    buff_size: Optional[int] = 4096,
+    dtype: Optional[np.dtype] = DTYPE,
+):
+    return c_read_wrapper(read_evt3, fpath, buff_size, dtype)
+
+
+def cut_dat(
+    fpath_in: Union[pathlib.Path, str],
+    fpath_out: Union[pathlib.Path, str],
+    max_nevents: Optional[int] = 1000,
+    buff_size: Optional[int] = 4096,
+):
     return c_cut_wrapper(cut_dat, fpath_in, fpath_out, max_nevents, buff_size)
 
-def cut_evt2(fpath_in, fpath_out, max_nevents=1000, buff_size=4096):
+
+def cut_evt2(
+    fpath_in: Union[pathlib.Path, str],
+    fpath_out: Union[pathlib.Path, str],
+    max_nevents: Optional[int] = 1000,
+    buff_size: Optional[int] = 4096,
+):
     return c_cut_wrapper(cut_evt2, fpath_in, fpath_out, max_nevents, buff_size)
 
-def cut_evt3(fpath_in, fpath_out, max_nevents=1000, buff_size=4096):
-    return c_cut_wrapper(cut_evt3, fpath_in, fpath_out, max_nevents, buff_size)
 
+def cut_evt3(
+    fpath_in: Union[pathlib.Path, str],
+    fpath_out: Union[pathlib.Path, str],
+    max_nevents: Optional[int] = 1000,
+    buff_size: Optional[int] = 4096,
+):
+    return c_cut_wrapper(cut_evt3, fpath_in, fpath_out, max_nevents, buff_size)
