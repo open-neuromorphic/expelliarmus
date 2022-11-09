@@ -1,10 +1,11 @@
-from ctypes import *
-import numpy as np
-from numpy.lib.recfunctions import unstructured_to_structured
-import re
 import os
 import pathlib
-from typing import Union, Optional
+import re
+from ctypes import *
+from typing import Optional, Union
+
+import numpy as np
+from numpy.lib.recfunctions import unstructured_to_structured
 
 # Stuff you do not need to worry about :)
 
@@ -115,7 +116,7 @@ def read_dat(
     """
     Function that reads a DAT binary file to a structured NumPy array.
     Args:
-        - fpath: path to the DAT file. 
+        - fpath: path to the DAT file.
         - buff_size: size of the buffer used to read the binary file.
         - dtype: the types for the structured array.
     Returns:
@@ -132,7 +133,7 @@ def read_evt2(
     """
     Function that reads a EVT2 binary file to a structured NumPy array.
     Args:
-        - fpath: path to the EVT2 file. 
+        - fpath: path to the EVT2 file.
         - buff_size: size of the buffer used to read the binary file.
         - dtype: the types for the structured array.
     Returns:
@@ -149,7 +150,7 @@ def read_evt3(
     """
     Function that reads a EVT3 binary file to a structured NumPy array.
     Args:
-        - fpath: path to the DAT file. 
+        - fpath: path to the DAT file.
         - buff_size: size of the buffer used to read the binary file.
         - dtype: the types for the structured array.
     Returns:
@@ -167,8 +168,8 @@ def cut_dat(
     """
     Function that reads a DAT binary file and cuts it to a limited number of events.
     Args:
-        - fpath_in: path to the input DAT file. 
-        - fpath_out: path to the output DAT file. 
+        - fpath_in: path to the input DAT file.
+        - fpath_out: path to the output DAT file.
         - max_nevents: number of events to be written in the output file.
         - buff_size: size of the buffer used to read the binary file.
     Returns:
@@ -186,8 +187,8 @@ def cut_evt2(
     """
     Function that reads a EVT2 binary file and cuts it to a limited number of events.
     Args:
-        - fpath_in: path to the input EVT2 file. 
-        - fpath_out: path to the output EVT2 file. 
+        - fpath_in: path to the input EVT2 file.
+        - fpath_out: path to the output EVT2 file.
         - max_nevents: number of events to be written in the output file.
         - buff_size: size of the buffer used to read the binary file.
     Returns:
@@ -205,8 +206,8 @@ def cut_evt3(
     """
     Function that reads a EVT3 binary file and cuts it to a limited number of events.
     Args:
-        - fpath_in: path to the input EVT3 file. 
-        - fpath_out: path to the output EVT3 file. 
+        - fpath_in: path to the input EVT3 file.
+        - fpath_out: path to the output EVT3 file.
         - max_nevents: number of events to be written in the output file.
         - buff_size: size of the buffer used to read the binary file.
     Returns:

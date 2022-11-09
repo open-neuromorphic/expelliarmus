@@ -1,7 +1,7 @@
-from setuptools import Extension, setup
-
 # Inspired by https://github.com/himbeles/ctypes-example.
 from distutils.command.build_ext import build_ext as build_ext_orig
+
+from setuptools import Extension, setup
 
 
 class CTypesExtension(Extension):
@@ -29,7 +29,7 @@ setup(
     author_email="fabriziottati@gmail.com, mail@lenzgregor.com",
     maintainer="Fabrizio Ottati, Gregor Lenz",
     maintainer_email="fabriziottati@gmail.com, mail@lenzgregor.com",
-    version="0.0.0",
+    version="0.1.0",
     py_modules=["expelliarmus.expelliarmus_wrapper"],
     ext_modules=[
         CTypesExtension(
