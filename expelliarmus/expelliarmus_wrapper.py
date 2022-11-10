@@ -164,7 +164,7 @@ def cut_dat(
     fpath_out: Union[pathlib.Path, str],
     max_nevents: Optional[int] = 1000,
     buff_size: Optional[int] = 4096,
-) -> np.ndarray:
+) -> int:
     """
     Function that reads a DAT binary file and cuts it to a limited number of events.
     Args:
@@ -173,7 +173,7 @@ def cut_dat(
         - max_nevents: number of events to be written in the output file.
         - buff_size: size of the buffer used to read the binary file.
     Returns:
-        - arr: a structured NumPy array that encodes (timestamp, x_address, y_address, polarity).
+        - dim: the number of events encoded in the output file.
     """
     return c_cut_wrapper(cut_dat, fpath_in, fpath_out, max_nevents, buff_size)
 
@@ -183,7 +183,7 @@ def cut_evt2(
     fpath_out: Union[pathlib.Path, str],
     max_nevents: Optional[int] = 1000,
     buff_size: Optional[int] = 4096,
-) -> np.ndarray:
+) -> int:
     """
     Function that reads a EVT2 binary file and cuts it to a limited number of events.
     Args:
@@ -192,7 +192,7 @@ def cut_evt2(
         - max_nevents: number of events to be written in the output file.
         - buff_size: size of the buffer used to read the binary file.
     Returns:
-        - arr: a structured NumPy array that encodes (timestamp, x_address, y_address, polarity).
+        - dim: the number of events encoded in the output file.
     """
     return c_cut_wrapper(cut_evt2, fpath_in, fpath_out, max_nevents, buff_size)
 
@@ -202,7 +202,7 @@ def cut_evt3(
     fpath_out: Union[pathlib.Path, str],
     max_nevents: Optional[int] = 1000,
     buff_size: Optional[int] = 4096,
-) -> np.ndarray:
+) -> int:
     """
     Function that reads a EVT3 binary file and cuts it to a limited number of events.
     Args:
@@ -211,6 +211,6 @@ def cut_evt3(
         - max_nevents: number of events to be written in the output file.
         - buff_size: size of the buffer used to read the binary file.
     Returns:
-        - arr: a structured NumPy array that encodes (timestamp, x_address, y_address, polarity).
+        - dim: the number of events encoded in the output file.
     """
     return c_cut_wrapper(cut_evt3, fpath_in, fpath_out, max_nevents, buff_size)

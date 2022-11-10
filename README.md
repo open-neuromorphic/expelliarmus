@@ -7,7 +7,7 @@ A Python/C library for decoding DVS proprietary data formats to NumPy structured
 - EVT3 (Prophesee). 
 
 ## Usage examples
-Given an EVT3 file called `pedestrians.raw`, which can be dowloaded from [here](https://dataset.prophesee.ai/index.php/s/fB7xvMpE136yakl/download) we can decode it to an array in the following way. 
+Given an EVT3 file called `pedestrians.raw`, which can be dowloaded from [here](https://dataset.prophesee.ai/index.php/s/fB7xvMpE136yakl/download), we can decode it to an array in the following way. 
 
 
 ```python
@@ -50,7 +50,7 @@ print(n_events) # The number of events embedded in the output file.
     5000
 
 
-This can be verified by reading the new file in an array.
+This can be verified by reading the new file to an array.
 
 
 ```python
