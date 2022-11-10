@@ -72,3 +72,21 @@ print(arr[4999], cut_arr[-1])
     (0, 707, 297, 0) (0, 707, 297, 0)
     (90266, 598, 260, 0) (90266, 598, 260, 0)
 
+## Dummy functions prototypes
+
+The function used to decode the binary files to arrays have the following prototype:
+
+```python 
+def read_FILE_FORMAT(fpath, buff_size=4096):
+    ...
+    return np_arr
+```
+
+The functions used to "cut" off files have the following prototype:
+ ```python 
+def cut_FILE_FORMAT(fpath_in, fpath_out, max_nevents=1000, buff_size=4096):
+    ...
+    return nevents_in_output_file
+```     
+
+More information about the arguments can be found in the source code. 
