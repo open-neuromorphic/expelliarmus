@@ -1,4 +1,5 @@
 # Inspired by https://github.com/himbeles/ctypes-example.
+import os
 from distutils.command.build_ext import build_ext as build_ext_orig
 
 from setuptools import Extension, setup
