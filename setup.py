@@ -23,6 +23,9 @@ class build_ext(build_ext_orig):
         return super().get_ext_filename(ext_name)
 
 
+with open("README.md", "r") as file:
+    long_description = file.read()
+
 setup(
     name="expelliarmus",
     install_requires=["numpy"],
@@ -31,6 +34,8 @@ setup(
     maintainer="Fabrizio Ottati, Gregor Lenz",
     maintainer_email="fabriziottati@gmail.com, mail@lenzgregor.com",
     version="1.0.0",
+    long_description=long_description,
+    long_description_content_type="text/markdown",
     py_modules=["expelliarmus.expelliarmus_wrapper"],
     ext_modules=[
         CTypesExtension(

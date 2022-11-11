@@ -6,7 +6,7 @@ jobs:
   build_wheels:
     name: Build wheels on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
-    if: github.ref == 'refs/heads/develop'
+    if: github.ref == 'refs/heads/main'
     strategy:
       matrix:
         os: [ubuntu-20.04, macOS-11, windows-2019,]
@@ -14,7 +14,6 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      # Used to host cibuildwheel
       - uses: actions/setup-python@v3
 
       - name: Install cibuildwheel
@@ -41,7 +40,7 @@ jobs:
               path: dist/*.tar.gz
 
   upload_pypi:
-      needs: [build_wheels, build_sdist]
+      needs: build_sdist
       runs-on: ubuntu-latest
       if: github.ref == 'refs/heads/develop'
       steps:
