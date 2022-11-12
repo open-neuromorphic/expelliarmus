@@ -1,12 +1,21 @@
 # Expelliarmus 
-A Python/C library for decoding DVS proprietary data formats to NumPy structured arrays.
+A Python/C library for decoding DVS binary data formats to NumPy structured arrays.
 
 ## Supported formats
 - DAT (Prophesee).
 - EVT2 (Prophesee).
 - EVT3 (Prophesee). 
 
-## Usage examples
+## Installation 
+
+You can install the library through `pip`:
+```
+pip install expelliarmus 
+```
+
+The package is tested on Windows, MacOS and Linux.
+
+## Quickstart
 Given an EVT3 file called `pedestrians.raw`, which can be dowloaded from [here](https://dataset.prophesee.ai/index.php/s/fB7xvMpE136yakl/download), we can decode it to an array in the following way. 
 
 
@@ -72,7 +81,7 @@ print(arr[4999], cut_arr[-1])
     (0, 707, 297, 0) (0, 707, 297, 0)
     (90266, 598, 260, 0) (90266, 598, 260, 0)
 
-## Dummy functions prototypes
+## Quick usage instructions
 
 The function used to decode the binary files to arrays have the following prototype:
 
@@ -90,3 +99,7 @@ def cut_FILE_FORMAT(fpath_in, fpath_out, max_nevents=1000, buff_size=4096):
 ```     
 
 More information about the arguments can be found in the source code. 
+
+## Contributing
+
+If you would like to contribute by proposing a bug-fix or a new feature, feel free to open a discussion on GitHub.
