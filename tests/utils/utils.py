@@ -59,4 +59,7 @@ def test_read_wrapper(
     assert fpath.is_file()
     arr = read_fn(fpath)
     assert len(arr) == expected_nevents
+    fpath = pathlib.Path("tests", "sample-files", fname.split('.')[0]+".npy")
+    ref_arr = np.load(fpath)
+    assert (ref_arr==arr).all() 
     return

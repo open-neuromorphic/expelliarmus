@@ -23,36 +23,25 @@ c_lib_expelliarmus = CDLL(str(lib_path))
 ARGTYPES_READ = [c_char_p, POINTER(c_size_t), c_size_t]
 RESTYPE_READ = POINTER(c_ulonglong)
 
+c_read_dat = c_lib_expelliarmus.read_dat
+c_read_evt2 = c_lib_expelliarmus.read_evt2
+c_read_evt3 = c_lib_expelliarmus.read_evt3
+for c_read_fn in (c_read_dat, c_read_evt2, c_read_evt3):
+    c_read_fn.restype = RESTYPE_READ
+    c_read_fn.argtypes = ARGTYPES_READ
+
 ARGTYPES_CUT = [c_char_p, c_char_p, c_size_t, c_size_t]
 RESTYPE_CUT = c_size_t
 
-c_read_dat = c_lib_expelliarmus.read_dat
-c_read_dat.restype = RESTYPE_READ
-c_read_dat.argtypes = ARGTYPES_READ
-
-c_read_evt2 = c_lib_expelliarmus.read_evt2
-c_read_evt2.restype = RESTYPE_READ
-c_read_evt2.argtypes = ARGTYPES_READ
-
-c_read_evt3 = c_lib_expelliarmus.read_evt3
-c_read_evt3.restype = RESTYPE_READ
-c_read_evt3.argtypes = ARGTYPES_READ
-
 c_cut_dat = c_lib_expelliarmus.cut_dat
-c_cut_dat.restype = RESTYPE_CUT
-c_cut_dat.argtypes = ARGTYPES_CUT
-
 c_cut_evt2 = c_lib_expelliarmus.cut_evt2
-c_cut_evt2.restype = RESTYPE_CUT
-c_cut_evt2.argtypes = ARGTYPES_CUT
-
 c_cut_evt3 = c_lib_expelliarmus.cut_evt3
-c_cut_evt3.restype = RESTYPE_CUT
-c_cut_evt3.argtypes = ARGTYPES_CUT
+for c_cut_fn in (c_cut_dat, c_cut_evt2, c_cut_evt3):
+    c_cut_fn.restype = RESTYPE_CUT
+    c_cut_fn.argtypes = ARGTYPES_CUT
 
 # Default data type for structured array.
 DTYPE = np.dtype([("t", np.int64), ("x", np.int16), ("y", np.int16), ("p", np.uint8)])
-
 
 def c_read_wrapper(p_fun, fpath, buff_size, dtype):
     fpath = pathlib.Path(fpath).resolve()
