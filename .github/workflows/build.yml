@@ -51,7 +51,7 @@ jobs:
           path: ./wheelhouse/*.whl
 
   upload_pypi:
-      needs: build_wheels, multitest
+      needs: [build_wheels, multitest]
       runs-on: ubuntu-latest
       if: github.ref == 'refs/heads/main'
       steps:
