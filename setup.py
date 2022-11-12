@@ -29,10 +29,10 @@ with open("README.md", "r") as file:
 setup(
     name="expelliarmus",
     install_requires=["numpy"],
-    author="Fabrizio Ottati, Gregor Lenz",
-    author_email="fabriziottati@gmail.com, mail@lenzgregor.com",
-    maintainer="Fabrizio Ottati, Gregor Lenz",
-    maintainer_email="fabriziottati@gmail.com, mail@lenzgregor.com",
+    author=["Fabrizio Ottati", "Gregor Lenz"],
+    author_email=["fabriziottati@gmail.com", "mail@lenzgregor.com"],
+    maintainer=["Fabrizio Ottati", "Gregor Lenz"],
+    maintainer_email=["fabriziottati@gmail.com", "mail@lenzgregor.com"],
     long_description=long_description,
     long_description_content_type="text/markdown",
     py_modules=["expelliarmus.expelliarmus_wrapper"],
@@ -43,4 +43,6 @@ setup(
         ),
     ],
     cmdclass={"build_ext": build_ext},
+    setup_requires=["pbr"], 
+    pbr=True
 )
