@@ -1,17 +1,15 @@
 import expelliarmus
+from .utils import utils
 
 def test_dat_decoding():
-    events = expelliarmus.read_dat('tests/sample-files/dat_test_NCARS.dat')
-
-    assert len(events) == 4407
+    utils.test_read_wrapper(expelliarmus.read_dat, "dat_test_NCARS.dat", 4407)
+    return
 
 
 def test_evt2_decoding():
-    events = expelliarmus.read_evt2('tests/sample-files/evt2_test_sparklers.raw')
-
-    assert len(events) == 521252
+    utils.test_read_wrapper(expelliarmus.read_evt2, "evt2_test_sparklers.raw", 521252)
+    return
 
 def test_evt3_decoding():
-    events = expelliarmus.read_evt3('tests/sample-files/evt3_test_pedestrians.raw')
-
-    assert len(events) == 5000
+    utils.test_read_wrapper(expelliarmus.read_evt3, "evt3_test_pedestrians.raw", 5000)
+    return
