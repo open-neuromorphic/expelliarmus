@@ -9,11 +9,9 @@ jobs:
       fail-fast: false
       matrix:
         os: [fedora-latest, ubuntu-latest, macOS-latest, windows-latest]
-        python-version: ["3.7", "3.8", "3.9", "3.10"]
+        python-version: ["3.7", "3.8", "3.9", "3.10", "3.11"]
     steps:
       - uses: actions/checkout@v2
-      - if: matrix.os == 'ubuntu-latest'
-        name: install audio library libsndfile
         run: sudo apt-get -y update && sudo apt-get install -y libsndfile1
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v2
@@ -34,7 +32,7 @@ jobs:
     if: github.ref == 'refs/heads/main'
     strategy:
       matrix:
-        os: [ubuntu-latest, macOS-latest, windows-latest,]
+        os: [ubuntu-latest, macOS-latest, windows-latest, fedora-latest]
 
     steps:
       - uses: actions/checkout@v3
@@ -53,7 +51,7 @@ jobs:
           path: ./wheelhouse/*.whl
 
   upload_pypi:
-      needs: build_wheels
+      needs: build_wheels, multitest
       runs-on: ubuntu-latest
       if: github.ref == 'refs/heads/main'
       steps:

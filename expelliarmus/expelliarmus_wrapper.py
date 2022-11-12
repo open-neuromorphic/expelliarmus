@@ -74,7 +74,6 @@ def c_read_wrapper(p_fun, fpath, buff_size, dtype):
         (c_dim.value // 4, 4)
     )
     np_arr = unstructured_to_structured(np_arr, dtype=dtype)
-    np_arr["t"] -= np_arr["t"][0]  # Eliminating the bias of the first sample.
     return np_arr
 
 
