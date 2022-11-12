@@ -33,6 +33,8 @@ setup(
     author_email=["fabriziottati@gmail.com", "mail@lenzgregor.com"],
     maintainer=["Fabrizio Ottati", "Gregor Lenz"],
     maintainer_email=["fabriziottati@gmail.com", "mail@lenzgregor.com"],
+    url="https://github.com/fabhertz95/expelliarmus",
+    version="1.0.0", 
     long_description=long_description,
     long_description_content_type="text/markdown",
     py_modules=["expelliarmus.expelliarmus_wrapper"],
