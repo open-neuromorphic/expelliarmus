@@ -122,6 +122,7 @@ def read_dat(
     Returns:
         - arr: a structured NumPy array that encodes (timestamp, x_address, y_address, polarity).
     """
+    assert str(fpath).endswith(".dat"), f"Error: the file provided \"{str(fpath)}\" is not a DAT file."
     return c_read_wrapper(read_dat, fpath, buff_size, dtype)
 
 
@@ -139,6 +140,7 @@ def read_evt2(
     Returns:
         - arr: a structured NumPy array that encodes (timestamp, x_address, y_address, polarity).
     """
+    assert str(fpath).endswith(".raw"), "Error: the file provided \"{str(fpath)}\" is not a RAW file."
     return c_read_wrapper(read_evt2, fpath, buff_size, dtype)
 
 
@@ -156,6 +158,7 @@ def read_evt3(
     Returns:
         - arr: a structured NumPy array that encodes (timestamp, x_address, y_address, polarity).
     """
+    assert str(fpath).endswith(".raw"), "Error: the file provided \"{str(fpath)}\" is not a RAW file."
     return c_read_wrapper(read_evt3, fpath, buff_size, dtype)
 
 
@@ -175,6 +178,8 @@ def cut_dat(
     Returns:
         - dim: the number of events encoded in the output file.
     """
+    assert str(fpath_in).endswith(".dat"), f"Error: the input file provided \"{str(fpath_in)}\" is not a DAT file."
+    assert str(fpath_out).endswith(".dat"), f"Error: the output file provided \"{str(fpath_out)}\" is not a DAT file."
     return c_cut_wrapper(cut_dat, fpath_in, fpath_out, max_nevents, buff_size)
 
 
@@ -194,6 +199,8 @@ def cut_evt2(
     Returns:
         - dim: the number of events encoded in the output file.
     """
+    assert str(fpath_in).endswith(".raw"), f"Error: the input file provided \"{str(fpath_in)}\" is not a RAW file."
+    assert str(fpath_out).endswith(".raw"), f"Error: the output file provided \"{str(fpath_out)}\" is not a RAW file."
     return c_cut_wrapper(cut_evt2, fpath_in, fpath_out, max_nevents, buff_size)
 
 
@@ -213,4 +220,6 @@ def cut_evt3(
     Returns:
         - dim: the number of events encoded in the output file.
     """
+    assert str(fpath_in).endswith(".raw"), f"Error: the input file provided \"{str(fpath_in)}\" is not a RAW file."
+    assert str(fpath_out).endswith(".raw"), f"Error: the output file provided \"{str(fpath_out)}\" is not a RAW file."
     return c_cut_wrapper(cut_evt3, fpath_in, fpath_out, max_nevents, buff_size)
