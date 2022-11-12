@@ -24,7 +24,7 @@ jobs:
           pip install -r tests/requirements.txt
           pip install .
       - name: Test with pytest
-        run: pytest test
+        run: pytest tests
         env:
             CI: true
 
