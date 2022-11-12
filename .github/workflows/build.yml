@@ -3,6 +3,31 @@ name: Build
 on: [push, pull_request]
 
 jobs:
+  multitest:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-20.04, macOS-11, windows-2022]
+        python-version: ["3.7", "3.8", "3.9"]
+    steps:
+      - uses: actions/checkout@v2
+      - if: matrix.os == 'ubuntu-20.04'
+        name: install audio library libsndfile
+        run: sudo apt-get -y update && sudo apt-get install -y libsndfile1
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install requirements
+        run: |
+          pip install -r tests/requirements.txt
+          pip install .
+      - name: Test with pytest
+        run: pytest test
+        env:
+            CI: true
+
   build_wheels:
     name: Build wheels on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
