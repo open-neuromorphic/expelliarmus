@@ -101,7 +101,7 @@ def read_FILE_FORMAT(fpath, buff_size=4096):
 
 The functions used to "cut" off files have the following prototype:
  ```python 
-def cut_FILE_FORMAT(fpath_in, fpath_out, max_nevents=1000, buff_size=4096):
+def cut_FILE_FORMAT(fpath_in, fpath_out, new_duration=10, buff_size=4096):
     ...
     return nevents_in_output_file
 ```     
