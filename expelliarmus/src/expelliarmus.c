@@ -278,7 +278,7 @@ DLLEXPORT event_array_t read_evt3(const char* fpath, size_t buff_size){
 	uint16_t base_x=0, k=0, num_vect_events=0; 
 	const uint16_t mask_11b=0x7FFU, mask_12b=0xFFFU, mask_8b=0xFFU; 
 	uint64_t buff_tmp=0, time_high=0, time_low=0, time_stamp=0, time_high_ovfs=0, time_low_ovfs=0; 
-	while ((values_read = fread(buff, sizeof(buff[0]), buff_size, fp)) > 0){
+	while ((values_read = fread(buff, sizeof(*buff), buff_size, fp)) > 0){
 		for (j=0; j<values_read; j++){
 			// Getting the event type. 
 			event_type = (buff[j] >> 12); 
@@ -288,13 +288,13 @@ DLLEXPORT event_array_t read_evt3(const char* fpath, size_t buff_size){
 					break; 
 
 				case EVT3_EVT_ADDR_X:
-					event_tmp.p = (polarity_t) (buff[j] >> 11)%2; 
+					event_tmp.p = (polarity_t) ((buff[j] >> 11)%2); 
 					event_tmp.x = (pixel_t)(buff[j] & mask_11b);
 					append_event(&event_tmp, &arr, i++); 
 					break; 
 
 				case EVT3_VECT_BASE_X:
-					event_tmp.p = (polarity_t) (buff[j+1] >> 11)%2; 
+					event_tmp.p = (polarity_t) ((buff[j] >> 11)%2); 
 					base_x = (uint16_t)(buff[j] & mask_11b);
 					break; 
 

@@ -23,6 +23,15 @@ for root, dirs, files in os.walk(this_file_path):
 clib = CDLL(str(lib_path))
 
 
+class event_t(Structure):
+    _fields_ = [
+        ("t", c_int64),
+        ("x", c_int16),
+        ("y", c_int16),
+        ("p", c_uint8),
+    ]
+
+
 class event_array_t(Structure):
     _fields_ = [
         ("t_arr", POINTER(c_int64)),

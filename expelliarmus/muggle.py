@@ -2,6 +2,8 @@ from typing import Union, Optional
 import pathlib
 from .muggle_wrapper import (
     read_dat_chunk,
+    read_evt2_chunk,
+    read_evt3_chunk,
 )
 from .clib_muggle import dat_chunk_wrap_t, evt2_chunk_wrap_t, evt3_chunk_wrap_t
 
@@ -47,7 +49,7 @@ class Muggle:
         self, fpath: Union[str, pathlib.Path], nevents_per_chunk: int, encoding: str
     ):
         assert isinstance(fpath, str) or isinstance(
-            fpat, pathlib.Path
+            fpath, pathlib.Path
         ), "Error: the file path provided is not valid."
         fpath = pathlib.Path(fpath).resolve()
         assert fpath.is_file(), "Error: the input file provided does not exist."

@@ -3,6 +3,7 @@ import os
 import shutil
 import numpy as np
 from typing import Callable, Union, Optional
+from expelliarmus import Muggle
 
 if os.sep == "/":  # Unix system.
     TMPDIR = pathlib.Path("/tmp")
@@ -59,4 +60,22 @@ def test_read_wrapper(
     fpath = pathlib.Path("tests", "sample-files", fname.split(".")[0] + ".npy")
     ref_arr = np.load(fpath)
     assert (ref_arr == arr).all()
+    return
+
+
+def test_muggle(encoding: str, fname: Union[str, pathlib.Path]):
+    fpath = pathlib.Path("tests", "sample-files", fname).resolve()
+    assert fpath.is_file()
+    muggler = Muggle(fpath, nevents_per_chunk=128, encoding=encoding)
+    fpath = pathlib.Path("tests", "sample-files", fname.split(".")[0] + ".npy")
+    ref_arr = np.load(fpath)
+    nevents = len(ref_arr)
+    chunk_offset = 0
+    for chunk_arr in muggler.read_chunk():
+        chunk_width = len(chunk_arr)
+        assert (
+            ref_arr[chunk_offset : min(chunk_offset + chunk_width, nevents)]
+            == chunk_arr[:]
+        ).all()
+        chunk_offset += chunk_width
     return

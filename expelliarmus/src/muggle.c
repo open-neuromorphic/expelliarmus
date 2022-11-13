@@ -240,23 +240,26 @@ DLLEXPORT void read_evt3_chunk(const char* fpath, size_t buff_size, evt3_chunk_w
 	chunk_wrap->arr = arr; 
 
 	if (chunk_wrap->bytes_read == 0){
+		chunk_wrap->base_x = 0; 
 		chunk_wrap->time_high = 0; 
 		chunk_wrap->time_low = 0; 
 		chunk_wrap->time_high_ovfs = 0; 
 		chunk_wrap->time_low_ovfs = 0; 
+		chunk_wrap->event_tmp.t=0; chunk_wrap->event_tmp.x=0; chunk_wrap->event_tmp.y=0; chunk_wrap->event_tmp.p=0; 
 
 		// Jumping over the headers.
 		uint8_t pt; 
 		 do {
 			do { 
-				fread(&pt, 1, 1, fp); 
+				chunk_wrap->bytes_read += fread(&pt, 1, 1, fp); 
 			} while (pt != 0x0A); 
-			fread(&pt, 1, 1, fp); 
+			chunk_wrap->bytes_read += fread(&pt, 1, 1, fp); 
 			if (pt != 0x25) break; 
 		} while (1); 
 		
 		// Coming back to previous byte.
 		fseek(fp, -1, SEEK_CUR); 
+		chunk_wrap->bytes_read--; 
 	} else {
 		int err = fseek(fp, (long)(chunk_wrap->bytes_read), SEEK_SET); 
 		if (err != 0){
@@ -282,11 +285,9 @@ DLLEXPORT void read_evt3_chunk(const char* fpath, size_t buff_size, evt3_chunk_w
 	uint16_t* buff = (uint16_t*) malloc(buff_size * sizeof(uint16_t)); 
 	CHECK_ALLOCATION(buff); 
 
-	event_t event_tmp; event_tmp.t=0; event_tmp.x=0; event_tmp.y=0; event_tmp.p=0;  
-
 	size_t values_read=0, j=0, i=0; 
 	uint8_t event_type; 
-	uint16_t base_x=0, k=0, num_vect_events=0; 
+	uint16_t k=0, num_vect_events=0; 
 	const uint16_t mask_11b=0x7FFU, mask_12b=0xFFFU, mask_8b=0xFFU; 
 	uint64_t buff_tmp=0, time_stamp=0; 
 	while (i < nevents_per_chunk && (values_read = fread(buff, sizeof(buff[0]), buff_size, fp)) > 0){
@@ -295,23 +296,23 @@ DLLEXPORT void read_evt3_chunk(const char* fpath, size_t buff_size, evt3_chunk_w
 			event_type = (buff[j] >> 12); 
 			switch (event_type){
 				case EVT3_EVT_ADDR_Y:
-					event_tmp.y = (pixel_t)(buff[j] & mask_11b);
+					chunk_wrap->event_tmp.y = (pixel_t)(buff[j] & mask_11b);
 					break; 
 
 				case EVT3_EVT_ADDR_X:
-					event_tmp.p = (polarity_t) (buff[j] >> 11)%2; 
-					event_tmp.x = (pixel_t)(buff[j] & mask_11b);
-					append_event(&event_tmp, &arr, i++); 
+					chunk_wrap->event_tmp.p = (polarity_t) ((buff[j] >> 11)%2); 
+					chunk_wrap->event_tmp.x = (pixel_t)(buff[j] & mask_11b);
+					append_event(&(chunk_wrap->event_tmp), &arr, i++); 
 					break; 
 
 				case EVT3_VECT_BASE_X:
-					event_tmp.p = (polarity_t) (buff[j+1] >> 11)%2; 
-					base_x = (uint16_t)(buff[j] & mask_11b);
+					chunk_wrap->event_tmp.p = (polarity_t) ((buff[j] >> 11)%2); 
+					chunk_wrap->base_x = (uint16_t)(buff[j] & mask_11b);
 					break; 
 
 				case EVT3_VECT_12:
 					num_vect_events = 12; 
-					buff_tmp = (uint16_t)(buff[j] & mask_12b);
+					buff_tmp = (uint64_t)(buff[j] & mask_12b);
 
 				case EVT3_VECT_8:
 					if (num_vect_events == 0){
@@ -320,12 +321,12 @@ DLLEXPORT void read_evt3_chunk(const char* fpath, size_t buff_size, evt3_chunk_w
 					}
 					for (k=0; k<num_vect_events; k++){
 						if (buff_tmp%2){
-							event_tmp.x = (pixel_t)(base_x + k); 
-							append_event(&event_tmp, &arr, i++); 
+							chunk_wrap->event_tmp.x = (pixel_t)(chunk_wrap->base_x + k); 
+							append_event(&(chunk_wrap->event_tmp), &arr, i++); 
 						}
 						buff_tmp = buff_tmp >> 1; 
 					}
-					base_x += num_vect_events; 
+					chunk_wrap->base_x += num_vect_events; 
 					num_vect_events = 0; 
 					break; 
 
@@ -335,7 +336,7 @@ DLLEXPORT void read_evt3_chunk(const char* fpath, size_t buff_size, evt3_chunk_w
 						chunk_wrap->time_low_ovfs++; 
 					chunk_wrap->time_low = buff_tmp; 
 					time_stamp = (chunk_wrap->time_high_ovfs<<24) + ((chunk_wrap->time_high + chunk_wrap->time_low_ovfs)<<12) + chunk_wrap->time_low;
-					event_tmp.t = (timestamp_t) time_stamp; 
+					chunk_wrap->event_tmp.t = (timestamp_t) time_stamp; 
 					break; 
 
 				case EVT3_TIME_HIGH:
@@ -344,7 +345,7 @@ DLLEXPORT void read_evt3_chunk(const char* fpath, size_t buff_size, evt3_chunk_w
 						chunk_wrap->time_high_ovfs++; 
 					chunk_wrap->time_high = buff_tmp; 
 					time_stamp = (chunk_wrap->time_high_ovfs<<24) + ((chunk_wrap->time_high + chunk_wrap->time_low_ovfs)<<12) + chunk_wrap->time_low;
-					event_tmp.t = (timestamp_t) time_stamp; 
+					chunk_wrap->event_tmp.t = (timestamp_t) time_stamp; 
 					break; 
 
 				case EVT3_EXT_TRIGGER:

@@ -8,12 +8,12 @@ from ctypes import (
     c_int16,
     c_uint8,
     Structure,
-    c_voidp,
+    c_uint16,
 )
 import pathlib
 import os
 import re
-from .clib_expelliarmus import event_array_t
+from .clib_expelliarmus import event_array_t, event_t
 
 # Searching for the shared library.
 this_file_path = pathlib.Path(__file__).resolve().parent.parent
@@ -45,10 +45,12 @@ class evt3_chunk_wrap_t(Structure):
     _fields_ = [
         ("arr", event_array_t),
         ("bytes_read", c_size_t),
+        ("base_x", c_uint16),
         ("time_high", c_uint64),
         ("time_low", c_uint64),
         ("time_high_ovfs", c_uint64),
         ("time_low_ovfs", c_uint64),
+        ("event_tmp", event_t),
     ]
 
 

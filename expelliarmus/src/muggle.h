@@ -21,7 +21,9 @@ typedef struct evt2_chunk_wrap_s {
 typedef struct evt3_chunk_wrap_s {
 	event_array_t arr; 
 	size_t bytes_read; 
+	uint16_t base_x;
 	uint64_t time_high, time_low, time_high_ovfs, time_low_ovfs;
+	event_t event_tmp; 
 } evt3_chunk_wrap_t; 	
 
 DLLEXPORT void read_dat_chunk(const char*, size_t, dat_chunk_wrap_t*, size_t);
