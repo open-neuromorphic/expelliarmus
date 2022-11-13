@@ -4,20 +4,7 @@
 #include <stdio.h> 
 #include <stdint.h>
 
-// Thank you http://wolfprojects.altervista.org/articles/dll-in-c-for-python/ :)
-// Thanks to this lines, also Windows DLL works.
-#ifdef _WIN32
-#define DLLEXPORT __declspec(dllexport)
-#else 
-#define DLLEXPORT
-#endif
-
-#define DEFAULT_ARRAY_DIM 16000
-
-#define T_POS 0U
-#define X_POS 1U
-#define Y_POS 2U
-#define P_POS 3U
+#define DEFAULT_ARRAY_DIM 8192
 
 #define DAT_EVENT_2D 0x0U
 #define DAT_EVENT_CD 0x0C
@@ -42,23 +29,41 @@
 #define EVT3_OTHERS 0xEU
 #define EVT3_CONTINUED_12 0xFU
 
-typedef uint64_t event_t; 
-typedef event_t* event_array_t; 
+// Thank you http://wolfprojects.altervista.org/articles/dll-in-c-for-python/ :)
+// Thanks to this lines, also Windows DLL works.
+#define DEFAULT_ARRAY_DIM 8192
+#ifdef _WIN32
+#define DLLEXPORT __declspec(dllexport)
+#else 
+#define DLLEXPORT
+#endif
 
-struct event_s {
-	event_t t; 
-	event_t x; 
-	event_t y; 
-	event_t p; 
-}; 
+typedef int64_t timestamp_t;  
+typedef int16_t pixel_t; 
+typedef uint8_t polarity_t; 
+
+typedef struct event_s {
+	timestamp_t t; 
+	pixel_t x, y; 
+	polarity_t p; 
+} event_t; 
+
+typedef struct event_array_s {
+	timestamp_t* t_arr; 
+	pixel_t* x_arr; 
+	pixel_t* y_arr; 
+	polarity_t* p_arr; 
+	size_t dim; 
+	size_t allocated_space;
+} event_array_t; 
+
 
 DLLEXPORT size_t cut_dat(const char*, const char*, size_t, size_t);
 DLLEXPORT size_t cut_evt2(const char*, const char*, size_t, size_t);
 DLLEXPORT size_t cut_evt3(const char*, const char*, size_t, size_t);
-DLLEXPORT event_array_t read_dat(const char*, size_t*, size_t); 
-DLLEXPORT event_array_t read_evt2(const char*, size_t*, size_t);
-DLLEXPORT event_array_t read_evt3(const char*, size_t*, size_t);
-void append_event(const struct event_s*, event_array_t*, size_t*, size_t*); 
-void free_event_array(event_array_t);
+DLLEXPORT event_array_t read_dat(const char*, size_t); 
+DLLEXPORT event_array_t read_evt2(const char*, size_t);
+DLLEXPORT event_array_t read_evt3(const char*, size_t);
+void append_event(const event_t*, event_array_t*, size_t); 
 
 #endif

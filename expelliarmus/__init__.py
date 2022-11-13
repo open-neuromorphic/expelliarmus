@@ -6,3 +6,5 @@ from .expelliarmus_wrapper import (
     cut_evt2,
     cut_evt3,
 )
+
+from .muggle import Muggle

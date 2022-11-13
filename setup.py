@@ -1,5 +1,5 @@
 # Inspired by https://github.com/himbeles/ctypes-example.
-import os
+import pathlib
 from distutils.command.build_ext import build_ext as build_ext_orig
 
 from setuptools import Extension, setup
@@ -34,14 +34,16 @@ setup(
     maintainer="Fabrizio Ottati, Gregor Lenz",
     maintainer_email="fabriziottati@gmail.com, mail@lenzgregor.com",
     url="https://github.com/fabhertz95/expelliarmus",
-    version="1.0.2", 
+    version="1.0.3", 
     long_description=long_description,
     long_description_content_type="text/markdown",
     py_modules=["expelliarmus.expelliarmus_wrapper"],
     ext_modules=[
         CTypesExtension(
             "expelliarmus.expelliarmus",
-            [os.path.join("expelliarmus", "src", "expelliarmus.c")],
+            [str(pathlib.Path("expelliarmus", "src", "expelliarmus.c")),
+             str(pathlib.Path("expelliarmus", "src", "muggle.c")),
+             ],
         ),
     ],
     cmdclass={"build_ext": build_ext},

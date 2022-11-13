@@ -1,44 +1,17 @@
 import os
 import pathlib
-import re
-from ctypes import *
+from ctypes import c_char_p, c_size_t
 from typing import Optional, Union
-
 import numpy as np
-from numpy.lib.recfunctions import unstructured_to_structured
+from .clib_expelliarmus import (
+        c_read_dat, 
+        c_read_evt2, 
+        c_read_evt3, 
+        c_cut_dat, 
+        c_cut_evt2, 
+        c_cut_evt3,
+        )
 
-# Stuff you do not need to worry about :)
-
-# Searching for the shared library.
-this_file_path = pathlib.Path(__file__).resolve().parent.parent
-lib_re = r"^expelliarmus\..*\.(so|pyd)$"
-for root, dirs, files in os.walk(this_file_path):
-    for f in files:
-        if re.match(lib_re, f):
-            lib_path = pathlib.Path(os.path.join(root, f))
-            break
-c_lib_expelliarmus = CDLL(str(lib_path))
-
-# Setting up C wrappers.
-ARGTYPES_READ = [c_char_p, POINTER(c_size_t), c_size_t]
-RESTYPE_READ = POINTER(c_ulonglong)
-
-c_read_dat = c_lib_expelliarmus.read_dat
-c_read_evt2 = c_lib_expelliarmus.read_evt2
-c_read_evt3 = c_lib_expelliarmus.read_evt3
-for c_read_fn in (c_read_dat, c_read_evt2, c_read_evt3):
-    c_read_fn.restype = RESTYPE_READ
-    c_read_fn.argtypes = ARGTYPES_READ
-
-ARGTYPES_CUT = [c_char_p, c_char_p, c_size_t, c_size_t]
-RESTYPE_CUT = c_size_t
-
-c_cut_dat = c_lib_expelliarmus.cut_dat
-c_cut_evt2 = c_lib_expelliarmus.cut_evt2
-c_cut_evt3 = c_lib_expelliarmus.cut_evt3
-for c_cut_fn in (c_cut_dat, c_cut_evt2, c_cut_evt3):
-    c_cut_fn.restype = RESTYPE_CUT
-    c_cut_fn.argtypes = ARGTYPES_CUT
 
 # Default data type for structured array.
 DTYPE = np.dtype([("t", np.int64), ("x", np.int16), ("y", np.int16), ("p", np.uint8)])
@@ -50,20 +23,20 @@ def c_read_wrapper(p_fun, fpath, buff_size, dtype):
     assert isinstance(buff_size, int) and buff_size > 0, "Error: a minimum buffer size of 1 is required."
 
     c_fpath = c_char_p(bytes(str(fpath), "utf-8"))
-    c_dim = c_size_t(0)
     c_buff_size = c_size_t(buff_size)
     if p_fun == read_dat:
-        c_arr = c_read_dat(c_fpath, byref(c_dim), c_buff_size)
+        c_arr = c_read_dat(c_fpath, c_buff_size)
     elif p_fun == read_evt2:
-        c_arr = c_read_evt2(c_fpath, byref(c_dim), c_buff_size)
+        c_arr = c_read_evt2(c_fpath, c_buff_size)
     elif p_fun == read_evt3:
-        c_arr = c_read_evt3(c_fpath, byref(c_dim), c_buff_size)
+        c_arr = c_read_evt3(c_fpath, c_buff_size)
     else:
         raise "Function not defined."
-    np_arr = np.ctypeslib.as_array(c_arr, shape=(c_dim.value,)).reshape(
-        (c_dim.value // 4, 4)
-    )
-    np_arr = unstructured_to_structured(np_arr, dtype=dtype)
+    np_arr = np.empty((c_arr.dim,), dtype=dtype)
+    np_arr["t"] = np.ctypeslib.as_array(c_arr.t_arr, shape=(c_arr.dim,))
+    np_arr["x"] = np.ctypeslib.as_array(c_arr.x_arr, shape=(c_arr.dim,))
+    np_arr["y"] = np.ctypeslib.as_array(c_arr.y_arr, shape=(c_arr.dim,))
+    np_arr["p"] = np.ctypeslib.as_array(c_arr.p_arr, shape=(c_arr.dim,))
     return np_arr
 
 
@@ -97,7 +70,6 @@ def c_cut_wrapper(p_fun, fpath_in, fpath_out, new_duration, buff_size):
 
 
 # Actual stuff you should care about.
-
 
 def read_dat(
     fpath: Union[pathlib.Path, str],
@@ -215,3 +187,4 @@ def cut_evt3(
     assert str(fpath_in).endswith(".raw"), f"Error: the input file provided \"{str(fpath_in)}\" is not a RAW file."
     assert str(fpath_out).endswith(".raw"), f"Error: the output file provided \"{str(fpath_out)}\" is not a RAW file."
     return c_cut_wrapper(cut_evt3, fpath_in, fpath_out, new_duration, buff_size)
+
