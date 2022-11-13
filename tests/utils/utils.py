@@ -22,12 +22,10 @@ def test_cut_wrapper(
         ],
         int,
     ],
-    read_fn: Callable[
-        [Union[str, pathlib.Path], Optional[int]], np.ndarray
-    ],
+    read_fn: Callable[[Union[str, pathlib.Path], Optional[int]], np.ndarray],
     fname_in: Union[str, pathlib.Path],
     fname_out: Union[str, pathlib.Path],
-    new_duration: int = 20
+    new_duration: int = 20,
 ):
     fpath_in = pathlib.Path("tests", "sample-files", fname_in).resolve()
     fpath_out = TMPDIR.joinpath(cut_fn.__name__)
@@ -40,7 +38,7 @@ def test_cut_wrapper(
     nevents_out = cut_fn(fpath_in, fpath_out, new_duration=new_duration)
     arr = read_fn(fpath_out)
     assert len(arr) == nevents_out
-    assert (arr["t"][-1] - arr["t"][0]) >= new_duration*1000
+    assert (arr["t"][-1] - arr["t"][0]) >= new_duration * 1000
     # Checking that the cut is consistent.
     orig_arr = read_fn(fpath_in)
     assert (orig_arr[:nevents_out] == arr[:]).all()
@@ -48,18 +46,17 @@ def test_cut_wrapper(
     shutil.rmtree(fpath_out.parent)
     return
 
+
 def test_read_wrapper(
-    read_fn: Callable[
-        [Union[str, pathlib.Path], Optional[int]], np.ndarray
-    ],
+    read_fn: Callable[[Union[str, pathlib.Path], Optional[int]], np.ndarray],
     fname: Union[str, pathlib.Path],
-    expected_nevents: int
+    expected_nevents: int,
 ):
     fpath = pathlib.Path("tests", "sample-files", fname).resolve()
     assert fpath.is_file()
     arr = read_fn(fpath)
     assert len(arr) == expected_nevents
-    fpath = pathlib.Path("tests", "sample-files", fname.split('.')[0]+".npy")
+    fpath = pathlib.Path("tests", "sample-files", fname.split(".")[0] + ".npy")
     ref_arr = np.load(fpath)
-    assert (ref_arr==arr).all() 
+    assert (ref_arr == arr).all()
     return

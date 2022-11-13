@@ -4,23 +4,26 @@ from ctypes import c_char_p, c_size_t
 from typing import Optional, Union
 import numpy as np
 from .clib_expelliarmus import (
-        c_read_dat, 
-        c_read_evt2, 
-        c_read_evt3, 
-        c_cut_dat, 
-        c_cut_evt2, 
-        c_cut_evt3,
-        )
+    c_read_dat,
+    c_read_evt2,
+    c_read_evt3,
+    c_cut_dat,
+    c_cut_evt2,
+    c_cut_evt3,
+)
 
 
 # Default data type for structured array.
 DTYPE = np.dtype([("t", np.int64), ("x", np.int16), ("y", np.int16), ("p", np.uint8)])
 
+
 def c_read_wrapper(p_fun, fpath, buff_size, dtype):
     assert isinstance(fpath, str) or isinstance(fpath, pathlib.Path)
     fpath = pathlib.Path(fpath).resolve()
     assert fpath.is_file(), f'Error: the file provided "{str(fpath)}" does not exist.'
-    assert isinstance(buff_size, int) and buff_size > 0, "Error: a minimum buffer size of 1 is required."
+    assert (
+        isinstance(buff_size, int) and buff_size > 0
+    ), "Error: a minimum buffer size of 1 is required."
 
     c_fpath = c_char_p(bytes(str(fpath), "utf-8"))
     c_buff_size = c_size_t(buff_size)
@@ -51,8 +54,12 @@ def c_cut_wrapper(p_fun, fpath_in, fpath_out, new_duration, buff_size):
     assert (
         fpath_out.parent.is_dir()
     ), f'Error: the output file path provided "{str(fpath_out)}" does not exist.'
-    assert isinstance(buff_size, int) and buff_size > 0, "Error: a minimum buffer size of 1 is required."
-    assert isinstance(new_duration, int) and new_duration > 0, "Error: the new time duration of the recording must be larger than or equal to 1ms."
+    assert (
+        isinstance(buff_size, int) and buff_size > 0
+    ), "Error: a minimum buffer size of 1 is required."
+    assert (
+        isinstance(new_duration, int) and new_duration > 0
+    ), "Error: the new time duration of the recording must be larger than or equal to 1ms."
 
     c_fpath_in = c_char_p(bytes(str(fpath_in), "utf-8"))
     c_fpath_out = c_char_p(bytes(str(fpath_out), "utf-8"))
@@ -71,6 +78,7 @@ def c_cut_wrapper(p_fun, fpath_in, fpath_out, new_duration, buff_size):
 
 # Actual stuff you should care about.
 
+
 def read_dat(
     fpath: Union[pathlib.Path, str],
     buff_size: Optional[int] = 4096,
@@ -85,7 +93,9 @@ def read_dat(
     Returns:
         - arr: a structured NumPy array that encodes (timestamp, x_address, y_address, polarity).
     """
-    assert str(fpath).endswith(".dat"), f"Error: the file provided \"{str(fpath)}\" is not a DAT file."
+    assert str(fpath).endswith(
+        ".dat"
+    ), f'Error: the file provided "{str(fpath)}" is not a DAT file.'
     return c_read_wrapper(read_dat, fpath, buff_size, dtype)
 
 
@@ -103,7 +113,9 @@ def read_evt2(
     Returns:
         - arr: a structured NumPy array that encodes (timestamp, x_address, y_address, polarity).
     """
-    assert str(fpath).endswith(".raw"), "Error: the file provided \"{str(fpath)}\" is not a RAW file."
+    assert str(fpath).endswith(
+        ".raw"
+    ), 'Error: the file provided "{str(fpath)}" is not a RAW file.'
     return c_read_wrapper(read_evt2, fpath, buff_size, dtype)
 
 
@@ -121,7 +133,9 @@ def read_evt3(
     Returns:
         - arr: a structured NumPy array that encodes (timestamp, x_address, y_address, polarity).
     """
-    assert str(fpath).endswith(".raw"), "Error: the file provided \"{str(fpath)}\" is not a RAW file."
+    assert str(fpath).endswith(
+        ".raw"
+    ), 'Error: the file provided "{str(fpath)}" is not a RAW file.'
     return c_read_wrapper(read_evt3, fpath, buff_size, dtype)
 
 
@@ -141,8 +155,12 @@ def cut_dat(
     Returns:
         - dim: the number of events encoded in the output file.
     """
-    assert str(fpath_in).endswith(".dat"), f"Error: the input file provided \"{str(fpath_in)}\" is not a DAT file."
-    assert str(fpath_out).endswith(".dat"), f"Error: the output file provided \"{str(fpath_out)}\" is not a DAT file."
+    assert str(fpath_in).endswith(
+        ".dat"
+    ), f'Error: the input file provided "{str(fpath_in)}" is not a DAT file.'
+    assert str(fpath_out).endswith(
+        ".dat"
+    ), f'Error: the output file provided "{str(fpath_out)}" is not a DAT file.'
     return c_cut_wrapper(cut_dat, fpath_in, fpath_out, new_duration, buff_size)
 
 
@@ -163,8 +181,12 @@ def cut_evt2(
     Returns:
         - dim: the number of events encoded in the output file.
     """
-    assert str(fpath_in).endswith(".raw"), f"Error: the input file provided \"{str(fpath_in)}\" is not a RAW file."
-    assert str(fpath_out).endswith(".raw"), f"Error: the output file provided \"{str(fpath_out)}\" is not a RAW file."
+    assert str(fpath_in).endswith(
+        ".raw"
+    ), f'Error: the input file provided "{str(fpath_in)}" is not a RAW file.'
+    assert str(fpath_out).endswith(
+        ".raw"
+    ), f'Error: the output file provided "{str(fpath_out)}" is not a RAW file.'
     return c_cut_wrapper(cut_evt2, fpath_in, fpath_out, new_duration, buff_size)
 
 
@@ -184,7 +206,10 @@ def cut_evt3(
     Returns:
         - dim: the number of events encoded in the output file.
     """
-    assert str(fpath_in).endswith(".raw"), f"Error: the input file provided \"{str(fpath_in)}\" is not a RAW file."
-    assert str(fpath_out).endswith(".raw"), f"Error: the output file provided \"{str(fpath_out)}\" is not a RAW file."
+    assert str(fpath_in).endswith(
+        ".raw"
+    ), f'Error: the input file provided "{str(fpath_in)}" is not a RAW file.'
+    assert str(fpath_out).endswith(
+        ".raw"
+    ), f'Error: the output file provided "{str(fpath_out)}" is not a RAW file.'
     return c_cut_wrapper(cut_evt3, fpath_in, fpath_out, new_duration, buff_size)
-

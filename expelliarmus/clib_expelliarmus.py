@@ -1,4 +1,13 @@
-from ctypes import CDLL, c_char_p, POINTER, c_size_t, c_int64, c_int16, c_uint8, Structure
+from ctypes import (
+    CDLL,
+    c_char_p,
+    POINTER,
+    c_size_t,
+    c_int64,
+    c_int16,
+    c_uint8,
+    Structure,
+)
 import pathlib
 import os
 import re
@@ -13,15 +22,17 @@ for root, dirs, files in os.walk(this_file_path):
             break
 clib = CDLL(str(lib_path))
 
+
 class event_array_t(Structure):
     _fields_ = [
-            ("t_arr", POINTER(c_int64)), 
-            ("x_arr", POINTER(c_int16)), 
-            ("y_arr", POINTER(c_int16)), 
-            ("p_arr", POINTER(c_uint8)),
-            ("dim", c_size_t), 
-            ("allocated_space", c_size_t), 
-            ]
+        ("t_arr", POINTER(c_int64)),
+        ("x_arr", POINTER(c_int16)),
+        ("y_arr", POINTER(c_int16)),
+        ("p_arr", POINTER(c_uint8)),
+        ("dim", c_size_t),
+        ("allocated_space", c_size_t),
+    ]
+
 
 # Setting up C wrappers.
 ARGTYPES_READ = [c_char_p, c_size_t]
@@ -43,4 +54,3 @@ c_cut_evt3 = clib.cut_evt3
 for c_cut_fn in (c_cut_dat, c_cut_evt2, c_cut_evt3):
     c_cut_fn.restype = RESTYPE_CUT
     c_cut_fn.argtypes = ARGTYPES_CUT
-

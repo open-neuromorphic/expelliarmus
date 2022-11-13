@@ -1,4 +1,15 @@
-from ctypes import CDLL, c_char_p, POINTER, c_size_t, c_int64, c_int16, c_uint8, Structure
+from ctypes import (
+    CDLL,
+    c_char_p,
+    POINTER,
+    c_size_t,
+    c_uint64,
+    c_int64,
+    c_int16,
+    c_uint8,
+    Structure,
+    c_voidp,
+)
 import pathlib
 import os
 import re
@@ -15,22 +26,39 @@ for root, dirs, files in os.walk(this_file_path):
 clib = CDLL(str(lib_path))
 
 # Setting up arguments and return types.
-ARGTYPES_CHUNK = [c_char_p, c_size_t, c_size_t, c_size_t]
-
-
 class dat_chunk_wrap_t(Structure):
     _fields_ = [
-            ("arr", event_array_t), 
-            ("bytes_read", c_size_t),
-            ]
+        ("arr", event_array_t),
+        ("bytes_read", c_size_t),
+    ]
 
-RESTYPE_CHUNK = dat_chunk_wrap_t
+
+class evt2_chunk_wrap_t(Structure):
+    _fields_ = [
+        ("arr", event_array_t),
+        ("bytes_read", c_size_t),
+        ("time_high", c_uint64),
+    ]
+
+
+class evt3_chunk_wrap_t(Structure):
+    _fields_ = [
+        ("arr", event_array_t),
+        ("bytes_read", c_size_t),
+        ("time_high", c_uint64),
+        ("time_low", c_uint64),
+        ("time_high_ovfs", c_uint64),
+        ("time_low_ovfs", c_uint64),
+    ]
+
 
 c_read_dat_chunk = clib.read_dat_chunk
-# c_read_evt2_chunk = clib.read_evt2_chunk
-# c_read_evt3_chunk = clib.read_evt3_chunk
-for c_chunk_fn in (c_read_dat_chunk, ): #, c_read_evt2_chunk, c_read_evt3_chunk):
-    c_chunk_fn.argtypes = ARGTYPES_CHUNK
-    c_chunk_fn.restype = RESTYPE_CHUNK
-
-
+c_read_evt2_chunk = clib.read_evt2_chunk
+c_read_evt3_chunk = clib.read_evt3_chunk
+for c_chunk_fn, chunk_wrap_t in (
+    (c_read_dat_chunk, dat_chunk_wrap_t),
+    (c_read_evt2_chunk, evt2_chunk_wrap_t),
+    (c_read_evt3_chunk, evt3_chunk_wrap_t),
+):
+    c_chunk_fn.argtypes = [c_char_p, c_size_t, POINTER(chunk_wrap_t), c_size_t]
+    c_chunk_fn.restype = None
