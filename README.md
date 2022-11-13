@@ -9,14 +9,11 @@ A Python/C library for decoding DVS binary data formats to NumPy structured arra
 ## Installation 
 
 You can install the library through `pip`:
-```
+```bash
 pip install expelliarmus 
 ```
 
 The package is tested on Windows, MacOS and Linux.
-
-## Quickstart
-Given an EVT3 file called `pedestrians.raw`, which can be dowloaded from [here](https://dataset.prophesee.ai/index.php/s/fB7xvMpE136yakl/download), we can decode it to an array in the following way. 
 
 
 ```python
@@ -45,41 +42,52 @@ A typical sample looks like this:
 print(arr[0])
 ```
 
-    (0, 707, 297, 0)
+    (5840504, 707, 297, 0)
 
 
-If we would like to reduce the EVT3 file size, we can use the `cut_evt3` function:
+If we would like to reduce the EVT3 file size, we can use the `cut_evt3` function to limit the recording time duration to `10ms`, for instance:
 
 
 ```python
-n_events = expelliarmus.cut_evt3(fpath_in="./pedestrians.raw", fpath_out="./pedestrians_cut.raw", max_nevents=5000)
-print(n_events) # The number of events embedded in the output file.
+nevents = expelliarmus.cut_evt3(fpath_in="./pedestrians.raw", fpath_out="./pedestrians_cut.raw", new_duration=10)
+print(f"Number of events embedded in the cut file: {nevents}.") # The number of events embedded in the output file.
 ```
 
-    5000
+    Number of events embedded in the cut file: 540.
 
 
-This can be verified by reading the new file to an array.
+This can be verified by reading the new file in an array.
 
 
 ```python
 cut_arr = expelliarmus.read_evt3(fpath="./pedestrians_cut.raw")
-print(cut_arr.shape)
+print(f"Length of array extracted from the cut recording: {len(cut_arr)}.")
 ```
 
-    (5000,)
+    Length of array extracted from the cut recording: 540.
 
 
 The files are consistent:
 
 
 ```python
-print(arr[0], cut_arr[0])
-print(arr[4999], cut_arr[-1])
+print(f"First original sample: {arr[0]} ! First cut sample: {cut_arr[0]}.")
+print(f"{nevents}th original sample: {arr[nevents-1]} ! Last cut sample: {cut_arr[-1]}.")
 ```
 
-    (0, 707, 297, 0) (0, 707, 297, 0)
-    (90266, 598, 260, 0) (90266, 598, 260, 0)
+    First original sample: (5840504, 707, 297, 0) ! First cut sample: (5840504, 707, 297, 0).
+    540th original sample: (5853218, 1208, 253, 0) ! Last cut sample: (5853218, 1208, 253, 0).
+
+
+The time duration is, more or less, the desired one (the events are discrete, hence we have not a fine control over them).
+
+
+```python
+print(f"New recording duration: {((cut_arr['t'][-1] - cut_arr['t'][0])/1000):.2f} ms") 
+```
+
+    New recording duration: 12.71 ms
+
 
 ## Quick usage instructions
 
