@@ -15,6 +15,13 @@ _SUPPORTED_ENCODINGS = (
 
 
 class Muggle:
+    """
+    Muggle allows you to read in chunks from a file using the read_chunk() generator.
+    Args:
+        - fpath: path to the input file.
+        - nevents_per_chunk: how many events per chunk you want.
+        - encoding: the encoding of the input file, to be chosen among DAT, EVT2 and EVT3.
+    """
     def __init__(
         self, fpath: Union[str, pathlib.Path], nevents_per_chunk: int, encoding: str
     ):
@@ -70,6 +77,11 @@ class Muggle:
         return
 
     def read_chunk(self):
+        """
+        The Muggle generator.
+        Return:
+            - arr: structured NumPy array of events.
+        """
         nevents_read = self._nevents_chunk
         while nevents_read >= self._nevents_chunk:
             self._chunk_wrap, arr = self._read_fn(

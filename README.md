@@ -89,6 +89,32 @@ print(f"New recording duration: {((cut_arr['t'][-1] - cut_arr['t'][0])/1000):.2f
     New recording duration: 12.71 ms
 
 
+Now you can also read the events from large files in chunks, thanks to Muggle!
+
+
+```python
+from expelliarmus import Muggle
+muggle = Muggle(fpath="./pedestrians.raw", encoding="evt3", nevents_per_chunk=512)
+print(f"Length of the chunk: {len(next(muggle.read_chunk()))}.")
+```
+
+    Length of the chunk: 512.
+
+
+
+```python
+muggle = Muggle(fpath="./pedestrians.raw", encoding="evt3", nevents_per_chunk=16)
+print(next(muggle.read_chunk()))
+```
+
+    [(5840504, 707, 297, 0) (5840507, 592, 301, 0) (5840511, 997, 313, 0)
+     (5840526, 682, 283, 1) (5840526, 150, 331, 1) (5840532, 595, 313, 1)
+     (5840545,  14, 240, 0) (5840573, 983, 297, 0) (5840575, 599, 294, 0)
+     (5840580, 983, 282, 0) (5840581, 606, 302, 0) (5840585, 689, 281, 0)
+     (5840587, 689, 302, 0) (5840596, 849, 283, 1) (5840600, 542, 275, 1)
+     (5840605, 649, 305, 1)]
+
+
 ## Quick usage instructions
 
 The function used to decode the binary files to arrays have the following prototype:
@@ -105,6 +131,12 @@ def cut_FILE_FORMAT(fpath_in, fpath_out, new_duration=10, buff_size=4096):
     ...
     return nevents_in_output_file
 ```     
+
+To read in chunks from a file, you can use the `Muggle` class, which has the following constructor: 
+
+```python
+class Muggle(fpath, nevents_per_chunk, encoding)
+```
 
 More information about the arguments can be found in the source code. 
 
