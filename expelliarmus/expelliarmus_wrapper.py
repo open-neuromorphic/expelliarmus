@@ -44,9 +44,10 @@ for c_cut_fn in (c_cut_dat, c_cut_evt2, c_cut_evt3):
 DTYPE = np.dtype([("t", np.int64), ("x", np.int16), ("y", np.int16), ("p", np.uint8)])
 
 def c_read_wrapper(p_fun, fpath, buff_size, dtype):
+    assert isinstance(fpath, str) or isinstance(fpath, pathlib.Path)
     fpath = pathlib.Path(fpath).resolve()
     assert fpath.is_file(), f'Error: the file provided "{str(fpath)}" does not exist.'
-    assert buff_size > 0, "Error: a minimum buffer size of 1 is required."
+    assert isinstance(buff_size, int) and buff_size > 0, "Error: a minimum buffer size of 1 is required."
 
     c_fpath = c_char_p(bytes(str(fpath), "utf-8"))
     c_dim = c_size_t(0)
@@ -66,7 +67,9 @@ def c_read_wrapper(p_fun, fpath, buff_size, dtype):
     return np_arr
 
 
-def c_cut_wrapper(p_fun, fpath_in, fpath_out, max_nevents, buff_size):
+def c_cut_wrapper(p_fun, fpath_in, fpath_out, new_duration, buff_size):
+    assert isinstance(fpath_in, str) or isinstance(fpath_in, pathlib.Path)
+    assert isinstance(fpath_out, str) or isinstance(fpath_out, pathlib.Path)
     fpath_in = pathlib.Path(fpath_in).resolve()
     fpath_out = pathlib.Path(fpath_out).resolve()
     assert (
@@ -75,19 +78,19 @@ def c_cut_wrapper(p_fun, fpath_in, fpath_out, max_nevents, buff_size):
     assert (
         fpath_out.parent.is_dir()
     ), f'Error: the output file path provided "{str(fpath_out)}" does not exist.'
-    assert buff_size > 0, "Error: a minimum buffer size of 1 is required."
-    assert max_nevents > 0, "Error: a minimum number of events of 1 is required."
+    assert isinstance(buff_size, int) and buff_size > 0, "Error: a minimum buffer size of 1 is required."
+    assert isinstance(new_duration, int) and new_duration > 0, "Error: the new time duration of the recording must be larger than or equal to 1ms."
 
     c_fpath_in = c_char_p(bytes(str(fpath_in), "utf-8"))
     c_fpath_out = c_char_p(bytes(str(fpath_out), "utf-8"))
-    c_max_nevents = c_size_t(max_nevents)
+    c_new_duration = c_size_t(new_duration)
     c_buff_size = c_size_t(buff_size)
     if p_fun == cut_dat:
-        c_dim = c_cut_dat(c_fpath_in, c_fpath_out, c_max_nevents, c_buff_size)
+        c_dim = c_cut_dat(c_fpath_in, c_fpath_out, c_new_duration, c_buff_size)
     elif p_fun == cut_evt2:
-        c_dim = c_cut_evt2(c_fpath_in, c_fpath_out, c_max_nevents, c_buff_size)
+        c_dim = c_cut_evt2(c_fpath_in, c_fpath_out, c_new_duration, c_buff_size)
     elif p_fun == cut_evt3:
-        c_dim = c_cut_evt3(c_fpath_in, c_fpath_out, c_max_nevents, c_buff_size)
+        c_dim = c_cut_evt3(c_fpath_in, c_fpath_out, c_new_duration, c_buff_size)
     else:
         raise "Function not defined."
     return c_dim
@@ -153,7 +156,7 @@ def read_evt3(
 def cut_dat(
     fpath_in: Union[pathlib.Path, str],
     fpath_out: Union[pathlib.Path, str],
-    max_nevents: Optional[int] = 1000,
+    new_duration: Optional[int] = 10,
     buff_size: Optional[int] = 4096,
 ) -> int:
     """
@@ -161,20 +164,20 @@ def cut_dat(
     Args:
         - fpath_in: path to the input DAT file.
         - fpath_out: path to the output DAT file.
-        - max_nevents: number of events to be written in the output file.
+        - new_duration: new time duration of the recording expressed in milliseconds.
         - buff_size: size of the buffer used to read the binary file.
     Returns:
         - dim: the number of events encoded in the output file.
     """
     assert str(fpath_in).endswith(".dat"), f"Error: the input file provided \"{str(fpath_in)}\" is not a DAT file."
     assert str(fpath_out).endswith(".dat"), f"Error: the output file provided \"{str(fpath_out)}\" is not a DAT file."
-    return c_cut_wrapper(cut_dat, fpath_in, fpath_out, max_nevents, buff_size)
+    return c_cut_wrapper(cut_dat, fpath_in, fpath_out, new_duration, buff_size)
 
 
 def cut_evt2(
     fpath_in: Union[pathlib.Path, str],
     fpath_out: Union[pathlib.Path, str],
-    max_nevents: Optional[int] = 1000,
+    new_duration: Optional[int] = 10,
     buff_size: Optional[int] = 4096,
 ) -> int:
     """
@@ -182,6 +185,7 @@ def cut_evt2(
     Args:
         - fpath_in: path to the input EVT2 file.
         - fpath_out: path to the output EVT2 file.
+        - new_duration: new time duration of the recording expressed in milliseconds.
         - max_nevents: number of events to be written in the output file.
         - buff_size: size of the buffer used to read the binary file.
     Returns:
@@ -189,13 +193,13 @@ def cut_evt2(
     """
     assert str(fpath_in).endswith(".raw"), f"Error: the input file provided \"{str(fpath_in)}\" is not a RAW file."
     assert str(fpath_out).endswith(".raw"), f"Error: the output file provided \"{str(fpath_out)}\" is not a RAW file."
-    return c_cut_wrapper(cut_evt2, fpath_in, fpath_out, max_nevents, buff_size)
+    return c_cut_wrapper(cut_evt2, fpath_in, fpath_out, new_duration, buff_size)
 
 
 def cut_evt3(
     fpath_in: Union[pathlib.Path, str],
     fpath_out: Union[pathlib.Path, str],
-    max_nevents: Optional[int] = 1000,
+    new_duration: Optional[int] = 10,
     buff_size: Optional[int] = 4096,
 ) -> int:
     """
@@ -203,11 +207,11 @@ def cut_evt3(
     Args:
         - fpath_in: path to the input EVT3 file.
         - fpath_out: path to the output EVT3 file.
-        - max_nevents: number of events to be written in the output file.
+        - new_duration: new time duration of the recording expressed in milliseconds.
         - buff_size: size of the buffer used to read the binary file.
     Returns:
         - dim: the number of events encoded in the output file.
     """
     assert str(fpath_in).endswith(".raw"), f"Error: the input file provided \"{str(fpath_in)}\" is not a RAW file."
     assert str(fpath_out).endswith(".raw"), f"Error: the output file provided \"{str(fpath_out)}\" is not a RAW file."
-    return c_cut_wrapper(cut_evt3, fpath_in, fpath_out, max_nevents, buff_size)
+    return c_cut_wrapper(cut_evt3, fpath_in, fpath_out, new_duration, buff_size)

@@ -27,7 +27,7 @@ def test_cut_wrapper(
     ],
     fname_in: Union[str, pathlib.Path],
     fname_out: Union[str, pathlib.Path],
-    nevents: int = 25
+    new_duration: int = 20
 ):
     fpath_in = pathlib.Path("tests", "sample-files", fname_in).resolve()
     fpath_out = TMPDIR.joinpath(cut_fn.__name__)
@@ -37,13 +37,13 @@ def test_cut_wrapper(
     fpath_out.touch()
     assert fpath_out.is_file()
     # Checking that the desired number of events has been encoded to the output file.
-    nevents_out = cut_fn(fpath_in, fpath_out, max_nevents=nevents)
-    assert nevents_out == nevents
+    nevents_out = cut_fn(fpath_in, fpath_out, new_duration=new_duration)
     arr = read_fn(fpath_out)
-    assert len(arr) == nevents
+    assert len(arr) == nevents_out
+    assert (arr["t"][-1] - arr["t"][0]) >= new_duration*1000
     # Checking that the cut is consistent.
     orig_arr = read_fn(fpath_in)
-    assert (orig_arr[:nevents] == arr[:]).all()
+    assert (orig_arr[:nevents_out] == arr[:]).all()
     # Cleaning up.
     shutil.rmtree(fpath_out.parent)
     return

@@ -289,7 +289,7 @@ DLLEXPORT event_array_t read_evt3(const char* fpath, size_t* dim, size_t buff_si
  * Functions for cutting DAT and RAW files to a certain number of events.
  */
 
-DLLEXPORT size_t cut_dat(const char* fpath_in, const char* fpath_out, size_t max_nevents, size_t buff_size){
+DLLEXPORT size_t cut_dat(const char* fpath_in, const char* fpath_out, size_t new_duration, size_t buff_size){
 	FILE* fp_in = fopen(fpath_in, "rb"); 
 	CHECK_FILE(fp_in, fpath_in); 
 	FILE* fp_out = fopen(fpath_out, "wb"); 
@@ -310,33 +310,32 @@ DLLEXPORT size_t cut_dat(const char* fpath_in, const char* fpath_out, size_t max
 	fwrite(&pt, 1, 1, fp_out);  
 	fread(&pt, 1, 1, fp_in); 
 	fwrite(&pt, 1, 1, fp_out);  
-
+	
 	// Buffer to read binary data.
-	// In this case, every 64 bits correspond to an event. Hence, 
-	// to read at most max_nevents, we need to choose min(buff_size, max_nevents)
-	// as size for the read and write buffers.
-	uint64_t* buff = (uint64_t*) malloc(buff_size * sizeof(uint64_t));
+	uint32_t* buff = (uint32_t*) malloc(2*buff_size * sizeof(uint32_t));
 	CHECK_ALLOCATION(buff); 
 	
-	size_t i=0, values_read=0, values_written=0, nevents_to_read=0;
-   	nevents_to_read = (buff_size > max_nevents) ? max_nevents : buff_size; 	
-	while (i < max_nevents && (values_read = fread(buff, sizeof(buff[0]), nevents_to_read, fp_in)) > 0){
-		values_written = fwrite(buff, sizeof(buff[0]), values_read, fp_out); 
-		i += values_read; 
-		if (values_written != values_read){
-			fprintf(stderr, "Error: the number of events read (%lu) does not correspond to the number written (%lu)", values_read, values_written); 
-			exit(3); 
+	// Temporary event data structure.
+	size_t values_read=0, j=0, i=0; 
+	event_t time_ovfs=0, timestamp=0, first_timestamp=0; 
+	while ((timestamp-first_timestamp) < new_duration*1000 && (values_read = fread(buff, sizeof(*buff), 2*buff_size, fp_in)) > 0){
+		for (j=0; (timestamp-first_timestamp) < new_duration*1000 && j<values_read; j+=2){
+			// Event timestamp.
+			if (((event_t)buff[j]) < timestamp) // Overflow.
+				time_ovfs++; 
+			timestamp = (event_t) buff[j]; 
+			if (i++ == 0)
+				first_timestamp = timestamp; 
+			fwrite(&buff[j], sizeof(*buff), 2, fp_out);
 		}
-		nevents_to_read = (values_read+nevents_to_read > max_nevents) ? max_nevents-values_read : nevents_to_read;
 	}
-
 	free(buff); 
 	fclose(fp_in); 
 	fclose(fp_out); 
 	return i; 
 }
 
-DLLEXPORT size_t cut_evt2(const char* fpath_in, const char* fpath_out, size_t max_nevents, size_t buff_size){
+DLLEXPORT size_t cut_evt2(const char* fpath_in, const char* fpath_out, size_t new_duration, size_t buff_size){
 	FILE* fp_in = fopen(fpath_in, "rb"); 
 	CHECK_FILE(fp_in, fpath_in); 
 	FILE* fp_out = fopen(fpath_out, "wb"); 
@@ -361,18 +360,27 @@ DLLEXPORT size_t cut_evt2(const char* fpath_in, const char* fpath_out, size_t ma
 	CHECK_ALLOCATION(buff); 
 	uint8_t event_type; 
 	size_t i=0, j=0, values_read=0; 
-	while (i < max_nevents && (values_read = fread(buff, sizeof(*buff), buff_size, fp_in)) > 0){
-		for (j=0; i < max_nevents && j<values_read; j++){
+	event_t first_timestamp=0, timestamp=0, time_high=0, time_low=0;
+	const uint32_t mask_28b = 0xFFFFFFFU, mask_6b=0x3FU; 
+	while ((timestamp-first_timestamp) < new_duration*1000 && (values_read = fread(buff, sizeof(*buff), buff_size, fp_in)) > 0){
+		for (j=0; (timestamp-first_timestamp) < new_duration*1000 && j<values_read; j++){
 			fwrite(&buff[j], sizeof(buff[0]), 1, fp_out); 
 			// Getting the event type. 
 			event_type = (uint8_t) (buff[j] >> 28); 
 			switch (event_type){
 				case EVT2_CD_ON:
 				case EVT2_CD_OFF:
-					i++; 
+					// Getting 6LSBs of the time stamp. 
+					time_low = ((event_t)((buff[j] >> 22) & mask_6b)); 
+					timestamp = ((time_high << 6) | time_low); 
+					if (i++ == 0)
+						first_timestamp = timestamp;
 					break; 
 
 				case EVT2_TIME_HIGH:
+					// Adding 28 MSBs to timestamp.
+					time_high = (event_t)(buff[j] & mask_28b); 
+					break; 
 					break; 
 
 				case EVT2_EXT_TRIGGER:
@@ -392,7 +400,7 @@ DLLEXPORT size_t cut_evt2(const char* fpath_in, const char* fpath_out, size_t ma
 	return i; 
 }
 
-DLLEXPORT size_t cut_evt3(const char* fpath_in, const char* fpath_out, size_t max_nevents, size_t buff_size){
+DLLEXPORT size_t cut_evt3(const char* fpath_in, const char* fpath_out, size_t new_duration, size_t buff_size){
 	FILE* fp_in = fopen(fpath_in, "rb"); 
 	CHECK_FILE(fp_in, fpath_in); 
 	FILE* fp_out = fopen(fpath_out, "w+b"); 
@@ -421,10 +429,14 @@ DLLEXPORT size_t cut_evt3(const char* fpath_in, const char* fpath_out, size_t ma
 
 	event_t buff_tmp=0, k=0, num_vect_events=0; 
 	const uint16_t mask_8b = 0xFFU, mask_12b = 0xFFFU; 
-	uint8_t event_type=0; 
-	while (i < max_nevents && (values_read = fread(buff, sizeof(*buff), buff_size, fp_in)) > 0){
-		for (j=0; i < max_nevents && j<values_read; j++){
-			fwrite(&buff[j], sizeof(buff[0]), 1, fp_out); 
+	uint8_t event_type=0, recording_finished=0, last_events_acquired=0, get_out=0; 
+	event_t first_timestamp=0, timestamp=0, time_high=0, time_high_ovfs=0, time_low=0, time_low_ovfs=0; 
+	// Converting duration to microseconds.
+	new_duration *= 1000; 
+
+	while (!get_out && (values_read = fread(buff, sizeof(*buff), buff_size, fp_in)) > 0){
+		for (j=0; !get_out && j<values_read; j++){
+			fwrite(&buff[j], sizeof(*buff), 1, fp_out); 
 			// Getting the event type. 
 			event_type = (buff[j] >> 12); 
 			switch (event_type){
@@ -432,6 +444,8 @@ DLLEXPORT size_t cut_evt3(const char* fpath_in, const char* fpath_out, size_t ma
 					break; 
 
 				case EVT3_EVT_ADDR_X:
+					if (recording_finished)
+						last_events_acquired = 1; 
 					i++; 
 					break; 
 
@@ -449,16 +463,42 @@ DLLEXPORT size_t cut_evt3(const char* fpath_in, const char* fpath_out, size_t ma
 					}
 					for (k=0; k<num_vect_events; k++){
 						if (buff_tmp%2)
-							i++;
+							i++; 
 						buff_tmp = buff_tmp >> 1; 
 					}
 					num_vect_events = 0; 
+					if (recording_finished)
+						last_events_acquired = 1; 
 					break; 
 
 				case EVT3_TIME_LOW:
+					if ((timestamp - first_timestamp) >= new_duration){
+						recording_finished = 1;
+						if (last_events_acquired)
+							get_out = 1; 
+					}
+					buff_tmp = (event_t)(buff[j] & mask_12b);
+					if (buff_tmp < time_low) // Overflow.
+						time_low_ovfs++; 
+					time_low = buff_tmp; 
+					timestamp = (time_high_ovfs<<24) + ((time_high+time_low_ovfs)<<12) + time_low;
+					if (i==0)
+						first_timestamp = timestamp; 
 					break; 
 
 				case EVT3_TIME_HIGH:
+					if ((timestamp - first_timestamp) >= new_duration){
+						recording_finished = 1;
+						if (last_events_acquired)
+							get_out = 1; 
+					}
+					buff_tmp = (event_t)(buff[j] & mask_12b);
+					if (buff_tmp < time_high) // Overflow.
+						time_high_ovfs++; 
+					time_high = buff_tmp; 
+					timestamp = (time_high_ovfs<<24) + ((time_high+time_low_ovfs)<<12) + time_low;
+					if (i==0)
+						first_timestamp = timestamp; 
 					break; 
 
 				case EVT3_EXT_TRIGGER:
@@ -467,7 +507,7 @@ DLLEXPORT size_t cut_evt3(const char* fpath_in, const char* fpath_out, size_t ma
 					break; 
 
 				default:
-					fprintf(stderr, "Error: event type not valid: 0x%x peppa.\n", event_type); 
+					fprintf(stderr, "Error: event type not valid: 0x%x.\n", event_type); 
 					exit(1); 
 			}
 		}
