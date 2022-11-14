@@ -34,7 +34,7 @@ setup(
     maintainer="Fabrizio Ottati, Gregor Lenz",
     maintainer_email="fabriziottati@gmail.com, mail@lenzgregor.com",
     url="https://github.com/fabhertz95/expelliarmus",
-    version="1.0.12",
+    version="1.0.13",
     long_description=long_description,
     long_description_content_type="text/markdown",
     packages = ["expelliarmus", "expelliarmus.muggle", "expelliarmus.wizard"],
