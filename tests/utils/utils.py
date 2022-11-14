@@ -20,7 +20,7 @@ def test_cut(
     new_duration: int = 20,
 ):
     fpath_in = pathlib.Path("tests", "sample-files", fname_in).resolve()
-    fpath_out = TMPDIR.joinpath("read_"+encoding)
+    fpath_out = TMPDIR.joinpath("test_cut"+encoding)
     fpath_out.mkdir(exist_ok=True)
     assert fpath_out.is_dir()
     fpath_out = fpath_out.joinpath(fname_out)
@@ -51,6 +51,8 @@ def test_read(
     wizard = Wizard(fpath, encoding=encoding)
     arr = wizard.read()
     assert len(arr) == expected_nevents
+    assert arr["p"].min()==0 and arr["p"].max()==1
+    assert (np.sort(arr["t"]) == arr["t"]).all()
     fpath = pathlib.Path("tests", "sample-files", fname.split(".")[0] + ".npy")
     ref_arr = np.load(fpath)
     assert (ref_arr == arr).all()
