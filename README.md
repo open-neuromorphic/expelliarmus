@@ -15,7 +15,7 @@ pip install expelliarmus
 
 The package is tested on Windows, MacOS and Linux.
 
-##Quickstart
+## Quickstart
 
 Shall we start practicing some spells? For that, we need a `Wizard`!
 
