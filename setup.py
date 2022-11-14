@@ -34,13 +34,13 @@ setup(
     maintainer="Fabrizio Ottati, Gregor Lenz",
     maintainer_email="fabriziottati@gmail.com, mail@lenzgregor.com",
     url="https://github.com/fabhertz95/expelliarmus",
-    version="1.0.11",
+    version="1.0.12",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    py_modules=["expelliarmus.expelliarmus_wrapper"],
+    py_modules=["expelliarmus.wizard.wizard", "expelliarmus.muggle.muggle"],
     ext_modules=[
         CTypesExtension(
-            "expelliarmus.expelliarmus",
+            "expelliarmus",
             [
                 str(pathlib.Path("expelliarmus", "src", "expelliarmus.c")),
                 str(pathlib.Path("expelliarmus", "src", "muggle.c")),
