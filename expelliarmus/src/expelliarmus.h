@@ -38,6 +38,20 @@
 #define DLLEXPORT
 #endif
 
+#define CHECK_ALLOCATION(pt) {\
+	if (pt == NULL){\
+		fprintf(stderr, "Error during dinamic array memory allocation.\n");\
+		exit(EXIT_FAILURE);\
+	}\
+}
+
+#define CHECK_FILE(fp, fpath){\
+	if (fp==NULL){\
+		fprintf(stderr, "Error while opening the file \"%s\".\n", fpath);\
+		exit(EXIT_FAILURE);\
+	}\
+}
+
 typedef int64_t timestamp_t;  
 typedef int16_t pixel_t; 
 typedef uint8_t polarity_t; 

@@ -3,20 +3,6 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-#define CHECK_ALLOCATION(pt) {\
-	if (pt == NULL){\
-		fprintf(stderr, "Error during dinamic array memory allocation.\n");\
-		exit(1);\
-	}\
-}
-
-#define CHECK_FILE(fp, fpath){\
-	if (fp==NULL){\
-		fprintf(stderr, "Error while opening the file \"%s\".\n", fpath);\
-		exit(2);\
-	}\
-}
-
 void append_event(const event_t* event, event_array_t* arr, size_t i){
 	event_array_t arr_tmp = *arr; 
 	if (i >= arr->allocated_space){
@@ -205,7 +191,7 @@ DLLEXPORT event_array_t read_evt2(const char* fpath, size_t buff_size){
 
 				default:
 					fprintf(stderr, "Error: event type not valid: 0x%x 0x%x.\n", event_type, EVT2_CD_ON); 
-					exit(1); 
+					exit(EXIT_FAILURE); 
 			}
 		}
 	}
@@ -343,7 +329,7 @@ DLLEXPORT event_array_t read_evt3(const char* fpath, size_t buff_size){
 
 				default:
 					fprintf(stderr, "Error: event type not valid: 0x%x peppa.\n", event_type); 
-					exit(1); 
+					exit(EXIT_FAILURE); 
 			}
 		}
 	}
@@ -480,7 +466,7 @@ DLLEXPORT size_t cut_evt2(const char* fpath_in, const char* fpath_out, size_t ne
 
 				default:
 					fprintf(stderr, "Error: event type not valid: 0x%x 0x%x.\n", event_type, EVT2_CD_ON); 
-					exit(1); 
+					exit(EXIT_FAILURE); 
 			}
 		}
 	}
@@ -598,7 +584,7 @@ DLLEXPORT size_t cut_evt3(const char* fpath_in, const char* fpath_out, size_t ne
 
 				default:
 					fprintf(stderr, "Error: event type not valid: 0x%x.\n", event_type); 
-					exit(1); 
+					exit(EXIT_FAILURE); 
 			}
 		}
 	}

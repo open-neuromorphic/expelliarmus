@@ -2,20 +2,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define CHECK_ALLOCATION(pt) {\
-	if (pt == NULL){\
-		fprintf(stderr, "Error during dinamic array memory allocation.\n");\
-		exit(1);\
-	}\
-}
-
-#define CHECK_FILE(fp, fpath){\
-	if (fp==NULL){\
-		fprintf(stderr, "Error while opening the file \"%s\".\n", fpath);\
-		exit(2);\
-	}\
-}
-
 DLLEXPORT void read_dat_chunk(const char* fpath, size_t buff_size, dat_chunk_wrap_t* chunk_wrap, size_t nevents_per_chunk){
 	FILE* fp = fopen(fpath, "rb"); 
 	CHECK_FILE(fp, fpath); 
@@ -199,7 +185,7 @@ DLLEXPORT void read_evt2_chunk(const char* fpath, size_t buff_size, evt2_chunk_w
 
 				default:
 					fprintf(stderr, "Error: event type not valid: 0x%x.\n", event_type); 
-					exit(1); 
+					exit(EXIT_FAILURE); 
 			}
 		}
 		chunk_wrap->bytes_read += j*sizeof(*buff); 
@@ -355,7 +341,7 @@ DLLEXPORT void read_evt3_chunk(const char* fpath, size_t buff_size, evt3_chunk_w
 
 				default:
 					fprintf(stderr, "Error: event type not valid: 0x%x peppa.\n", event_type); 
-					exit(1); 
+					exit(EXIT_FAILURE); 
 			}
 		}
 		chunk_wrap->bytes_read += j*sizeof(*buff);
