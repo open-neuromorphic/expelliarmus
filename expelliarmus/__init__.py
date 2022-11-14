@@ -1,10 +1,2 @@
-from .expelliarmus_wrapper import (
-    read_dat,
-    read_evt2,
-    read_evt3,
-    cut_dat,
-    cut_evt2,
-    cut_evt3,
-)
-
-from .muggle import Muggle
+from expelliarmus.wizard.wizard import Wizard
+from expelliarmus.muggle.muggle import Muggle

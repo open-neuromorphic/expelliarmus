@@ -15,10 +15,21 @@ pip install expelliarmus
 
 The package is tested on Windows, MacOS and Linux.
 
+##Quickstart
+
+Shall we start practicing some spells? For that, we need a `Wizard`!
+
 
 ```python
-import expelliarmus
-arr = expelliarmus.read_evt3(fpath="./pedestrians.raw")
+from expelliarmus import Wizard
+wizard = Wizard(fpath="./pedestrians.raw", encoding="evt3")
+```
+
+Let's cast a spell and read [this RAW file](https://dataset.prophesee.ai/index.php/s/fB7xvMpE136yakl/download) to a structured NumPy array! 
+
+
+```python
+arr = wizard.read()
 print(arr.shape) # Number of events encoded to the NumPy array.
 ```
 
@@ -45,11 +56,11 @@ print(arr[0])
     (5840504, 707, 297, 0)
 
 
-If we would like to reduce the EVT3 file size, we can use the `cut_evt3` function to limit the recording time duration to `10ms`, for instance:
+If we would like to reduce the EVT3 file size! We can use the `cut()` spell to limit the recording time duration to `12ms`, for instance:
 
 
 ```python
-nevents = expelliarmus.cut_evt3(fpath_in="./pedestrians.raw", fpath_out="./pedestrians_cut.raw", new_duration=10)
+nevents = wizard.cut(fpath_out="./pedestrians_cut.raw", new_duration=12)
 print(f"Number of events embedded in the cut file: {nevents}.") # The number of events embedded in the output file.
 ```
 
@@ -60,7 +71,8 @@ This can be verified by reading the new file in an array.
 
 
 ```python
-cut_arr = expelliarmus.read_evt3(fpath="./pedestrians_cut.raw")
+assistant = Wizard(fpath="./pedestrians_cut.raw", encoding="evt3")
+cut_arr = assistant.read()
 print(f"Length of array extracted from the cut recording: {len(cut_arr)}.")
 ```
 
@@ -89,7 +101,7 @@ print(f"New recording duration: {((cut_arr['t'][-1] - cut_arr['t'][0])/1000):.2f
     New recording duration: 12.71 ms
 
 
-Now you can also read the events from large files in chunks, thanks to Muggle!
+What if you're a poor `Muggle` and you cannot cast any spells? Well, we can try to read the files one chunk at time...
 
 
 ```python
@@ -100,6 +112,8 @@ print(f"Length of the chunk: {len(next(muggle.read_chunk()))}.")
 
     Length of the chunk: 512.
 
+
+Let's read less events, so that we are able to visualize them.
 
 
 ```python
@@ -117,29 +131,21 @@ print(next(muggle.read_chunk()))
 
 ## Quick usage instructions
 
-The function used to decode the binary files to arrays have the following prototype:
+Right now, three encodings are supported: `dat`, `evt2` and `evt3`. `Wizard` can read and cut files, while `Muggle` allows to read files in chunks when these are too large. The constructors are the following:
 
 ```python 
-def read_FILE_FORMAT(fpath, buff_size=4096):
-    ...
-    return np_arr
+class Wizard(fpath, encoding, buff_size, dtype)
 ```
-
-The functions used to "cut" off files have the following prototype:
- ```python 
-def cut_FILE_FORMAT(fpath_in, fpath_out, new_duration=10, buff_size=4096):
-    ...
-    return nevents_in_output_file
-```     
-
-To read in chunks from a file, you can use the `Muggle` class, which has the following constructor: 
-
 ```python
-class Muggle(fpath, nevents_per_chunk, encoding)
+class Muggle(fpath_in, encoding, buff_size, dtype)
 ```
 
-More information about the arguments can be found in the source code. 
+To read a file we use the `read()` method, while to cut it the `cut(fpath_out, new_duration)` one from the `Wizard`.
+
+To read in chunks from a file, you can use the `Muggle` `read_chunk()` method. which has the following constructor: 
+
+More information about the usage can be found in the source code. Sooner or later we'll publish a proper documentation! 
 
 ## Contributing
 
-If you would like to contribute by proposing a bug-fix or a new feature, feel free to open a discussion on GitHub.
+If you would like to contribute by proposing a bug-fix or a new feature, feel free to open a discussion on GitHub or to open an issue. You can even write an email!

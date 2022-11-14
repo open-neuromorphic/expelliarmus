@@ -3,7 +3,7 @@ import os
 import shutil
 import numpy as np
 from typing import Callable, Union, Optional
-from expelliarmus import Muggle
+from expelliarmus import Muggle, Wizard
 
 if os.sep == "/":  # Unix system.
     TMPDIR = pathlib.Path("/tmp")
@@ -13,49 +13,43 @@ else:
     raise "Something went wrong with os.sep."
 
 
-def test_cut_wrapper(
-    cut_fn: Callable[
-        [
-            Union[str, pathlib.Path],
-            Union[str, pathlib.Path],
-            Optional[int],
-            Optional[int],
-        ],
-        int,
-    ],
-    read_fn: Callable[[Union[str, pathlib.Path], Optional[int]], np.ndarray],
+def test_cut(
+    encoding: str, 
     fname_in: Union[str, pathlib.Path],
     fname_out: Union[str, pathlib.Path],
     new_duration: int = 20,
 ):
     fpath_in = pathlib.Path("tests", "sample-files", fname_in).resolve()
-    fpath_out = TMPDIR.joinpath(cut_fn.__name__)
+    fpath_out = TMPDIR.joinpath("read_"+encoding)
     fpath_out.mkdir(exist_ok=True)
     assert fpath_out.is_dir()
     fpath_out = fpath_out.joinpath(fname_out)
     fpath_out.touch()
     assert fpath_out.is_file()
     # Checking that the desired number of events has been encoded to the output file.
-    nevents_out = cut_fn(fpath_in, fpath_out, new_duration=new_duration)
-    arr = read_fn(fpath_out)
+    wizard_0 = Wizard(fpath_in, encoding=encoding)
+    nevents_out = wizard_0.cut(fpath_out, new_duration=new_duration)
+    wizard_1 = Wizard(fpath_out, encoding=encoding)
+    arr = wizard_1.read()
     assert len(arr) == nevents_out
     assert (arr["t"][-1] - arr["t"][0]) >= new_duration * 1000
     # Checking that the cut is consistent.
-    orig_arr = read_fn(fpath_in)
+    orig_arr = wizard_0.read()
     assert (orig_arr[:nevents_out] == arr[:]).all()
     # Cleaning up.
     shutil.rmtree(fpath_out.parent)
     return
 
 
-def test_read_wrapper(
-    read_fn: Callable[[Union[str, pathlib.Path], Optional[int]], np.ndarray],
+def test_read(
+    encoding: str,
     fname: Union[str, pathlib.Path],
     expected_nevents: int,
 ):
     fpath = pathlib.Path("tests", "sample-files", fname).resolve()
     assert fpath.is_file()
-    arr = read_fn(fpath)
+    wizard = Wizard(fpath, encoding=encoding)
+    arr = wizard.read()
     assert len(arr) == expected_nevents
     fpath = pathlib.Path("tests", "sample-files", fname.split(".")[0] + ".npy")
     ref_arr = np.load(fpath)
@@ -63,7 +57,7 @@ def test_read_wrapper(
     return
 
 
-def test_muggle(encoding: str, fname: Union[str, pathlib.Path]):
+def test_chunk_read(encoding: str, fname: Union[str, pathlib.Path]):
     fpath = pathlib.Path("tests", "sample-files", fname).resolve()
     assert fpath.is_file()
     muggler = Muggle(fpath, nevents_per_chunk=128, encoding=encoding)

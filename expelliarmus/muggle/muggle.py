@@ -1,11 +1,15 @@
 from typing import Union, Optional
 import pathlib
-from .muggle_wrapper import (
+from expelliarmus.muggle.muggle_wrapper import (
     read_dat_chunk,
     read_evt2_chunk,
     read_evt3_chunk,
 )
-from .clib_muggle import dat_chunk_wrap_t, evt2_chunk_wrap_t, evt3_chunk_wrap_t
+from expelliarmus.muggle.clib import (
+    dat_chunk_wrap_t,
+    evt2_chunk_wrap_t,
+    evt3_chunk_wrap_t,
+)
 
 _SUPPORTED_ENCODINGS = (
     "DAT",
@@ -22,6 +26,7 @@ class Muggle:
         - nevents_per_chunk: how many events per chunk you want.
         - encoding: the encoding of the input file, to be chosen among DAT, EVT2 and EVT3.
     """
+
     def __init__(
         self, fpath: Union[str, pathlib.Path], nevents_per_chunk: int, encoding: str
     ):

@@ -13,7 +13,7 @@ from ctypes import (
 import pathlib
 import os
 import re
-from .clib_expelliarmus import event_array_t, event_t
+from expelliarmus.wizard.clib import event_array_t, event_t
 
 # Searching for the shared library.
 this_file_path = pathlib.Path(__file__).resolve().parent.parent

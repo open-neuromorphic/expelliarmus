@@ -2,8 +2,7 @@ from ctypes import c_char_p, c_size_t, byref
 import pathlib
 import numpy as np
 from typing import Union, Optional, Callable
-from .expelliarmus_wrapper import DTYPE
-from .clib_muggle import (
+from expelliarmus.muggle.clib import (
     c_read_dat_chunk,
     c_read_evt2_chunk,
     c_read_evt3_chunk,
@@ -11,6 +10,8 @@ from .clib_muggle import (
     evt2_chunk_wrap_t,
     evt3_chunk_wrap_t,
 )
+
+DTYPE = np.dtype([("t", np.int64), ("x", np.int16), ("y", np.int16), ("p", np.uint8)])
 
 
 def c_chunk_wrapper(p_fn, fpath, buff_size, chunk_wrap, nevents_per_chunk, dtype):
