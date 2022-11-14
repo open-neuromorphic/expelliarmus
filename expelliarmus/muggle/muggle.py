@@ -11,29 +11,19 @@ from expelliarmus.muggle.clib import (
     evt3_chunk_wrap_t,
 )
 
-_SUPPORTED_ENCODINGS = (
-    "DAT",
-    "EVT2",
-    "EVT3",
-)
-
+from expelliarmus.utils import check_input_file, check_encoding
 
 class Muggle:
     """
     Muggle allows you to read in chunks from a file using the read_chunk() generator.
     Args:
-        - fpath: path to the input file.
-        - nevents_per_chunk: how many events per chunk you want.
         - encoding: the encoding of the input file, to be chosen among DAT, EVT2 and EVT3.
     """
 
     def __init__(
-        self, fpath: Union[str, pathlib.Path], nevents_per_chunk: int, encoding: str
+        self, encoding: str
     ):
-        self._check_errors(fpath, nevents_per_chunk, encoding)
-        self._nevents_chunk = nevents_per_chunk
-        self._fpath = fpath
-        self._encoding = encoding.upper()
+        self._encoding = check_encoding(encoding)
         self._read_fn = self._get_read_fn()
         self._chunk_wrap = self._get_chunk_wrap()
         return
@@ -57,41 +47,22 @@ class Muggle:
             read_fn = read_evt3_chunk
         return read_fn
 
-    def _check_errors(
-        self, fpath: Union[str, pathlib.Path], nevents_per_chunk: int, encoding: str
-    ):
-        assert isinstance(fpath, str) or isinstance(
-            fpath, pathlib.Path
-        ), "Error: the file path provided is not valid."
-        fpath = pathlib.Path(fpath).resolve()
-        assert fpath.is_file(), "Error: the input file provided does not exist."
-        assert (
-            isinstance(nevents_per_chunk, int) and nevents_per_chunk > 0
-        ), "Error: a positive number of events per chunk must be provided."
-        assert isinstance(encoding, str)
-        encoding = encoding.upper()
-        assert encoding in _SUPPORTED_ENCODINGS
-        if encoding == "DAT":
-            assert str(fpath).endswith(".dat")
-        elif encoding == "EVT2" or encoding == "EVT3":
-            assert str(fpath).endswith(".raw")
-        return
-
-    def reset(self):
-        self._chunk_wrap.bytes_read = 0
-        return
-
-    def read_chunk(self):
+    def read_chunk(self, fpath: Union[str, pathlib.Path], nevents_per_chunk: int):
         """
         The Muggle generator.
+        Args:
+            - fpath: path to the input file.
+            - nevents_per_chunk: _minimum_ number of events included in the chunk.
         Return:
             - arr: structured NumPy array of events.
         """
-        nevents_read = self._nevents_chunk
-        while nevents_read >= self._nevents_chunk:
+        assert nevents_per_chunk>0, "A positive number of events per chunk to be read has to be provided."
+        nevents_read = nevents_per_chunk
+        fpath = check_input_file(fpath, self._encoding)
+        while nevents_read >= nevents_per_chunk:
             self._chunk_wrap, arr = self._read_fn(
-                fpath=self._fpath,
-                nevents_per_chunk=self._nevents_chunk,
+                fpath=fpath,
+                nevents_per_chunk=nevents_per_chunk,
                 chunk_wrap=self._chunk_wrap,
             )
             if self._chunk_wrap.bytes_read == 0:
