@@ -13,6 +13,7 @@ from expelliarmus.muggle.clib import (
 
 from expelliarmus.utils import check_input_file, check_encoding
 
+
 class Muggle:
     """
     Muggle allows you to read in chunks from a file using the read_chunk() generator.
@@ -20,9 +21,7 @@ class Muggle:
         - encoding: the encoding of the input file, to be chosen among DAT, EVT2 and EVT3.
     """
 
-    def __init__(
-        self, encoding: str
-    ):
+    def __init__(self, encoding: str):
         self._encoding = check_encoding(encoding)
         self._read_fn = self._get_read_fn()
         self._chunk_wrap = self._get_chunk_wrap()
@@ -56,7 +55,9 @@ class Muggle:
         Return:
             - arr: structured NumPy array of events.
         """
-        assert nevents_per_chunk>0, "A positive number of events per chunk to be read has to be provided."
+        assert (
+            nevents_per_chunk > 0
+        ), "A positive number of events per chunk to be read has to be provided."
         nevents_read = nevents_per_chunk
         fpath = check_input_file(fpath, self._encoding)
         while nevents_read >= nevents_per_chunk:

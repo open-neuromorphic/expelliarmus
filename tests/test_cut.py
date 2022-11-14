@@ -3,9 +3,13 @@ from .utils import utils
 
 NEW_DURATION = 15
 
+
 def test_dat_cutting():
     utils.test_cut(
-            encoding="dat", fname_in="dat_sample.dat", fname_out="out_dat.dat", new_duration=NEW_DURATION,
+        encoding="dat",
+        fname_in="dat_sample.dat",
+        fname_out="out_dat.dat",
+        new_duration=NEW_DURATION,
     )
     return
 

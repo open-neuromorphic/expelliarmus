@@ -14,7 +14,7 @@ else:
 
 
 def test_cut(
-    encoding: str, 
+    encoding: str,
     fname_in: Union[str, pathlib.Path],
     fname_out: Union[str, pathlib.Path],
     new_duration: int = 20,
@@ -22,7 +22,7 @@ def test_cut(
     assert isinstance(fname_in, str) or isinstance(fname_in, pathlib.Path)
     assert isinstance(fname_out, str) or isinstance(fname_out, pathlib.Path)
     fpath_in = pathlib.Path("tests", "sample-files", fname_in).resolve()
-    fpath_out = TMPDIR.joinpath("test_cut"+encoding)
+    fpath_out = TMPDIR.joinpath("test_cut" + encoding)
     fpath_out.mkdir(exist_ok=True)
     assert fpath_out.is_dir()
     fpath_out = fpath_out.joinpath(fname_out)
@@ -53,7 +53,7 @@ def test_read(
     wizard = Wizard(encoding=encoding)
     arr = wizard.read(fpath)
     assert len(arr) == expected_nevents
-    assert arr["p"].min()==0 and arr["p"].max()==1
+    assert arr["p"].min() == 0 and arr["p"].max() == 1
     assert (np.sort(arr["t"]) == arr["t"]).all()
     fpath = pathlib.Path("tests", "sample-files", fname.split(".")[0] + ".npy")
     ref_arr = np.load(fpath)
@@ -61,7 +61,9 @@ def test_read(
     return
 
 
-def test_chunk_read(encoding: str, fname: Union[str, pathlib.Path], nevents_per_chunk: int):
+def test_chunk_read(
+    encoding: str, fname: Union[str, pathlib.Path], nevents_per_chunk: int
+):
     assert isinstance(fname, str) or isinstance(fname, pathlib.Path)
     fpath = pathlib.Path("tests", "sample-files", fname).resolve()
     assert fpath.is_file()

@@ -6,11 +6,17 @@ from expelliarmus.wizard.wizard_wrapper import (
     read_dat,
     read_evt2,
     read_evt3,
-    cut_dat, 
+    cut_dat,
     cut_evt2,
     cut_evt3,
 )
-from expelliarmus.utils import check_file_encoding, check_encoding, check_input_file, check_output_file
+from expelliarmus.utils import (
+    check_file_encoding,
+    check_encoding,
+    check_input_file,
+    check_output_file,
+)
+
 
 class Wizard:
     """
@@ -25,7 +31,9 @@ class Wizard:
         self,
         encoding: str,
         buff_size: Optional[int] = 4096,
-        dtype: Optional[np.dtype] = np.dtype([("t", np.int64), ("x", np.int16), ("y", np.int16), ("p", np.uint8)]),
+        dtype: Optional[np.dtype] = np.dtype(
+            [("t", np.int64), ("x", np.int16), ("y", np.int16), ("p", np.uint8)]
+        ),
     ):
         self._check_errors(buff_size, dtype)
         self._encoding = check_encoding(encoding)
@@ -54,15 +62,24 @@ class Wizard:
         return cut_fn
 
     def _check_errors(
-            self, buff_size: int, dtype: np.dtype,
+        self,
+        buff_size: int,
+        dtype: np.dtype,
     ):
         assert (
             isinstance(buff_size, int) and buff_size > 0
         ), "Error: the buffer size for the binary read has to be larger than 0."
-        assert isinstance(dtype, np.dtype) and len(dtype) == 4, "The dtype provided is not valid. It should be [('t', type), ('x', type), ('y', type), ('p', type)] in any order."
+        assert (
+            isinstance(dtype, np.dtype) and len(dtype) == 4
+        ), "The dtype provided is not valid. It should be [('t', type), ('x', type), ('y', type), ('p', type)] in any order."
         return
 
-    def cut(self, fpath_in: Union[str, pathlib.Path], fpath_out: Union[str, pathlib.Path], new_duration: int):
+    def cut(
+        self,
+        fpath_in: Union[str, pathlib.Path],
+        fpath_out: Union[str, pathlib.Path],
+        new_duration: int,
+    ):
         """
         Cuts the duration of the recording contained in 'fpath_in' to 'new_duration' and saves the result to 'fpath_out'.
         Args:
@@ -74,14 +91,21 @@ class Wizard:
         """
         fpath_in = check_input_file(fpath_in, self._encoding)
         fpath_out = check_output_file(fpath_out, self._encoding)
-        assert isinstance(new_duration, int) and new_duration > 0, "A positive duration, expressed in milliseconds, needs to be provided."
-        nevents = self._cut_fn(fpath_in=fpath_in, fpath_out=fpath_out, new_duration=new_duration, buff_size=self._buff_size)
+        assert (
+            isinstance(new_duration, int) and new_duration > 0
+        ), "A positive duration, expressed in milliseconds, needs to be provided."
+        nevents = self._cut_fn(
+            fpath_in=fpath_in,
+            fpath_out=fpath_out,
+            new_duration=new_duration,
+            buff_size=self._buff_size,
+        )
         return nevents
 
     def read(self, fpath: Union[str, pathlib.Path]):
         """
         Reads a binary file to a structured NumPy of events.
-        Args: 
+        Args:
             - fpath: path to the input file.
         Returns:
             - arr: the structured NumPy array.

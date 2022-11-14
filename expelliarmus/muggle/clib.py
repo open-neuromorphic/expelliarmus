@@ -18,7 +18,7 @@ from expelliarmus.utils import _ROOT_PATH
 
 # Searching for the shared library.
 lib_re = r"^expelliarmus\..*\.(so|pyd)$"
-for root, dirs, files in os.walk(_ROOT_PATH)
+for root, dirs, files in os.walk(_ROOT_PATH):
     for f in files:
         if re.match(lib_re, f):
             lib_path = pathlib.Path(os.path.join(root, f))

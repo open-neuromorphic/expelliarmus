@@ -2,7 +2,7 @@ from .utils import utils
 
 
 def test_dat_decoding():
-    utils.test_read(encoding="dat", fname="dat_sample.dat",  expected_nevents=4407)
+    utils.test_read(encoding="dat", fname="dat_sample.dat", expected_nevents=4407)
     return
 
 
