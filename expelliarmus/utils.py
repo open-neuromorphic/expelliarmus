@@ -1,4 +1,5 @@
 import pathlib
+import numpy as np
 
 _ROOT_PATH = pathlib.Path(__file__).resolve().parent.parent
 
@@ -7,6 +8,11 @@ _SUPPORTED_ENCODINGS = (
     "EVT2",
     "EVT3",
 )
+
+_DEFAULT_DTYPE = np.dtype(
+    [("t", np.int64), ("x", np.int16), ("y", np.int16), ("p", np.uint8)]
+)
+_DEFAULT_BUFF_SIZE = 4096
 
 
 def check_file_encoding(fpath, encoding):

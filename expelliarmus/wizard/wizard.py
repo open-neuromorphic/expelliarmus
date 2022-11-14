@@ -15,6 +15,8 @@ from expelliarmus.utils import (
     check_encoding,
     check_input_file,
     check_output_file,
+    _DEFAULT_DTYPE,
+    _DEFAULT_BUFF_SIZE,
 )
 
 
@@ -30,10 +32,8 @@ class Wizard:
     def __init__(
         self,
         encoding: str,
-        buff_size: Optional[int] = 4096,
-        dtype: Optional[np.dtype] = np.dtype(
-            [("t", np.int64), ("x", np.int16), ("y", np.int16), ("p", np.uint8)]
-        ),
+        buff_size: Optional[int] = _DEFAULT_BUFF_SIZE,
+        dtype: Optional[np.dtype] = _DEFAULT_DTYPE,
     ):
         self._check_errors(buff_size, dtype)
         self._encoding = check_encoding(encoding)

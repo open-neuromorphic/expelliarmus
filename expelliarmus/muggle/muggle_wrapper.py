@@ -11,8 +11,6 @@ from expelliarmus.muggle.clib import (
     evt3_chunk_wrap_t,
 )
 
-DTYPE = np.dtype([("t", np.int64), ("x", np.int16), ("y", np.int16), ("p", np.uint8)])
-
 
 def c_chunk_wrapper(p_fn, fpath, buff_size, chunk_wrap, nevents_per_chunk, dtype):
     assert isinstance(fpath, str) or isinstance(fpath, pathlib.Path)
@@ -60,8 +58,8 @@ def read_dat_chunk(
     fpath: Union[str, pathlib.Path],
     nevents_per_chunk: int,
     chunk_wrap: Union[dat_chunk_wrap_t, evt2_chunk_wrap_t, evt3_chunk_wrap_t],
-    buff_size: Optional[int] = 4096,
-    dtype: Optional[np.dtype] = DTYPE,
+    buff_size: int,
+    dtype: np.dtype,
 ):
     assert str(fpath).endswith(
         ".dat"
@@ -80,8 +78,8 @@ def read_evt2_chunk(
     fpath: Union[str, pathlib.Path],
     nevents_per_chunk: int,
     chunk_wrap: Union[dat_chunk_wrap_t, evt2_chunk_wrap_t, evt3_chunk_wrap_t],
-    buff_size: Optional[int] = 4096,
-    dtype: Optional[np.dtype] = DTYPE,
+    buff_size: int,
+    dtype: np.dtype,
 ):
     assert str(fpath).endswith(
         ".raw"
@@ -100,8 +98,8 @@ def read_evt3_chunk(
     fpath: Union[str, pathlib.Path],
     nevents_per_chunk: int,
     chunk_wrap: Union[dat_chunk_wrap_t, evt2_chunk_wrap_t, evt3_chunk_wrap_t],
-    buff_size: Optional[int] = 4096,
-    dtype: Optional[np.dtype] = DTYPE,
+    buff_size: int,
+    dtype: np.dtype,
 ):
     assert str(fpath).endswith(
         ".raw"
