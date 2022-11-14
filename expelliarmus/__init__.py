@@ -1,2 +1,2 @@
-from .wizard.wizard import Wizard
-from .muggle.muggle import Muggle
+from expelliarmus.wizard.wizard import Wizard
+from expelliarmus.muggle.muggle import Muggle
