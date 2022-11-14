@@ -1,5 +1,5 @@
 import sys
-from utils import _ROOT_PATH 
+from .utils import _ROOT_PATH 
 sys.path.append(str(_ROOT_PATH))
 
 from expelliarmus.wizard.wizard import Wizard
