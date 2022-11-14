@@ -14,11 +14,11 @@ import pathlib
 import os
 import re
 from expelliarmus.wizard.clib import event_array_t, event_t
+from expelliarmus.utils import _ROOT_PATH
 
 # Searching for the shared library.
-this_file_path = pathlib.Path(__file__).resolve().parent.parent.parent
 lib_re = r"^expelliarmus\..*\.(so|pyd)$"
-for root, dirs, files in os.walk(this_file_path):
+for root, dirs, files in os.walk(_ROOT_PATH)
     for f in files:
         if re.match(lib_re, f):
             lib_path = pathlib.Path(os.path.join(root, f))

@@ -1,5 +1,7 @@
 import pathlib
 
+_ROOT_PATH = pathlib.Path(__file__).resolve().parent
+
 _SUPPORTED_ENCODINGS = (
     "DAT",
     "EVT2",
