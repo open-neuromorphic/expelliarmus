@@ -13,7 +13,7 @@ import os
 import re
 
 # Searching for the shared library.
-this_file_path = pathlib.Path(__file__).resolve().parent.parent
+this_file_path = pathlib.Path(__file__).resolve().parent.parent.parent
 lib_re = r"^expelliarmus\..*\.(so|pyd)$"
 for root, dirs, files in os.walk(this_file_path):
     for f in files:
