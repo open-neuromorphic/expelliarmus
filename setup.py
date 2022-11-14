@@ -37,7 +37,8 @@ setup(
     version="1.0.12",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    py_modules=["expelliarmus.wizard.wizard", "expelliarmus.muggle.muggle"],
+    packages = ["expelliarmus", "expelliarmus.muggle", "expelliarmus.wizard"],
+    # py_modules=["expelliarmus.wizard.wizard", "expelliarmus.muggle.muggle"],
     ext_modules=[
         CTypesExtension(
             "expelliarmus",
