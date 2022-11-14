@@ -1,4 +1,5 @@
-# Expelliarmus 
+![expelliarmus](Logo.png)
+
 A Python/C library for decoding DVS binary data formats to NumPy structured arrays.
 
 ## Supported formats
