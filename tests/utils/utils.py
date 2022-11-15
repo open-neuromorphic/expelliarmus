@@ -12,12 +12,32 @@ elif os.sep == "\\":  # Findus system.
 else:
     raise "Something went wrong with os.sep."
 
+DTYPES = (
+        np.dtype([("t", np.int64), ("x", np.int16), ("y", np.int16), ("p", bool)]),
+        np.dtype([("x", np.int16), ("y", np.int16), ("t", np.int64), ("p", bool)]),
+        np.dtype([("p", bool), ("t", np.int64), ("y", np.int16), ("x", np.int16)]),
+        np.dtype([("x", np.int32), ("t", np.int64), ("y", np.int32), ("p", bool)]),
+        np.dtype([("t", np.int64), ("x", np.int16), ("y", np.int32), ("p", bool)]),
+        )
+
+def _test_fields(ref_arr: np.ndarray, arr: np.ndarray, sensor_size: tuple):
+    assert arr["p"].min() == 0 and arr["p"].max() == 1
+    assert arr["x"].min() >= 0 and arr["x"].max() < sensor_size[0], f"Error: {arr['x'].min()} <= x < {arr['x'].max()} (max {sensor_size[0]})."
+    assert arr["y"].min() >= 0 and arr["y"].max() < sensor_size[1], f"Error: {arr['y'].min()} <= y < {arr['y'].max()} (max {sensor_size[1]})."
+    assert arr["t"].min() >= 0
+    assert (np.sort(arr["t"]) == arr["t"]).all()
+    assert (ref_arr["t"] == arr["t"]).all() 
+    assert (ref_arr["x"] == arr["x"]).all() 
+    assert (ref_arr["y"] == arr["y"]).all() 
+    assert (ref_arr["p"] == arr["p"]).all()
+    return
 
 def test_cut(
     encoding: str,
     fname_in: Union[str, pathlib.Path],
     fname_out: Union[str, pathlib.Path],
     new_duration: int = 20,
+    sensor_size = (640, 480), 
 ):
     assert isinstance(fname_in, str) or isinstance(fname_in, pathlib.Path)
     assert isinstance(fname_out, str) or isinstance(fname_out, pathlib.Path)
@@ -29,14 +49,16 @@ def test_cut(
     fpath_out.touch()
     assert fpath_out.is_file()
     # Checking that the desired number of events has been encoded to the output file.
-    wizard = Wizard(encoding=encoding)
-    nevents_out = wizard.cut(fpath_in, fpath_out, new_duration=new_duration)
-    arr = wizard.read(fpath_out)
-    assert len(arr) == nevents_out
-    assert (arr["t"][-1] - arr["t"][0]) >= new_duration * 1000
-    # Checking that the cut is consistent.
-    orig_arr = wizard.read(fpath_in)
-    assert (orig_arr[:nevents_out] == arr[:]).all()
+    ref_wizard = Wizard(encoding=encoding)
+    ref_arr = ref_wizard.read(fpath_in)
+    for dtype in DTYPES:
+        wizard = Wizard(encoding=encoding, dtype=dtype)
+        nevents_out = wizard.cut(fpath_in, fpath_out, new_duration=new_duration)
+        arr = wizard.read(fpath_out)
+        assert len(arr) == nevents_out
+        assert (arr["t"][-1] - arr["t"][0]) >= new_duration * 1000
+        # Checking that the cut is consistent.
+        _test_fields(ref_arr[:nevents_out], arr, sensor_size)
     # Cleaning up.
     shutil.rmtree(fpath_out.parent)
     return
@@ -48,29 +70,17 @@ def test_read(
     expected_nevents: int,
     sensor_size = (640, 380),
 ):
-    dtypes = (
-        np.dtype([("t", np.int64), ("x", np.int16), ("y", np.int16), ("p", bool)]),
-        np.dtype([("x", np.int16), ("y", np.int16), ("t", np.int64), ("p", bool)]),
-        np.dtype([("p", bool), ("t", np.int64), ("y", np.int16), ("x", np.int16)]),
-        np.dtype([("x", np.int32), ("t", np.int64), ("y", np.int32), ("p", bool)]),
-        np.dtype([("t", np.int64), ("x", np.int16), ("y", np.int32), ("p", bool)]),
-        )
     assert isinstance(fname, str) or isinstance(fname, pathlib.Path)
     fpath = pathlib.Path("tests", "sample-files", fname).resolve()
     assert fpath.is_file()
     fpath_ref = pathlib.Path("tests", "sample-files", fname.split(".")[0] + ".npy")
     ref_arr = np.load(fpath_ref)
-    for dtype in dtypes:
+    for dtype in DTYPES:
         wizard = Wizard(encoding=encoding, dtype=dtype)
         arr = wizard.read(fpath)
         assert arr.dtype == dtype
         assert len(arr) == expected_nevents
-        assert arr["p"].min() == 0 and arr["p"].max() == 1
-        assert arr["x"].min() >= 0 and arr["x"].max() < sensor_size[0], f"Error: {arr['x'].min()} <= x < {arr['x'].max()} (max {sensor_size[0]})."
-        assert arr["y"].min() >= 0 and arr["y"].max() < sensor_size[1], f"Error: {arr['y'].min()} <= y < {arr['y'].max()} (max {sensor_size[1]})."
-        assert arr["t"].min() >= 0
-        assert (np.sort(arr["t"]) == arr["t"]).all()
-        assert (ref_arr["t"] == arr["t"]).all() and (ref_arr["x"] == arr["x"]).all() and (ref_arr["y"] == arr["y"]).all() and (ref_arr["p"] == arr["p"]).all()
+        _test_fields(ref_arr, arr, sensor_size)
     return 
      
 
@@ -83,26 +93,11 @@ def test_chunk_read(
     fpath_ref = pathlib.Path("tests", "sample-files", fname.split(".")[0] + ".npy")
     ref_arr = np.load(fpath_ref)
     nevents = len(ref_arr)
-    dtypes = (
-        np.dtype([("t", np.int64), ("x", np.int16), ("y", np.int16), ("p", bool)]),
-        np.dtype([("x", np.int16), ("y", np.int16), ("t", np.int64), ("p", bool)]),
-        np.dtype([("p", bool), ("t", np.int64), ("y", np.int16), ("x", np.int16)]),
-        np.dtype([("x", np.int32), ("t", np.int64), ("y", np.int32), ("p", bool)]),
-        np.dtype([("t", np.int64), ("x", np.int16), ("y", np.int32), ("p", bool)]),
-        )
-    for dtype in dtypes:
+    for dtype in DTYPES:
         muggler = Muggle(encoding=encoding, dtype=dtype)
         chunk_offset = 0
         for chunk_arr in muggler.read_chunk(fpath, nevents_per_chunk):
-            assert chunk_arr["p"].min() == 0 and chunk_arr["p"].max() == 1
-            assert chunk_arr["x"].min() >= 0 and chunk_arr["x"].max() < sensor_size[0], f"Error: {chunk_arr['x'].min()} <= x < {chunk_arr['x'].max()} (max {sensor_size[0]})."
-            assert chunk_arr["y"].min() >= 0 and chunk_arr["y"].max() < sensor_size[1], f"Error: {chunk_arr['y'].min()} <= y < {chunk_arr['y'].max()} (max {sensor_size[1]})."
-            assert chunk_arr["t"].min() >= 0
-            assert (np.sort(chunk_arr["t"]) == chunk_arr["t"]).all()
             chunk_width = len(chunk_arr)
-            assert (ref_arr["t"][chunk_offset : min(chunk_offset + chunk_width, nevents)] == chunk_arr["t"]).all() 
-            assert (ref_arr["x"][chunk_offset : min(chunk_offset + chunk_width, nevents)] == chunk_arr["x"]).all()
-            assert (ref_arr["y"][chunk_offset : min(chunk_offset + chunk_width, nevents)] == chunk_arr["y"]).all() 
-            assert (ref_arr["p"][chunk_offset : min(chunk_offset + chunk_width, nevents)] == chunk_arr["p"]).all()
+            _test_fields(ref_arr[chunk_offset : min(chunk_offset + chunk_width, nevents)], chunk_arr, sensor_size)
             chunk_offset += chunk_width
     return
