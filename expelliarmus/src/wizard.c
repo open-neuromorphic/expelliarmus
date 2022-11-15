@@ -1,4 +1,4 @@
-#include "expelliarmus.h"
+#include "wizard.h"
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>

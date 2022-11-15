@@ -5,7 +5,7 @@
 // Thanks to this lines, also Windows DLL works.
 #include <stdint.h>
 #include <stdlib.h>
-#include "expelliarmus.h"
+#include "wizard.h"
 
 typedef struct dat_chunk_wrap_s {
 	event_array_t arr; 

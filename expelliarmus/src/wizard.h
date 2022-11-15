@@ -1,5 +1,5 @@
-#ifndef EXPELLIARMUS_H
-#define EXPELLIARMUS_H
+#ifndef WIZARD_H
+#define WIZARD_H
 
 #include <stdio.h> 
 #include <stdint.h>

@@ -43,7 +43,7 @@ setup(
         CTypesExtension(
             "expelliarmus",
             [
-                str(pathlib.Path("expelliarmus", "src", "expelliarmus.c")),
+                str(pathlib.Path("expelliarmus", "src", "wizard.c")),
                 str(pathlib.Path("expelliarmus", "src", "muggle.c")),
             ],
         ),
