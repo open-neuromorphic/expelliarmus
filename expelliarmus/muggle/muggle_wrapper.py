@@ -33,7 +33,7 @@ def c_chunk_wrapper(p_fn, fpath, buff_size, chunk_wrap, nevents_per_chunk, dtype
     elif p_fn == read_evt3_chunk:
         c_fn = c_read_evt3_chunk
     else:
-        raise "Function not defined."
+        raise Exception("Function not defined.")
     c_fn(c_fpath, c_buff_size, byref(chunk_wrap), c_nevents_per_chunk)
     if chunk_wrap.bytes_read > 0:
         np_arr = np.empty((chunk_wrap.arr.dim,), dtype=dtype)

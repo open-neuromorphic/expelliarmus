@@ -23,7 +23,7 @@ def c_read_wrapper(p_fn, fpath, buff_size, dtype):
     elif p_fn == read_evt3:
         c_arr = c_read_evt3(c_fpath, c_buff_size)
     else:
-        raise "Function not defined."
+        raise Exception("Function not defined.")
     np_arr = np.empty((c_arr.dim,), dtype=dtype)
     np_arr["t"] = np.ctypeslib.as_array(c_arr.t_arr, shape=(c_arr.dim,))
     np_arr["x"] = np.ctypeslib.as_array(c_arr.x_arr, shape=(c_arr.dim,))
@@ -44,7 +44,7 @@ def c_cut_wrapper(p_fn, fpath_in, fpath_out, new_duration, buff_size):
     elif p_fn == cut_evt3:
         c_dim = c_cut_evt3(c_fpath_in, c_fpath_out, c_new_duration, c_buff_size)
     else:
-        raise "Function not defined."
+        raise Exception("Function not defined.")
     return c_dim
 
 
