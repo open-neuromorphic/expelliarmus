@@ -55,11 +55,37 @@ def test_read(
     assert len(arr) == expected_nevents
     assert arr["p"].min() == 0 and arr["p"].max() == 1
     assert (np.sort(arr["t"]) == arr["t"]).all()
-    fpath = pathlib.Path("tests", "sample-files", fname.split(".")[0] + ".npy")
-    ref_arr = np.load(fpath)
+    fpath_ref = pathlib.Path("tests", "sample-files", fname.split(".")[0] + ".npy")
+    ref_arr = np.load(fpath_ref)
     assert (ref_arr == arr).all()
     return
 
+def test_multiple_dtypes(
+    encoding: str, 
+    fname: Union[str, pathlib.Path],
+    expected_nevents: int,
+):
+    dtypes = (
+        np.dtype([("t", np.int64), ("x", np.int16), ("y", np.int16), ("p", bool)]),
+        np.dtype([("x", np.int16), ("y", np.int16), ("t", np.int64), ("p", bool)]),
+        np.dtype([("p", bool), ("t", np.int64), ("y", np.int16), ("x", np.int16)]),
+        np.dtype([("x", np.int32), ("t", np.int64), ("y", np.int32), ("p", bool)]),
+        np.dtype([("t", np.int64), ("x", np.int16), ("y", np.int32), ("p", bool)]),
+        )
+    assert isinstance(fname, str) or isinstance(fname, pathlib.Path)
+    fpath = pathlib.Path("tests", "sample-files", fname).resolve()
+    assert fpath.is_file()
+    fpath_ref = pathlib.Path("tests", "sample-files", fname.split(".")[0] + ".npy")
+    ref_arr = np.load(fpath_ref)
+    for dtype in dtypes:
+        wizard = Wizard(encoding=encoding, dtype=dtype)
+        arr = wizard.read(fpath)
+        assert len(arr) == expected_nevents
+        assert arr["p"].min() == 0 and arr["p"].max() == 1
+        assert (np.sort(arr["t"]) == arr["t"]).all()
+        assert (ref_arr["t"] == arr["t"]).all() and (ref_arr["x"] == arr["x"]).all() and (ref_arr["y"] == arr["y"]).all() and (ref_arr["p"] == arr["p"]).all()
+    return 
+     
 
 def test_chunk_read(
     encoding: str, fname: Union[str, pathlib.Path], nevents_per_chunk: int
