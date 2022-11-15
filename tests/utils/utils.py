@@ -68,7 +68,7 @@ def test_read(
     encoding: str, 
     fname: Union[str, pathlib.Path],
     expected_nevents: int,
-    sensor_size = (640, 380),
+    sensor_size = (640, 480),
 ):
     assert isinstance(fname, str) or isinstance(fname, pathlib.Path)
     fpath = pathlib.Path("tests", "sample-files", fname).resolve()
