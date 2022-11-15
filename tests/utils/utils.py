@@ -54,6 +54,8 @@ def test_read(
     arr = wizard.read(fpath)
     assert len(arr) == expected_nevents
     assert arr["p"].min() == 0 and arr["p"].max() == 1
+    assert arr["x"].min() >= 0 and arr["x"].max() < 1280
+    assert arr["y"].min() >= 0 and arr["y"].max() < 720
     assert (np.sort(arr["t"]) == arr["t"]).all()
     fpath_ref = pathlib.Path("tests", "sample-files", fname.split(".")[0] + ".npy")
     ref_arr = np.load(fpath_ref)
@@ -82,6 +84,8 @@ def test_multiple_dtypes(
         arr = wizard.read(fpath)
         assert len(arr) == expected_nevents
         assert arr["p"].min() == 0 and arr["p"].max() == 1
+        assert arr["x"].min() >= 0 and arr["x"].max() < 1280
+        assert arr["y"].min() >= 0 and arr["y"].max() < 720
         assert (np.sort(arr["t"]) == arr["t"]).all()
         assert (ref_arr["t"] == arr["t"]).all() and (ref_arr["x"] == arr["x"]).all() and (ref_arr["y"] == arr["y"]).all() and (ref_arr["p"] == arr["p"]).all()
     return 
