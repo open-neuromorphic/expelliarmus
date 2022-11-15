@@ -46,6 +46,7 @@ def test_read(
     encoding: str,
     fname: Union[str, pathlib.Path],
     expected_nevents: int,
+    sensor_size = (640, 380),
 ):
     assert isinstance(fname, str) or isinstance(fname, pathlib.Path)
     fpath = pathlib.Path("tests", "sample-files", fname).resolve()
@@ -54,8 +55,8 @@ def test_read(
     arr = wizard.read(fpath)
     assert len(arr) == expected_nevents
     assert arr["p"].min() == 0 and arr["p"].max() == 1
-    assert arr["x"].min() >= 0 and arr["x"].max() < 1280
-    assert arr["y"].min() >= 0 and arr["y"].max() < 720
+    assert arr["x"].min() >= 0 and arr["x"].max() < sensor_size[0], f"Error: {arr['x'].min()} <= x < {arr['x'].max()} (max {sensor_size[0]})."
+    assert arr["y"].min() >= 0 and arr["y"].max() < sensor_size[1], f"Error: {arr['y'].min()} <= y < {arr['y'].max()} (max {sensor_size[1]})."
     assert (np.sort(arr["t"]) == arr["t"]).all()
     fpath_ref = pathlib.Path("tests", "sample-files", fname.split(".")[0] + ".npy")
     ref_arr = np.load(fpath_ref)
@@ -66,6 +67,7 @@ def test_multiple_dtypes(
     encoding: str, 
     fname: Union[str, pathlib.Path],
     expected_nevents: int,
+    sensor_size = (640, 380),
 ):
     dtypes = (
         np.dtype([("t", np.int64), ("x", np.int16), ("y", np.int16), ("p", bool)]),
@@ -84,8 +86,8 @@ def test_multiple_dtypes(
         arr = wizard.read(fpath)
         assert len(arr) == expected_nevents
         assert arr["p"].min() == 0 and arr["p"].max() == 1
-        assert arr["x"].min() >= 0 and arr["x"].max() < 1280
-        assert arr["y"].min() >= 0 and arr["y"].max() < 720
+        assert arr["x"].min() >= 0 and arr["x"].max() < sensor_size[0], f"Error: {arr['x'].min()} <= x < {arr['x'].max()} (max {sensor_size[0]})."
+        assert arr["y"].min() >= 0 and arr["y"].max() < sensor_size[1], f"Error: {arr['y'].min()} <= y < {arr['y'].max()} (max {sensor_size[1]})."
         assert (np.sort(arr["t"]) == arr["t"]).all()
         assert (ref_arr["t"] == arr["t"]).all() and (ref_arr["x"] == arr["x"]).all() and (ref_arr["y"] == arr["y"]).all() and (ref_arr["p"] == arr["p"]).all()
     return 
