@@ -12,13 +12,20 @@ elif os.sep == "\\":  # Findus system.
 else:
     raise "Something went wrong with os.sep."
 
-DTYPES = (
-        np.dtype([("t", np.int64), ("x", np.int16), ("y", np.int16), ("p", np.uint8)]),
-        np.dtype([("x", np.int16), ("y", np.int16), ("t", np.int64), ("p", np.uint8)]),
-        np.dtype([("p", np.uint8), ("t", np.int64), ("y", np.int16), ("x", np.int16)]),
-        np.dtype([("x", np.int32), ("t", np.int64), ("y", np.int32), ("p", np.uint8)]),
-        np.dtype([("t", np.int64), ("x", np.int16), ("y", np.int32), ("p", np.uint8)]),
-        )
+COORDS = ['t', 'x', 'y', 'p']
+DATA_TYPES = [(np.int64, np.uint64, np.int64, np.uint64, np.int64, np.uint64), 
+              (np.int32, np.uint16, np.int16, np.uint32, np.int64, np.uint64),
+              (np.int32, np.uint16, np.int16, np.uint32, np.int64, np.uint64),
+              (bool, np.uint8, np.uint16, np.uint16, np.uint64, np.int8),
+              ]
+
+DTYPES = []
+for coord_i in range(len(COORDS)):
+    COORDS = COORDS[1:] + COORDS[:1]
+    DATA_TYPES = DATA_TYPES[1:] + DATA_TYPES[:1]
+    for data_types in zip(*DATA_TYPES):
+        tmp = [(COORDS[i], data_type) for i, data_type in enumerate(data_types)]
+        DTYPES.append(np.dtype(tmp))
 
 CHUNK_SIZES = tuple([2**i for i in range(7, 16+1)])
 
@@ -92,8 +99,8 @@ def test_chunk_read(
     assert isinstance(fname, str) or isinstance(fname, pathlib.Path)
     fpath = pathlib.Path("tests", "sample-files", fname).resolve()
     assert fpath.is_file()
-    fpath_ref = pathlib.Path("tests", "sample-files", fname.split(".")[0] + ".npy")
-    ref_arr = np.load(fpath_ref)
+    ref_fpath= pathlib.Path("tests", "sample-files", fname.split(".")[0] + ".npy")
+    ref_arr = np.load(ref_fpath)
     tot_nevents = len(ref_arr)
     for chunk_size in CHUNK_SIZES:
         for dtype in DTYPES:
@@ -103,4 +110,4 @@ def test_chunk_read(
                 nevents = len(chunk_arr)
                 _test_fields(ref_arr[chunk_offset : min(chunk_offset + nevents, tot_nevents)], chunk_arr, sensor_size)
                 chunk_offset += nevents
-        return
+    return
