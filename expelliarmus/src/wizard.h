@@ -32,6 +32,7 @@
 // Thank you http://wolfprojects.altervista.org/articles/dll-in-c-for-python/ :)
 // Thanks to this lines, also Windows DLL works.
 #define DEFAULT_ARRAY_DIM 8192
+
 #ifdef _WIN32
 #define DLLEXPORT __declspec(dllexport)
 #else 
@@ -51,6 +52,11 @@
 		exit(EXIT_FAILURE);\
 	}\
 }
+
+#define CHECK_TIMESTAMP_MONOTONICITY(timestamp, prev_timestamp){\
+	if (((uint64_t)timestamp) < ((uint64_t)prev_timestamp))\
+		fprintf(stderr, "WARNING: the timestamps are not monotonic. Current: %lu; previous:%lu.\n", ((uint64_t)timestamp), ((uint64_t)prev_timestamp));\
+}	
 
 typedef int64_t timestamp_t;  
 typedef int16_t pixel_t; 

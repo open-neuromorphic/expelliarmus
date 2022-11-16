@@ -48,21 +48,22 @@ DLLEXPORT void read_dat_chunk(const char* fpath, size_t buff_size, dat_chunk_wra
 	CHECK_ALLOCATION(arr.p_arr); 
 	
 	// Buffer to read binary data.
-	uint32_t* buff = (uint32_t*) malloc(2*buff_size * sizeof(uint32_t));
+	uint32_t* buff = (uint32_t*) malloc(buff_size * sizeof(uint32_t));
 	CHECK_ALLOCATION(buff); 
 	
 	// Temporary event data structure.
 	event_t event_tmp; event_tmp.x=0; event_tmp.y=0; event_tmp.t=0; event_tmp.p=0;  
 	size_t values_read=0, j=0, i=0; 
 	const uint32_t mask_4b=0xFU, mask_14b=0x3FFFU;
-	uint64_t time_ovfs=0, time_val=0; 
-	while (i < nevents_per_chunk && (values_read = fread(buff, sizeof(*buff), 2*buff_size, fp)) > 0){
+	uint64_t time_ovfs=0, timestamp=0; 
+	while (i < nevents_per_chunk && (values_read = fread(buff, sizeof(*buff), buff_size, fp)) > 0){
 		for (j=0; i < nevents_per_chunk && j<values_read; j+=2){
 			// Event timestamp.
-			if (((uint64_t)(buff[j])) < time_val) // Overflow.
+			if (((uint64_t)(buff[j])) < timestamp) // Overflow.
 				time_ovfs++; 
-			time_val = (uint64_t) buff[j]; 
-			event_tmp.t = (timestamp_t)((time_ovfs<<32) | time_val); 
+			timestamp = (time_ovfs<<32) | ((uint64_t)buff[j]);
+			CHECK_TIMESTAMP_MONOTONICITY(timestamp, event_tmp.t); 
+			event_tmp.t = (timestamp_t) timestamp; 
 			// Event polarity.
 			event_tmp.p = (polarity_t) ((buff[j+1] >> 28) & mask_4b); 
 			// Event y address.
@@ -155,7 +156,7 @@ DLLEXPORT void read_evt2_chunk(const char* fpath, size_t buff_size, evt2_chunk_w
 	uint8_t event_type; 
 	size_t i=0, j=0, values_read=0; 
 	const uint32_t mask_6b=0x3FU, mask_11b=0x7FFU, mask_28b=0xFFFFFFFU;
-	uint32_t time_low=0; 
+	uint64_t time_low=0, timestamp=0; 
 	while (i < nevents_per_chunk && (values_read = fread(buff, sizeof(*buff), buff_size, fp)) > 0){
 		for (j=0; i < nevents_per_chunk && j<values_read; j++){
 			// Getting the event type. 
@@ -165,8 +166,10 @@ DLLEXPORT void read_evt2_chunk(const char* fpath, size_t buff_size, evt2_chunk_w
 				case EVT2_CD_OFF:
 					event_tmp.p = (polarity_t) event_type; 
 					// Getting 6LSBs of the time stamp. 
-					time_low = ((uint32_t)((buff[j] >> 22) & mask_6b)); 
-					event_tmp.t = (timestamp_t)((chunk_wrap->time_high << 6) | time_low); 
+					time_low = ((uint64_t)((buff[j] >> 22) & mask_6b)); 
+					timestamp = (chunk_wrap->time_high << 6) | time_low;
+					CHECK_TIMESTAMP_MONOTONICITY(timestamp, event_tmp.t);
+					event_tmp.t = (timestamp_t) timestamp; 
 					// Getting event addresses.
 					event_tmp.x = (pixel_t) ((buff[j] >> 11) & mask_11b); 
 					event_tmp.y = (pixel_t) (buff[j] & mask_11b); 
@@ -175,7 +178,7 @@ DLLEXPORT void read_evt2_chunk(const char* fpath, size_t buff_size, evt2_chunk_w
 
 				case EVT2_TIME_HIGH:
 					// Adding 28 MSBs to timestamp.
-					chunk_wrap->time_high = (uint32_t)(buff[j] & mask_28b); 
+					chunk_wrap->time_high = (uint64_t)(buff[j] & mask_28b); 
 					break; 
 
 				case EVT2_EXT_TRIGGER:
@@ -275,11 +278,11 @@ DLLEXPORT void read_evt3_chunk(const char* fpath, size_t buff_size, evt3_chunk_w
 	uint8_t event_type; 
 	uint16_t k=0, num_vect_events=0; 
 	const uint16_t mask_11b=0x7FFU, mask_12b=0xFFFU, mask_8b=0xFFU; 
-	uint64_t buff_tmp=0, time_stamp=0; 
-	while (i < nevents_per_chunk && (values_read = fread(buff, sizeof(buff[0]), buff_size, fp)) > 0){
+	uint64_t buff_tmp=0, timestamp=0; 
+	while (i < nevents_per_chunk && (values_read = fread(buff, sizeof(*buff), buff_size, fp)) > 0){
 		for (j=0; i < nevents_per_chunk && j<values_read; j++){
 			// Getting the event type. 
-			event_type = (buff[j] >> 12); 
+			event_type = (uint8_t)(buff[j] >> 12); 
 			switch (event_type){
 				case EVT3_EVT_ADDR_Y:
 					chunk_wrap->event_tmp.y = (pixel_t)(buff[j] & mask_11b);
@@ -321,8 +324,9 @@ DLLEXPORT void read_evt3_chunk(const char* fpath, size_t buff_size, evt3_chunk_w
 					if (buff_tmp < chunk_wrap->time_low) // Overflow.
 						chunk_wrap->time_low_ovfs++; 
 					chunk_wrap->time_low = buff_tmp; 
-					time_stamp = (chunk_wrap->time_high_ovfs<<24) + ((chunk_wrap->time_high + chunk_wrap->time_low_ovfs)<<12) + chunk_wrap->time_low;
-					chunk_wrap->event_tmp.t = (timestamp_t) time_stamp; 
+					timestamp = (chunk_wrap->time_high_ovfs<<24) + ((chunk_wrap->time_high + chunk_wrap->time_low_ovfs)<<12) + chunk_wrap->time_low;
+					CHECK_TIMESTAMP_MONOTONICITY(timestamp, chunk_wrap->event_tmp.t)
+					chunk_wrap->event_tmp.t = (timestamp_t) timestamp; 
 					break; 
 
 				case EVT3_TIME_HIGH:
@@ -330,8 +334,9 @@ DLLEXPORT void read_evt3_chunk(const char* fpath, size_t buff_size, evt3_chunk_w
 					if (buff_tmp < chunk_wrap->time_high) // Overflow.
 						chunk_wrap->time_high_ovfs++; 
 					chunk_wrap->time_high = buff_tmp; 
-					time_stamp = (chunk_wrap->time_high_ovfs<<24) + ((chunk_wrap->time_high + chunk_wrap->time_low_ovfs)<<12) + chunk_wrap->time_low;
-					chunk_wrap->event_tmp.t = (timestamp_t) time_stamp; 
+					timestamp = (chunk_wrap->time_high_ovfs<<24) + ((chunk_wrap->time_high + chunk_wrap->time_low_ovfs)<<12) + chunk_wrap->time_low;
+					CHECK_TIMESTAMP_MONOTONICITY(timestamp, chunk_wrap->event_tmp.t)
+					chunk_wrap->event_tmp.t = (timestamp_t) timestamp; 
 					break; 
 
 				case EVT3_EXT_TRIGGER:
@@ -340,7 +345,7 @@ DLLEXPORT void read_evt3_chunk(const char* fpath, size_t buff_size, evt3_chunk_w
 					break; 
 
 				default:
-					fprintf(stderr, "Error: event type not valid: 0x%x peppa.\n", event_type); 
+					fprintf(stderr, "Error: event type not valid: 0x%x.\n", event_type); 
 					exit(EXIT_FAILURE); 
 			}
 		}

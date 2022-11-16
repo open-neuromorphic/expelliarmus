@@ -25,6 +25,7 @@ void append_event(const event_t* event, event_array_t* arr, size_t i){
 		arr->p_arr = arr_tmp.p_arr; 
 		arr->allocated_space *= 2; 
 	}
+	// Appending the event to the array.
 	arr->t_arr[i] = event->t; 
 	arr->x_arr[i] = event->x; 
 	arr->y_arr[i] = event->y; 
@@ -49,7 +50,7 @@ DLLEXPORT event_array_t read_dat(const char* fpath, size_t buff_size){
 		fread(&pt, 1, 1, fp); 
 		if (pt != 0x25) break; 
 	} while (1); 
-
+	// Jumping a byte.
 	fseek(fp, 1, SEEK_CUR); 
 
 	// Now we can start to have some fun.
@@ -70,21 +71,22 @@ DLLEXPORT event_array_t read_dat(const char* fpath, size_t buff_size){
 	CHECK_ALLOCATION(arr.p_arr); 
 	
 	// Buffer to read binary data.
-	uint32_t* buff = (uint32_t*) malloc(2*buff_size * sizeof(uint32_t));
+	uint32_t* buff = (uint32_t*) malloc(buff_size * sizeof(uint32_t));
 	CHECK_ALLOCATION(buff); 
 	
 	// Temporary event data structure.
-	struct event_s event_tmp; event_tmp.x=0; event_tmp.y=0; event_tmp.t=0; event_tmp.p=0;  
+	event_t event_tmp; event_tmp.x=0; event_tmp.y=0; event_tmp.t=0; event_tmp.p=0;  
 	size_t values_read=0, j=0, i=0; 
 	const uint32_t mask_4b=0xFU, mask_14b=0x3FFFU;
-	uint64_t time_ovfs=0, time_val=0; 
-	while ((values_read = fread(buff, sizeof(buff[0]), 2*buff_size, fp)) > 0){
+	uint64_t time_ovfs=0, timestamp=0; 
+	while ((values_read = fread(buff, sizeof(*buff), buff_size, fp)) > 0){
 		for (j=0; j<values_read; j+=2){
 			// Event timestamp.
-			if (((uint64_t)buff[j]) < time_val) // Overflow.
+			if (((uint64_t)buff[j]) < timestamp) // Overflow.
 				time_ovfs++; 
-			time_val = (uint64_t) buff[j]; 
-			event_tmp.t = (timestamp_t)((time_ovfs<<32) | time_val); 
+			timestamp = (time_ovfs<<32) | ((uint64_t)buff[j]); 
+			CHECK_TIMESTAMP_MONOTONICITY(timestamp, event_tmp.t);
+			event_tmp.t = (timestamp_t) timestamp; 
 			// Event polarity.
 			event_tmp.p = (polarity_t) ((buff[j+1] >> 28) & mask_4b); 
 			// Event y address.
@@ -155,13 +157,16 @@ DLLEXPORT event_array_t read_evt2(const char* fpath, size_t buff_size){
 	arr.p_arr = (polarity_t*) malloc(arr.allocated_space * sizeof(polarity_t));
 	CHECK_ALLOCATION(arr.p_arr); 
 
+	// Buffer to read the file.
 	uint32_t* buff = (uint32_t*) malloc(buff_size * sizeof(uint32_t)); 
 	CHECK_ALLOCATION(buff); 
+	// Stuff to handle the bitstream.
 	uint8_t event_type; 
-	struct event_s event_tmp; event_tmp.t=0; event_tmp.p=0; event_tmp.x=0; event_tmp.y=0;   
+	event_t event_tmp; event_tmp.t=0; event_tmp.p=0; event_tmp.x=0; event_tmp.y=0;   
 	size_t i=0, j=0, values_read=0; 
 	const uint32_t mask_6b=0x3FU, mask_11b=0x7FFU, mask_28b=0xFFFFFFFU;
-	uint32_t time_high=0, time_low=0; 
+	uint64_t time_high=0, time_low=0; 
+	uint64_t timestamp; 
 	while ((values_read = fread(buff, sizeof(buff[0]), buff_size, fp)) > 0){
 		for (j=0; j<values_read; j++){
 			// Getting the event type. 
@@ -171,8 +176,10 @@ DLLEXPORT event_array_t read_evt2(const char* fpath, size_t buff_size){
 				case EVT2_CD_OFF:
 					event_tmp.p = (polarity_t) event_type; 
 					// Getting 6LSBs of the time stamp. 
-					time_low = ((uint32_t)((buff[j] >> 22) & mask_6b)); 
-					event_tmp.t = (timestamp_t)((time_high << 6) | time_low); 
+					time_low = ((uint64_t)((buff[j] >> 22) & mask_6b)); 
+					timestamp = (time_high << 6) | time_low;
+					CHECK_TIMESTAMP_MONOTONICITY(timestamp, event_tmp.t);
+					event_tmp.t = (timestamp_t) timestamp; 
 					// Getting event addresses.
 					event_tmp.x = (pixel_t) ((buff[j] >> 11) & mask_11b); 
 					event_tmp.y = (pixel_t) (buff[j] & mask_11b); 
@@ -181,7 +188,7 @@ DLLEXPORT event_array_t read_evt2(const char* fpath, size_t buff_size){
 
 				case EVT2_TIME_HIGH:
 					// Adding 28 MSBs to timestamp.
-					time_high = (uint32_t)(buff[j] & mask_28b); 
+					time_high = (uint64_t)(buff[j] & mask_28b); 
 					break; 
 
 				case EVT2_EXT_TRIGGER:
@@ -190,7 +197,7 @@ DLLEXPORT event_array_t read_evt2(const char* fpath, size_t buff_size){
 					break; 
 
 				default:
-					fprintf(stderr, "Error: event type not valid: 0x%x 0x%x.\n", event_type, EVT2_CD_ON); 
+					fprintf(stderr, "Error: event type not valid: 0x%x.\n", event_type); 
 					exit(EXIT_FAILURE); 
 			}
 		}
@@ -263,11 +270,11 @@ DLLEXPORT event_array_t read_evt3(const char* fpath, size_t buff_size){
 
 	uint16_t base_x=0, k=0, num_vect_events=0; 
 	const uint16_t mask_11b=0x7FFU, mask_12b=0xFFFU, mask_8b=0xFFU; 
-	uint64_t buff_tmp=0, time_high=0, time_low=0, time_stamp=0, time_high_ovfs=0, time_low_ovfs=0; 
+	uint64_t buff_tmp=0, time_high=0, time_low=0, timestamp=0, time_high_ovfs=0, time_low_ovfs=0; 
 	while ((values_read = fread(buff, sizeof(*buff), buff_size, fp)) > 0){
 		for (j=0; j<values_read; j++){
 			// Getting the event type. 
-			event_type = (buff[j] >> 12); 
+			event_type = (uint8_t)(buff[j] >> 12); 
 			switch (event_type){
 				case EVT3_EVT_ADDR_Y:
 					event_tmp.y = (pixel_t)(buff[j] & mask_11b);
@@ -309,8 +316,9 @@ DLLEXPORT event_array_t read_evt3(const char* fpath, size_t buff_size){
 					if (buff_tmp < time_low) // Overflow.
 						time_low_ovfs++; 
 					time_low = buff_tmp; 
-					time_stamp = (time_high_ovfs<<24) + ((time_high+time_low_ovfs)<<12) + time_low;
-					event_tmp.t = (timestamp_t) time_stamp; 
+					timestamp = (time_high_ovfs<<24) + ((time_high+time_low_ovfs)<<12) + time_low;
+					CHECK_TIMESTAMP_MONOTONICITY(timestamp, event_tmp.t);
+					event_tmp.t = (timestamp_t) timestamp; 
 					break; 
 
 				case EVT3_TIME_HIGH:
@@ -318,8 +326,9 @@ DLLEXPORT event_array_t read_evt3(const char* fpath, size_t buff_size){
 					if (buff_tmp < time_high) // Overflow.
 						time_high_ovfs++; 
 					time_high = buff_tmp; 
-					time_stamp = (time_high_ovfs<<24) + ((time_high+time_low_ovfs)<<12) + time_low;
-					event_tmp.t = (timestamp_t) time_stamp; 
+					timestamp = (time_high_ovfs<<24) + ((time_high+time_low_ovfs)<<12) + time_low;
+					CHECK_TIMESTAMP_MONOTONICITY(timestamp, event_tmp.t);
+					event_tmp.t = (timestamp_t) timestamp; 
 					break; 
 
 				case EVT3_EXT_TRIGGER:
@@ -386,14 +395,14 @@ DLLEXPORT size_t cut_dat(const char* fpath_in, const char* fpath_out, size_t new
 	fwrite(&pt, 1, 1, fp_out);  
 	
 	// Buffer to read binary data.
-	uint32_t* buff = (uint32_t*) malloc(2*buff_size * sizeof(uint32_t));
+	uint32_t* buff = (uint32_t*) malloc(buff_size * sizeof(uint32_t));
 	CHECK_ALLOCATION(buff); 
 	
 	// Temporary event data structure.
 	size_t values_read=0, j=0, i=0; 
 	uint64_t time_ovfs=0, timestamp=0, first_timestamp=0; 
 	new_duration *= 1000; // Converting to microseconds.
-	while ((timestamp-first_timestamp) < (uint64_t)new_duration && (values_read = fread(buff, sizeof(*buff), 2*buff_size, fp_in)) > 0){
+	while ((timestamp-first_timestamp) < (uint64_t)new_duration && (values_read = fread(buff, sizeof(*buff), buff_size, fp_in)) > 0){
 		for (j=0; (timestamp-first_timestamp) < (uint64_t)new_duration && j<values_read; j+=2){
 			// Event timestamp.
 			if (((uint64_t)buff[j]) < timestamp) // Overflow.

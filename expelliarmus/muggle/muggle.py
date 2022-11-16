@@ -89,6 +89,7 @@ class Muggle:
         ), "A positive number of events per chunk to be read has to be provided."
         nevents_read = nevents_per_chunk
         fpath = check_input_file(fpath, self._encoding)
+        prev_bytes_read = 0
         while nevents_read >= nevents_per_chunk:
             self._chunk_wrap, arr = self._read_fn(
                 fpath=fpath,
@@ -97,7 +98,8 @@ class Muggle:
                 buff_size=self._buff_size,
                 dtype=self._dtype,
             )
-            if self._chunk_wrap.bytes_read == 0:
+            if self._chunk_wrap.bytes_read == 0 or self._chunk_wrap.bytes_read == prev_bytes_read:
                 break
+            prev_bytes_read = self._chunk_wrap.bytes_read
             nevents_read = len(arr)
             yield arr

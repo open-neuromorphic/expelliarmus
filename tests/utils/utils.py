@@ -13,15 +13,17 @@ else:
     raise "Something went wrong with os.sep."
 
 DTYPES = (
-        np.dtype([("t", np.int64), ("x", np.int16), ("y", np.int16), ("p", bool)]),
-        np.dtype([("x", np.int16), ("y", np.int16), ("t", np.int64), ("p", bool)]),
-        np.dtype([("p", bool), ("t", np.int64), ("y", np.int16), ("x", np.int16)]),
-        np.dtype([("x", np.int32), ("t", np.int64), ("y", np.int32), ("p", bool)]),
-        np.dtype([("t", np.int64), ("x", np.int16), ("y", np.int32), ("p", bool)]),
+        np.dtype([("t", np.int64), ("x", np.int16), ("y", np.int16), ("p", np.uint8)]),
+        np.dtype([("x", np.int16), ("y", np.int16), ("t", np.int64), ("p", np.uint8)]),
+        np.dtype([("p", np.uint8), ("t", np.int64), ("y", np.int16), ("x", np.int16)]),
+        np.dtype([("x", np.int32), ("t", np.int64), ("y", np.int32), ("p", np.uint8)]),
+        np.dtype([("t", np.int64), ("x", np.int16), ("y", np.int32), ("p", np.uint8)]),
         )
 
+CHUNK_SIZES = tuple([2**i for i in range(7, 16+1)])
+
 def _test_fields(ref_arr: np.ndarray, arr: np.ndarray, sensor_size: tuple):
-    assert arr["p"].min() == 0 and arr["p"].max() == 1
+    assert arr["p"].min() >= 0 and arr["p"].max() <= 1, f"Error: p_min={arr['p'].min()}, max_p={arr['p'].max()}."
     assert arr["x"].min() >= 0 and arr["x"].max() < sensor_size[0], f"Error: {arr['x'].min()} <= x < {arr['x'].max()} (max {sensor_size[0]})."
     assert arr["y"].min() >= 0 and arr["y"].max() < sensor_size[1], f"Error: {arr['y'].min()} <= y < {arr['y'].max()} (max {sensor_size[1]})."
     assert arr["t"].min() >= 0
@@ -85,19 +87,20 @@ def test_read(
      
 
 def test_chunk_read(
-    encoding: str, fname: Union[str, pathlib.Path], nevents_per_chunk: int, sensor_size = (640, 480),
+    encoding: str, fname: Union[str, pathlib.Path], sensor_size = (640, 480),
 ):
     assert isinstance(fname, str) or isinstance(fname, pathlib.Path)
     fpath = pathlib.Path("tests", "sample-files", fname).resolve()
     assert fpath.is_file()
     fpath_ref = pathlib.Path("tests", "sample-files", fname.split(".")[0] + ".npy")
     ref_arr = np.load(fpath_ref)
-    nevents = len(ref_arr)
-    for dtype in DTYPES:
-        muggler = Muggle(encoding=encoding, dtype=dtype)
-        chunk_offset = 0
-        for chunk_arr in muggler.read_chunk(fpath, nevents_per_chunk):
-            chunk_width = len(chunk_arr)
-            _test_fields(ref_arr[chunk_offset : min(chunk_offset + chunk_width, nevents)], chunk_arr, sensor_size)
-            chunk_offset += chunk_width
-    return
+    tot_nevents = len(ref_arr)
+    for chunk_size in CHUNK_SIZES:
+        for dtype in DTYPES:
+            muggler = Muggle(encoding=encoding, dtype=dtype)
+            chunk_offset = 0
+            for chunk_arr in muggler.read_chunk(fpath, chunk_size):
+                nevents = len(chunk_arr)
+                _test_fields(ref_arr[chunk_offset : min(chunk_offset + nevents, tot_nevents)], chunk_arr, sensor_size)
+                chunk_offset += nevents
+        return

@@ -15,7 +15,7 @@ typedef struct dat_chunk_wrap_s {
 typedef struct evt2_chunk_wrap_s {
 	event_array_t arr; 
 	size_t bytes_read; 
-	uint32_t time_high;
+	uint64_t time_high;
 } evt2_chunk_wrap_t; 	
 
 typedef struct evt3_chunk_wrap_s {
