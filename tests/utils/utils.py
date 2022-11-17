@@ -135,13 +135,15 @@ def test_chunk_read(
     for chunk_size in CHUNK_SIZES:
         for dtype in DTYPES:
             muggler = Muggle(encoding=encoding, dtype=dtype)
-            chunk_offset = 0
-            for chunk_arr in muggler.read_chunk(fpath, chunk_size):
-                nevents = len(chunk_arr)
-                _test_fields(
-                    ref_arr[chunk_offset : min(chunk_offset + nevents, tot_nevents)],
-                    chunk_arr,
-                    sensor_size,
-                )
-                chunk_offset += nevents
+            for repetition in range(2):
+                chunk_offset = 0
+                for chunk_arr in muggler.read_chunk(fpath, chunk_size):
+                    nevents = len(chunk_arr)
+                    _test_fields(
+                        ref_arr[chunk_offset : min(chunk_offset + nevents, tot_nevents)],
+                        chunk_arr,
+                        sensor_size,
+                    )
+                    chunk_offset += nevents
+                muggler.reset()
     return
