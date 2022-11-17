@@ -140,7 +140,9 @@ def test_chunk_read(
                 for chunk_arr in muggler.read_chunk(fpath, chunk_size):
                     nevents = len(chunk_arr)
                     _test_fields(
-                        ref_arr[chunk_offset : min(chunk_offset + nevents, tot_nevents)],
+                        ref_arr[
+                            chunk_offset : min(chunk_offset + nevents, tot_nevents)
+                        ],
                         chunk_arr,
                         sensor_size,
                     )
