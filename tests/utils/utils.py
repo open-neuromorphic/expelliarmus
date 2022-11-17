@@ -15,10 +15,10 @@ else:
 
 COORDS = ["t", "x", "y", "p"]
 DATA_TYPES = [
-    (np.int64, np.uint64, np.int64, np.uint64, np.int64, np.uint64),
-    (np.int32, np.uint16, np.int16, np.uint32, np.int64, np.uint64),
-    (np.int32, np.uint16, np.int16, np.uint32, np.int64, np.uint64),
-    (bool, np.uint8, np.uint16, np.int16, np.uint64, np.int8),
+    (np.int64, np.uint64, np.int64, np.uint64),
+    (np.uint32, np.uint16, np.int32, np.int16),
+    (np.uint32, np.uint16, np.int32, np.int16),
+    (bool, np.uint8, np.int8, np.int16),
 ]
 
 DTYPES = []
