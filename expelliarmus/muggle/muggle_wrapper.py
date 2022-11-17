@@ -38,17 +38,17 @@ def c_chunk_wrapper(p_fn, fpath, buff_size, chunk_wrap, nevents_per_chunk, dtype
     c_fn(c_fpath, c_buff_size, byref(chunk_wrap), c_nevents_per_chunk)
     if chunk_wrap.bytes_read > 0:
         np_arr = np.empty((chunk_wrap.arr.dim,), dtype=dtype)
-        np_arr["t"] = np.copy(
-            np.ctypeslib.as_array(chunk_wrap.arr.t_arr, shape=(chunk_wrap.arr.dim,))
+        np_arr["t"] = np.ctypeslib.as_array(
+            chunk_wrap.arr.t_arr, shape=(chunk_wrap.arr.dim,)
         )
-        np_arr["x"] = np.copy(
-            np.ctypeslib.as_array(chunk_wrap.arr.x_arr, shape=(chunk_wrap.arr.dim,))
+        np_arr["x"] = np.ctypeslib.as_array(
+            chunk_wrap.arr.x_arr, shape=(chunk_wrap.arr.dim,)
         )
-        np_arr["y"] = np.copy(
-            np.ctypeslib.as_array(chunk_wrap.arr.y_arr, shape=(chunk_wrap.arr.dim,))
+        np_arr["y"] = np.ctypeslib.as_array(
+            chunk_wrap.arr.y_arr, shape=(chunk_wrap.arr.dim,)
         )
-        np_arr["p"] = np.copy(
-            np.ctypeslib.as_array(chunk_wrap.arr.p_arr, shape=(chunk_wrap.arr.dim,))
+        np_arr["p"] = np.ctypeslib.as_array(
+            chunk_wrap.arr.p_arr, shape=(chunk_wrap.arr.dim,)
         )
         c_free_arr(chunk_wrap.arr)
     else:

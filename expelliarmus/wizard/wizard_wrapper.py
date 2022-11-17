@@ -26,10 +26,10 @@ def c_read_wrapper(p_fn, fpath, buff_size, dtype):
     else:
         raise Exception("Function not defined.")
     np_arr = np.empty((c_arr.dim,), dtype=dtype)
-    np_arr["t"] = np.copy(np.ctypeslib.as_array(c_arr.t_arr, shape=(c_arr.dim,)))
-    np_arr["x"] = np.copy(np.ctypeslib.as_array(c_arr.x_arr, shape=(c_arr.dim,)))
-    np_arr["y"] = np.copy(np.ctypeslib.as_array(c_arr.y_arr, shape=(c_arr.dim,)))
-    np_arr["p"] = np.copy(np.ctypeslib.as_array(c_arr.p_arr, shape=(c_arr.dim,)))
+    np_arr["t"] = np.ctypeslib.as_array(c_arr.t_arr, shape=(c_arr.dim,))
+    np_arr["x"] = np.ctypeslib.as_array(c_arr.x_arr, shape=(c_arr.dim,))
+    np_arr["y"] = np.ctypeslib.as_array(c_arr.y_arr, shape=(c_arr.dim,))
+    np_arr["p"] = np.ctypeslib.as_array(c_arr.p_arr, shape=(c_arr.dim,))
     c_free_arr(c_arr)
     return np_arr
 
