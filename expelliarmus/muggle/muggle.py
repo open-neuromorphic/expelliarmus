@@ -10,7 +10,7 @@ from expelliarmus.muggle.clib import (
     dat_chunk_wrap_t,
     evt2_chunk_wrap_t,
     evt3_chunk_wrap_t,
-    set_file_size, 
+    set_file_size,
     set_bytes_read,
 )
 
@@ -63,10 +63,10 @@ class Muggle:
         elif self._encoding == "EVT3":
             read_fn = read_evt3_chunk
         return read_fn
-    
+
     def reset(self):
         self.chunk_wrap = self._get_chunk_wrap()
-        return 
+        return
 
     def _check_errors(
         self,
@@ -96,7 +96,10 @@ class Muggle:
         nevents_read = nevents_per_chunk
         fpath = check_input_file(fpath, self._encoding)
         self.chunk_wrap = set_file_size(self.chunk_wrap, fpath.stat().st_size)
-        while self.chunk_wrap.bytes_read < self.chunk_wrap.file_size and nevents_read >= nevents_per_chunk:
+        while (
+            self.chunk_wrap.bytes_read < self.chunk_wrap.file_size
+            and nevents_read >= nevents_per_chunk
+        ):
             self._chunk_wrap, arr = self._read_fn(
                 fpath=fpath,
                 nevents_per_chunk=nevents_per_chunk,

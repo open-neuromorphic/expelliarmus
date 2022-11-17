@@ -57,14 +57,22 @@ class evt3_chunk_wrap_t(Structure):
         ("event_tmp", event_t),
     ]
 
-def set_file_size(chunk_wrap: Union[dat_chunk_wrap_t, evt2_chunk_wrap_t, evt3_chunk_wrap_t], file_size: int):
+
+def set_file_size(
+    chunk_wrap: Union[dat_chunk_wrap_t, evt2_chunk_wrap_t, evt3_chunk_wrap_t],
+    file_size: int,
+):
     chunk_wrap.file_size = c_size_t(file_size)
     return chunk_wrap
-    
-def set_bytes_read(chunk_wrap: Union[dat_chunk_wrap_t, evt2_chunk_wrap_t, evt3_chunk_wrap_t], bytes_read: int):
+
+
+def set_bytes_read(
+    chunk_wrap: Union[dat_chunk_wrap_t, evt2_chunk_wrap_t, evt3_chunk_wrap_t],
+    bytes_read: int,
+):
     chunk_wrap.bytes_read = c_size_t(bytes_read)
     return chunk_wrap
-    
+
 
 c_read_dat_chunk = clib.read_dat_chunk
 c_read_evt2_chunk = clib.read_evt2_chunk

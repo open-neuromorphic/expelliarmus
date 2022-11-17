@@ -77,7 +77,7 @@ typedef struct event_array_s {
 	size_t allocated_space;
 } event_array_t; 
 
-
+DLLEXPORT void free_event_array(event_array_t*); 
 DLLEXPORT size_t cut_dat(const char*, const char*, size_t, size_t);
 DLLEXPORT size_t cut_evt2(const char*, const char*, size_t, size_t);
 DLLEXPORT size_t cut_evt3(const char*, const char*, size_t, size_t);

@@ -3,6 +3,15 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+DLLEXPORT void free_event_array(event_array_t* arr){
+	free(arr->t_arr); 
+	free(arr->x_arr); 
+	free(arr->y_arr); 
+	free(arr->p_arr); 
+	arr->allocated_space=0; 
+	arr->dim=0; 
+}
+
 void append_event(const event_t* event, event_array_t* arr, size_t i){
 	event_array_t arr_tmp = *arr; 
 	if (i >= arr->allocated_space){

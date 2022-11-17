@@ -1,5 +1,6 @@
 from .utils import utils
 
+
 def test_dat_chunk_read():
     utils.test_chunk_read(
         encoding="dat", fname="dat_sample.dat", sensor_size=(120, 100)

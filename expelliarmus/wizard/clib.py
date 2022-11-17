@@ -63,3 +63,7 @@ c_cut_evt3 = clib.cut_evt3
 for c_cut_fn in (c_cut_dat, c_cut_evt2, c_cut_evt3):
     c_cut_fn.restype = RESTYPE_CUT
     c_cut_fn.argtypes = ARGTYPES_CUT
+
+c_free_arr = clib.free_event_array
+c_free_arr.argtypes = [POINTER(event_array_t)]
+c_free_arr.restype = None
