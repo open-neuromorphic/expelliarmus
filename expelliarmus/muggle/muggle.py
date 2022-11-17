@@ -10,6 +10,8 @@ from expelliarmus.muggle.clib import (
     dat_chunk_wrap_t,
     evt2_chunk_wrap_t,
     evt3_chunk_wrap_t,
+    set_file_size, 
+    set_bytes_read,
 )
 
 from expelliarmus.utils import (
@@ -40,7 +42,7 @@ class Muggle:
         self._buff_size = buff_size
         self._dtype = dtype
         self._read_fn = self._get_read_fn()
-        self._chunk_wrap = self._get_chunk_wrap()
+        self.chunk_wrap = self._get_chunk_wrap()
         return
 
     def _get_chunk_wrap(self):
@@ -50,7 +52,7 @@ class Muggle:
             chunk_wrap = evt2_chunk_wrap_t()
         elif self._encoding == "EVT3":
             chunk_wrap = evt3_chunk_wrap_t()
-        chunk_wrap.bytes_read = 0
+        chunk_wrap = set_bytes_read(chunk_wrap, 0)
         return chunk_wrap
 
     def _get_read_fn(self):
@@ -89,11 +91,12 @@ class Muggle:
         ), "A positive number of events per chunk to be read has to be provided."
         nevents_read = nevents_per_chunk
         fpath = check_input_file(fpath, self._encoding)
-        while nevents_read >= nevents_per_chunk:
+        self.chunk_wrap = set_file_size(self.chunk_wrap, fpath.stat().st_size)
+        while self.chunk_wrap.bytes_read < self.chunk_wrap.file_size and nevents_read >= nevents_per_chunk:
             self._chunk_wrap, arr = self._read_fn(
                 fpath=fpath,
                 nevents_per_chunk=nevents_per_chunk,
-                chunk_wrap=self._chunk_wrap,
+                chunk_wrap=self.chunk_wrap,
                 buff_size=self._buff_size,
                 dtype=self._dtype,
             )

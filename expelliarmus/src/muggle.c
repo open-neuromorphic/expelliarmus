@@ -3,6 +3,10 @@
 #include <stdlib.h>
 
 DLLEXPORT void read_dat_chunk(const char* fpath, size_t buff_size, dat_chunk_wrap_t* chunk_wrap, size_t nevents_per_chunk){
+	if (chunk_wrap->bytes_read >= chunk_wrap->file_size){
+		fprintf(stderr, "The file is finished.\n"); 
+		return; 
+	}
 	FILE* fp = fopen(fpath, "rb"); 
 	CHECK_FILE(fp, fpath); 
 
@@ -24,13 +28,11 @@ DLLEXPORT void read_dat_chunk(const char* fpath, size_t buff_size, dat_chunk_wra
 
 		fseek(fp, 1, SEEK_CUR); 
 		chunk_wrap->bytes_read++; 
-	} else {
-		int err = fseek(fp, (long)(chunk_wrap->bytes_read), SEEK_SET); 
-		if (err != 0){
+	} else
+		if (fseek(fp, (long)(chunk_wrap->bytes_read), SEEK_SET) != 0){
 			chunk_wrap->bytes_read = 0; 
 			return; 
 		}
-	}
 
 	// Now we can start to have some fun.
 	// Allocating the array of events.
@@ -102,6 +104,10 @@ DLLEXPORT void read_dat_chunk(const char* fpath, size_t buff_size, dat_chunk_wra
 }
 
 DLLEXPORT void read_evt2_chunk(const char* fpath, size_t buff_size, evt2_chunk_wrap_t* chunk_wrap, size_t nevents_per_chunk){
+	if (chunk_wrap->bytes_read >= chunk_wrap->file_size){
+		fprintf(stderr, "The file is finished.\n"); 
+		return; 
+	}
 	FILE* fp = fopen(fpath, "rb"); 
 	CHECK_FILE(fp, fpath); 
 
@@ -126,13 +132,13 @@ DLLEXPORT void read_evt2_chunk(const char* fpath, size_t buff_size, evt2_chunk_w
 		// Coming back to previous byte.
 		fseek(fp, -1, SEEK_CUR); 
 		chunk_wrap->bytes_read--;
-	} else {
-		int err = fseek(fp, (long)(chunk_wrap->bytes_read), SEEK_SET); 
-		if (err != 0){
+	} else 
+		if (fseek(fp, (long)(chunk_wrap->bytes_read), SEEK_SET) != 0){
+			fprintf(stderr, "ERROR: fseek() did not work as expected."); 
 			chunk_wrap->bytes_read = 0; 
 			return; 
 		}
-	}
+	
 
 	// Allocating the array of events.
 	// Timestamp.
@@ -221,6 +227,10 @@ DLLEXPORT void read_evt2_chunk(const char* fpath, size_t buff_size, evt2_chunk_w
 }
 
 DLLEXPORT void read_evt3_chunk(const char* fpath, size_t buff_size, evt3_chunk_wrap_t* chunk_wrap, size_t nevents_per_chunk){
+	if (chunk_wrap->bytes_read >= chunk_wrap->file_size){
+		fprintf(stderr, "The file is finished.\n"); 
+		return; 
+	}
 	FILE* fp = fopen(fpath, "rb"); 
 	CHECK_FILE(fp, fpath); 
 
@@ -249,13 +259,11 @@ DLLEXPORT void read_evt3_chunk(const char* fpath, size_t buff_size, evt3_chunk_w
 		// Coming back to previous byte.
 		fseek(fp, -1, SEEK_CUR); 
 		chunk_wrap->bytes_read--; 
-	} else {
-		int err = fseek(fp, (long)(chunk_wrap->bytes_read), SEEK_SET); 
-		if (err != 0){
+	} else
+		if (fseek(fp, (long)(chunk_wrap->bytes_read), SEEK_SET) != 0){
 			chunk_wrap->bytes_read = 0; 
 			return;
 		}
-	}
 
 	// Allocating the array of events.
 	// Timestamp.
