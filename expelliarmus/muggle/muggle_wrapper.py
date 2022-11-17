@@ -40,16 +40,16 @@ def c_chunk_wrapper(p_fn, fpath, buff_size, chunk_wrap, nevents_per_chunk, dtype
         np_arr = np.empty((chunk_wrap.arr.dim,), dtype=dtype)
         np_arr["t"] = np.ctypeslib.as_array(
             chunk_wrap.arr.t_arr, shape=(chunk_wrap.arr.dim,)
-        )
+        ).astype(np_arr["t"].dtype)
         np_arr["x"] = np.ctypeslib.as_array(
             chunk_wrap.arr.x_arr, shape=(chunk_wrap.arr.dim,)
-        )
+        ).astype(np_arr["x"].dtype)
         np_arr["y"] = np.ctypeslib.as_array(
             chunk_wrap.arr.y_arr, shape=(chunk_wrap.arr.dim,)
-        )
+        ).astype(np_arr["y"].dtype)
         np_arr["p"] = np.ctypeslib.as_array(
             chunk_wrap.arr.p_arr, shape=(chunk_wrap.arr.dim,)
-        )
+        ).astype(np_arr["p"].dtype)
         c_free_arr(chunk_wrap.arr)
     else:
         np_arr = None
