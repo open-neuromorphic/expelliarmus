@@ -63,6 +63,10 @@ class Muggle:
         elif self._encoding == "EVT3":
             read_fn = read_evt3_chunk
         return read_fn
+    
+    def reset(self):
+        self.chunk_wrap = self._get_chunk_wrap()
+        return 
 
     def _check_errors(
         self,
