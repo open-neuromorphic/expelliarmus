@@ -1,22 +1,23 @@
 import pathlib
 import os
+import platform
 import shutil
 import numpy as np
 from typing import Callable, Union, Optional
 from expelliarmus import Muggle, Wizard
 
-if os.sep == "/":  # Unix system.
+if platform.system() in ("Linux", "Darwin"):  # Unix system.
     TMPDIR = pathlib.Path("/tmp")
-elif os.sep == "\\":  # Findus system.
+elif platform.system() == "Windows":  # Findus system.
     TMPDIR = pathlib.Path(pathlib.Path().home(), "AppData", "Local", "Temp")
 else:
-    raise "Something went wrong with os.sep."
+    raise Exception("The OS has not been recognized.")
 
 COORDS = ['t', 'x', 'y', 'p']
 DATA_TYPES = [(np.int64, np.uint64, np.int64, np.uint64, np.int64, np.uint64), 
               (np.int32, np.uint16, np.int16, np.uint32, np.int64, np.uint64),
               (np.int32, np.uint16, np.int16, np.uint32, np.int64, np.uint64),
-              (bool, np.uint8, np.uint16, np.uint16, np.uint64, np.int8),
+              (bool, np.uint8, np.uint16, np.int16, np.uint64, np.int8),
               ]
 
 DTYPES = []
@@ -33,12 +34,12 @@ def _test_fields(ref_arr: np.ndarray, arr: np.ndarray, sensor_size: tuple):
     assert arr["p"].min() >= 0 and arr["p"].max() <= 1, f"Error: p_min={arr['p'].min()}, max_p={arr['p'].max()}."
     assert arr["x"].min() >= 0 and arr["x"].max() < sensor_size[0], f"Error: {arr['x'].min()} <= x < {arr['x'].max()} (max {sensor_size[0]})."
     assert arr["y"].min() >= 0 and arr["y"].max() < sensor_size[1], f"Error: {arr['y'].min()} <= y < {arr['y'].max()} (max {sensor_size[1]})."
-    assert arr["t"].min() >= 0
-    assert (np.sort(arr["t"]) == arr["t"]).all()
-    assert (ref_arr["t"] == arr["t"]).all() 
-    assert (ref_arr["x"] == arr["x"]).all() 
-    assert (ref_arr["y"] == arr["y"]).all() 
-    assert (ref_arr["p"] == arr["p"]).all()
+    assert arr["t"].min() >= 0, f"Error: min_t={arr['t'].min()}."
+    assert (np.sort(arr["t"]) == arr["t"]).all(), "Error: the timestamps are not monotonic."
+    assert (ref_arr["t"] == arr["t"]).all(), "Error: the timestamps do not coincide with the reference."
+    assert (ref_arr["x"] == arr["x"]).all(), "Error: the x addresses do not coincide with the reference."
+    assert (ref_arr["y"] == arr["y"]).all(), "Error: the y addresses do not coincide with the reference."
+    assert (ref_arr["p"] == arr["p"]).all(), "Error: the polarities do not coincide with the reference."
     return
 
 def test_cut(
@@ -64,8 +65,8 @@ def test_cut(
         wizard = Wizard(encoding=encoding, dtype=dtype)
         nevents_out = wizard.cut(fpath_in, fpath_out, new_duration=new_duration)
         arr = wizard.read(fpath_out)
-        assert len(arr) == nevents_out
-        assert (arr["t"][-1] - arr["t"][0]) >= new_duration * 1000
+        assert len(arr) == nevents_out, "The lenght of the array does not coincide with the number of events returned by the C function."
+        assert (arr["t"][-1] - arr["t"][0]) >= new_duration * 1000, f"Error: the actual duration of the recording is {(arr['t'][-1] - arr['t'][0])/1000:.2f} ms instead of {new_duration} ms."
         # Checking that the cut is consistent.
         _test_fields(ref_arr[:nevents_out], arr, sensor_size)
     # Cleaning up.
@@ -87,8 +88,8 @@ def test_read(
     for dtype in DTYPES:
         wizard = Wizard(encoding=encoding, dtype=dtype)
         arr = wizard.read(fpath)
-        assert arr.dtype == dtype
-        assert len(arr) == expected_nevents
+        assert arr.dtype == dtype, "Error: the resulting dtype does not coincide with the desired one."
+        assert len(arr) == expected_nevents, "Error: the number of events in the array does not coincide with the expected one."
         _test_fields(ref_arr, arr, sensor_size)
     return 
      
