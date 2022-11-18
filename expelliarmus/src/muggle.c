@@ -17,15 +17,7 @@ DLLEXPORT void read_dat_chunk(const char* fpath, size_t buff_size, dat_chunk_wra
 
 	if (chunk_wrap->bytes_read == 0){
 		// Jumping over the headers.
-		uint8_t pt; 
-		do {
-			do { 
-				chunk_wrap->bytes_read += fread(&pt, 1, 1, fp); 
-			} while (pt != 0x0A); 
-			chunk_wrap->bytes_read += fread(&pt, 1, 1, fp); 
-			if (pt != 0x25) break; 
-		} while (1); 
-
+		chunk_wrap->bytes_read = jump_headers(fp, NULL, 0U); 
 		fseek(fp, 1, SEEK_CUR); 
 		chunk_wrap->bytes_read++; 
 	} else
@@ -120,15 +112,7 @@ DLLEXPORT void read_evt2_chunk(const char* fpath, size_t buff_size, evt2_chunk_w
 		chunk_wrap->time_high = 0; 
 
 		// Jumping over the headers.
-		uint8_t pt; 
-		do {
-			do { 
-				chunk_wrap->bytes_read += fread(&pt, 1, 1, fp); 
-			} while (pt != 0x0A); 
-			chunk_wrap->bytes_read += fread(&pt, 1, 1, fp); 
-			if (pt != 0x25) break; 
-		} while (1); 
-
+		chunk_wrap->bytes_read = jump_headers(fp, NULL, 0U); 
 		// Coming back to previous byte.
 		fseek(fp, -1, SEEK_CUR); 
 		chunk_wrap->bytes_read--;
@@ -247,15 +231,7 @@ DLLEXPORT void read_evt3_chunk(const char* fpath, size_t buff_size, evt3_chunk_w
 		chunk_wrap->event_tmp.t=0; chunk_wrap->event_tmp.x=0; chunk_wrap->event_tmp.y=0; chunk_wrap->event_tmp.p=0; 
 
 		// Jumping over the headers.
-		uint8_t pt; 
-		 do {
-			do { 
-				chunk_wrap->bytes_read += fread(&pt, 1, 1, fp); 
-			} while (pt != 0x0A); 
-			chunk_wrap->bytes_read += fread(&pt, 1, 1, fp); 
-			if (pt != 0x25) break; 
-		} while (1); 
-		
+		chunk_wrap->bytes_read = jump_headers(fp, NULL, 0U); 	
 		// Coming back to previous byte.
 		fseek(fp, -1, SEEK_CUR); 
 		chunk_wrap->bytes_read--; 

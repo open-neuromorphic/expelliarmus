@@ -46,19 +46,30 @@ void append_event(const event_t* event, event_array_t* arr, size_t i){
  * Functions for reading events to arrays.
  */
 
+size_t jump_headers(FILE* fp_in, FILE* fp_out, uint8_t copy_file){
+	size_t bytes_read = 0; 
+	uint8_t c; 
+	 do {
+	   	do { 
+			bytes_read += fread(&c, 1, 1, fp_in); 
+			if (copy_file)
+				fwrite(&c, 1, 1, fp_out);  
+		} while (c != 0x0A); 
+		bytes_read += fread(&c, 1, 1, fp_in); 
+		if (copy_file)
+			fwrite(&c, 1, 1, fp_out);  
+		if (c != 0x25) break; 
+	} while (1); 
+	return bytes_read; 
+}
+	
+
 DLLEXPORT event_array_t read_dat(const char* fpath, size_t buff_size){
 	FILE* fp = fopen(fpath, "rb"); 
 	CHECK_FILE(fp, fpath); 
 
 	// Jumping over the headers.
-	uint8_t pt; 
-	 do {
-	   	do { 
-			fread(&pt, 1, 1, fp); 
-		} while (pt != 0x0A); 
-		fread(&pt, 1, 1, fp); 
-		if (pt != 0x25) break; 
-	} while (1); 
+	jump_headers(fp, NULL, 0U); 
 	// Jumping a byte.
 	fseek(fp, 1, SEEK_CUR); 
 
@@ -137,15 +148,7 @@ DLLEXPORT event_array_t read_evt2(const char* fpath, size_t buff_size){
 	CHECK_FILE(fp, fpath); 
 
 	// Jumping over the headers.
-	uint8_t pt; 
-	 do {
-	   	do { 
-			fread(&pt, 1, 1, fp); 
-		} while (pt != 0x0A); 
-		fread(&pt, 1, 1, fp); 
-		if (pt != 0x25) break; 
-	} while (1); 
-	
+	jump_headers(fp, NULL, 0U); 	
 	// Coming back to previous byte.
 	fseek(fp, -1, SEEK_CUR); 
 
@@ -242,14 +245,7 @@ DLLEXPORT event_array_t read_evt3(const char* fpath, size_t buff_size){
 	CHECK_FILE(fp, fpath); 
 
 	// Jumping over the headers.
-	uint8_t pt; 
-	 do {
-	   	do { 
-			fread(&pt, 1, 1, fp); 
-		} while (pt != 0x0A); 
-		fread(&pt, 1, 1, fp); 
-		if (pt != 0x25) break; 
-	} while (1); 
+	jump_headers(fp, NULL, 0U); 
 	
 	// Coming back to previous byte.
 	fseek(fp, -1, SEEK_CUR); 
@@ -388,20 +384,11 @@ DLLEXPORT size_t cut_dat(const char* fpath_in, const char* fpath_out, size_t new
 	CHECK_FILE(fp_out, fpath_out); 
 
 	// Jumping over the headers.
-	uint8_t pt; 
-	 do {
-	   	do { 
-			fread(&pt, 1, 1, fp_in); 
-			fwrite(&pt, 1, 1, fp_out);  
-		} while (pt != 0x0A); 
-		fread(&pt, 1, 1, fp_in); 
-		if (pt != 0x25) break; 
-		fwrite(&pt, 1, 1, fp_out);  
-	} while (1); 
-
-	fwrite(&pt, 1, 1, fp_out);  
-	fread(&pt, 1, 1, fp_in); 
-	fwrite(&pt, 1, 1, fp_out);  
+	uint8_t c; 
+	jump_headers(fp_in, fp_out, 1U); 
+	fwrite(&c, 1, 1, fp_out);  
+	fread(&c, 1, 1, fp_in); 
+	fwrite(&c, 1, 1, fp_out);  
 	
 	// Buffer to read binary data.
 	uint32_t* buff = (uint32_t*) malloc(buff_size * sizeof(uint32_t));
@@ -435,17 +422,7 @@ DLLEXPORT size_t cut_evt2(const char* fpath_in, const char* fpath_out, size_t ne
 	CHECK_FILE(fp_out, fpath_out); 
 
 	// Jumping over the headers.
-	uint8_t pt; 
-	 do {
-	   	do { 
-			fread(&pt, 1, 1, fp_in); 
-			fwrite(&pt, 1, 1, fp_out);
-		} while (pt != 0x0A); 
-		fread(&pt, 1, 1, fp_in); 
-		if (pt != 0x25) break; 
-		fwrite(&pt, 1, 1, fp_out); 
-	} while (1); 
-	
+	jump_headers(fp_in, fp_out, 1U); 	
 	// Coming back to previous byte.
 	fseek(fp_in, -1, SEEK_CUR); 
 
@@ -501,17 +478,7 @@ DLLEXPORT size_t cut_evt3(const char* fpath_in, const char* fpath_out, size_t ne
 	CHECK_FILE(fp_out, fpath_out); 
 
 	// Jumping over the headers.
-	uint8_t pt; 
-	 do {
-	   	do { 
-			fread(&pt, 1, 1, fp_in); 
-			fwrite(&pt, 1, 1, fp_out); 
-		} while (pt != 0x0A); 
-		fread(&pt, 1, 1, fp_in); 
-		if (pt != 0x25) break; 
-		fwrite(&pt, 1, 1, fp_out); 
-	} while (1); 
-	
+	jump_headers(fp_in, fp_out, 1U); 	
 	// Coming back to previous byte.
 	fseek(fp_in, -1, SEEK_CUR); 
 
