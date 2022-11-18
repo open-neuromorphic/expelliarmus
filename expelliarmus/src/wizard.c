@@ -42,6 +42,49 @@ void append_event(const event_t* event, event_array_t* arr, size_t i){
 	return; 
 }
 
+event_array_t realloc_event_array(event_array_t arr, size_t new_dim){
+	event_array_t arr_tmp = arr; 
+	// Timestamp.
+	arr_tmp.t_arr = (timestamp_t*) realloc(arr_tmp.t_arr, new_dim * sizeof(timestamp_t));
+	CHECK_ALLOCATION(arr_tmp.t_arr); 
+	arr.t_arr = arr_tmp.t_arr; 
+	// X coordinate.
+	arr_tmp.x_arr = (pixel_t*) realloc(arr_tmp.x_arr, new_dim * sizeof(pixel_t));
+	CHECK_ALLOCATION(arr_tmp.x_arr); 
+	arr.x_arr = arr_tmp.x_arr; 
+	// Y coordinate.
+	arr_tmp.y_arr = (pixel_t*) realloc(arr_tmp.y_arr, new_dim * sizeof(pixel_t));
+	CHECK_ALLOCATION(arr_tmp.y_arr); 
+	arr.y_arr = arr_tmp.y_arr; 
+	// Polarity.
+	arr_tmp.p_arr = (polarity_t*) realloc(arr_tmp.p_arr, new_dim * sizeof(polarity_t));
+	CHECK_ALLOCATION(arr_tmp.p_arr); 
+	arr.p_arr = arr_tmp.p_arr; 
+	arr.dim = new_dim; 
+	arr.allocated_space = new_dim; 
+	return arr;
+}
+
+event_array_t malloc_event_array(size_t dim){
+	event_array_t arr; 
+	arr.dim = 0; arr.allocated_space = dim; 
+	// Allocating the array of events.
+	// Timestamp.
+	arr.t_arr = (timestamp_t*) malloc(arr.allocated_space * sizeof(timestamp_t));
+	CHECK_ALLOCATION(arr.t_arr); 
+	// X coordinate.
+	arr.x_arr = (pixel_t*) malloc(arr.allocated_space * sizeof(pixel_t));
+	CHECK_ALLOCATION(arr.x_arr); 
+	// Y coordinate.
+	arr.y_arr = (pixel_t*) malloc(arr.allocated_space * sizeof(pixel_t));
+	CHECK_ALLOCATION(arr.y_arr); 
+	// Polarity.
+	arr.p_arr = (polarity_t*) malloc(arr.allocated_space * sizeof(polarity_t));
+	CHECK_ALLOCATION(arr.p_arr); 
+	return arr; 
+}
+
+
 /*
  * Functions for reading events to arrays.
  */
@@ -74,22 +117,8 @@ DLLEXPORT event_array_t read_dat(const char* fpath, size_t buff_size){
 	fseek(fp, 1, SEEK_CUR); 
 
 	// Now we can start to have some fun.
-	event_array_t arr; 
-	arr.dim = 0; arr.allocated_space = DEFAULT_ARRAY_DIM; 
-	// Allocating the array of events.
-	// Timestamp.
-	arr.t_arr = (timestamp_t*) malloc(arr.allocated_space * sizeof(timestamp_t));
-	CHECK_ALLOCATION(arr.t_arr); 
-	// X coordinate.
-	arr.x_arr = (pixel_t*) malloc(arr.allocated_space * sizeof(pixel_t));
-	CHECK_ALLOCATION(arr.x_arr); 
-	// Y coordinate.
-	arr.y_arr = (pixel_t*) malloc(arr.allocated_space * sizeof(pixel_t));
-	CHECK_ALLOCATION(arr.y_arr); 
-	// Polarity.
-	arr.p_arr = (polarity_t*) malloc(arr.allocated_space * sizeof(polarity_t));
-	CHECK_ALLOCATION(arr.p_arr); 
-	
+	event_array_t arr = malloc_event_array(DEFAULT_ARRAY_DIM); 
+
 	// Buffer to read binary data.
 	uint32_t* buff = (uint32_t*) malloc(buff_size * sizeof(uint32_t));
 	CHECK_ALLOCATION(buff); 
@@ -118,28 +147,7 @@ DLLEXPORT event_array_t read_dat(const char* fpath, size_t buff_size){
 	}
 	free(buff); 
 	fclose(fp); 
-	
-	// Reallocating to save memory.
-	event_array_t arr_tmp = arr; 
-	// Timestamp.
-	arr_tmp.t_arr = (timestamp_t*) realloc(arr_tmp.t_arr, i * sizeof(timestamp_t));
-	CHECK_ALLOCATION(arr_tmp.t_arr); 
-	arr.t_arr = arr_tmp.t_arr; 
-	// X coordinate.
-	arr_tmp.x_arr = (pixel_t*) realloc(arr_tmp.x_arr, i * sizeof(pixel_t));
-	CHECK_ALLOCATION(arr_tmp.x_arr); 
-	arr.x_arr = arr_tmp.x_arr; 
-	// Y coordinate.
-	arr_tmp.y_arr = (pixel_t*) realloc(arr_tmp.y_arr, i * sizeof(pixel_t));
-	CHECK_ALLOCATION(arr_tmp.y_arr); 
-	arr.y_arr = arr_tmp.y_arr; 
-	// Polarity.
-	arr_tmp.p_arr = (polarity_t*) realloc(arr_tmp.p_arr, i * sizeof(polarity_t));
-	CHECK_ALLOCATION(arr_tmp.p_arr); 
-	arr.p_arr = arr_tmp.p_arr; 
-
-	arr.dim = i; 
-	arr.allocated_space = i; 
+	arr = realloc_event_array(arr, i); 	
 	return arr; 
 }	
 
@@ -153,21 +161,7 @@ DLLEXPORT event_array_t read_evt2(const char* fpath, size_t buff_size){
 	fseek(fp, -1, SEEK_CUR); 
 
 	// Preparing the data structure. 
-	event_array_t arr; 
-	arr.dim = 0; arr.allocated_space = DEFAULT_ARRAY_DIM; 
-	// Allocating the array of events.
-	// Timestamp.
-	arr.t_arr = (timestamp_t*) malloc(arr.allocated_space * sizeof(timestamp_t));
-	CHECK_ALLOCATION(arr.t_arr); 
-	// X coordinate.
-	arr.x_arr = (pixel_t*) malloc(arr.allocated_space * sizeof(pixel_t));
-	CHECK_ALLOCATION(arr.x_arr); 
-	// Y coordinate.
-	arr.y_arr = (pixel_t*) malloc(arr.allocated_space * sizeof(pixel_t));
-	CHECK_ALLOCATION(arr.y_arr); 
-	// Polarity.
-	arr.p_arr = (polarity_t*) malloc(arr.allocated_space * sizeof(polarity_t));
-	CHECK_ALLOCATION(arr.p_arr); 
+	event_array_t arr = malloc_event_array(DEFAULT_ARRAY_DIM); 
 
 	// Buffer to read the file.
 	uint32_t* buff = (uint32_t*) malloc(buff_size * sizeof(uint32_t)); 
@@ -216,27 +210,7 @@ DLLEXPORT event_array_t read_evt2(const char* fpath, size_t buff_size){
 	}
 	fclose(fp); 
 	free(buff); 
-	// Reallocating to save memory.
-	event_array_t arr_tmp = arr; 
-	// Timestamp.
-	arr_tmp.t_arr = (timestamp_t*) realloc(arr_tmp.t_arr, i * sizeof(timestamp_t));
-	CHECK_ALLOCATION(arr_tmp.t_arr); 
-	arr.t_arr = arr_tmp.t_arr; 
-	// X coordinate.
-	arr_tmp.x_arr = (pixel_t*) realloc(arr_tmp.x_arr, i * sizeof(pixel_t));
-	CHECK_ALLOCATION(arr_tmp.x_arr); 
-	arr.x_arr = arr_tmp.x_arr; 
-	// Y coordinate.
-	arr_tmp.y_arr = (pixel_t*) realloc(arr_tmp.y_arr, i * sizeof(pixel_t));
-	CHECK_ALLOCATION(arr_tmp.y_arr); 
-	arr.y_arr = arr_tmp.y_arr; 
-	// Polarity.
-	arr_tmp.p_arr = (polarity_t*) realloc(arr_tmp.p_arr, i * sizeof(polarity_t));
-	CHECK_ALLOCATION(arr_tmp.p_arr); 
-	arr.p_arr = arr_tmp.p_arr; 
-
-	arr.dim = i; 
-	arr.allocated_space = i; 
+	arr = realloc_event_array(arr, i); 
 	return arr; 
 }
 
@@ -251,21 +225,7 @@ DLLEXPORT event_array_t read_evt3(const char* fpath, size_t buff_size){
 	fseek(fp, -1, SEEK_CUR); 
 
 	// Preparing the data structure. 
-	event_array_t arr; 
-	arr.dim = 0; arr.allocated_space = DEFAULT_ARRAY_DIM; 
-	// Allocating the array of events.
-	// Timestamp.
-	arr.t_arr = (timestamp_t*) malloc(arr.allocated_space * sizeof(timestamp_t));
-	CHECK_ALLOCATION(arr.t_arr); 
-	// X coordinate.
-	arr.x_arr = (pixel_t*) malloc(arr.allocated_space * sizeof(pixel_t));
-	CHECK_ALLOCATION(arr.x_arr); 
-	// Y coordinate.
-	arr.y_arr = (pixel_t*) malloc(arr.allocated_space * sizeof(pixel_t));
-	CHECK_ALLOCATION(arr.y_arr); 
-	// Polarity.
-	arr.p_arr = (polarity_t*) malloc(arr.allocated_space * sizeof(polarity_t));
-	CHECK_ALLOCATION(arr.p_arr); 
+	event_array_t arr = malloc_event_array(DEFAULT_ARRAY_DIM); 
 
 	uint16_t* buff = (uint16_t*) malloc(buff_size * sizeof(uint16_t)); 
 	CHECK_ALLOCATION(buff); 
@@ -349,27 +309,7 @@ DLLEXPORT event_array_t read_evt3(const char* fpath, size_t buff_size){
 	}
 	fclose(fp); 
 	free(buff); 
-	// Reallocating to save memory.
-	event_array_t arr_tmp = arr; 
-	// Timestamp.
-	arr_tmp.t_arr = (timestamp_t*) realloc(arr_tmp.t_arr, i * sizeof(timestamp_t));
-	CHECK_ALLOCATION(arr_tmp.t_arr); 
-	arr.t_arr = arr_tmp.t_arr; 
-	// X coordinate.
-	arr_tmp.x_arr = (pixel_t*) realloc(arr_tmp.x_arr, i * sizeof(pixel_t));
-	CHECK_ALLOCATION(arr_tmp.x_arr); 
-	arr.x_arr = arr_tmp.x_arr; 
-	// Y coordinate.
-	arr_tmp.y_arr = (pixel_t*) realloc(arr_tmp.y_arr, i * sizeof(pixel_t));
-	CHECK_ALLOCATION(arr_tmp.y_arr); 
-	arr.y_arr = arr_tmp.y_arr; 
-	// Polarity.
-	arr_tmp.p_arr = (polarity_t*) realloc(arr_tmp.p_arr, i * sizeof(polarity_t));
-	CHECK_ALLOCATION(arr_tmp.p_arr); 
-	arr.p_arr = arr_tmp.p_arr; 
-
-	arr.dim = i; 
-	arr.allocated_space = i; 
+	arr = realloc_event_array(arr, i); 
 	return arr; 
 }
 

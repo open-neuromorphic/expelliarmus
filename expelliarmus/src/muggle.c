@@ -10,9 +10,7 @@ DLLEXPORT void read_dat_chunk(const char* fpath, size_t buff_size, dat_chunk_wra
 	FILE* fp = fopen(fpath, "rb"); 
 	CHECK_FILE(fp, fpath); 
 
-	event_array_t arr; 
-	arr.dim = 0; 
-	arr.allocated_space = DEFAULT_ARRAY_DIM; 
+	event_array_t arr = malloc_event_array(DEFAULT_ARRAY_DIM); 
 	chunk_wrap->arr = arr; 
 
 	if (chunk_wrap->bytes_read == 0){
@@ -27,20 +25,6 @@ DLLEXPORT void read_dat_chunk(const char* fpath, size_t buff_size, dat_chunk_wra
 		}
 
 	// Now we can start to have some fun.
-	// Allocating the array of events.
-	// Timestamp.
-	arr.t_arr = (timestamp_t*) malloc(arr.allocated_space * sizeof(timestamp_t));
-	CHECK_ALLOCATION(arr.t_arr); 
-	// X coordinate.
-	arr.x_arr = (pixel_t*) malloc(arr.allocated_space * sizeof(pixel_t));
-	CHECK_ALLOCATION(arr.x_arr); 
-	// Y coordinate.
-	arr.y_arr = (pixel_t*) malloc(arr.allocated_space * sizeof(pixel_t));
-	CHECK_ALLOCATION(arr.y_arr); 
-	// Polarity.
-	arr.p_arr = (polarity_t*) malloc(arr.allocated_space * sizeof(polarity_t));
-	CHECK_ALLOCATION(arr.p_arr); 
-	
 	// Buffer to read binary data.
 	uint32_t* buff = (uint32_t*) malloc(buff_size * sizeof(uint32_t));
 	CHECK_ALLOCATION(buff); 
@@ -71,26 +55,7 @@ DLLEXPORT void read_dat_chunk(const char* fpath, size_t buff_size, dat_chunk_wra
 	free(buff); 
 	fclose(fp); 
 	// Reallocating to save memory.
-	event_array_t arr_tmp = arr; 
-	// Timestamp.
-	arr_tmp.t_arr = (timestamp_t*) realloc(arr_tmp.t_arr, i * sizeof(timestamp_t));
-	CHECK_ALLOCATION(arr_tmp.t_arr); 
-	arr.t_arr = arr_tmp.t_arr; 
-	// X coordinate.
-	arr_tmp.x_arr = (pixel_t*) realloc(arr_tmp.x_arr, i * sizeof(pixel_t));
-	CHECK_ALLOCATION(arr_tmp.x_arr); 
-	arr.x_arr = arr_tmp.x_arr; 
-	// Y coordinate.
-	arr_tmp.y_arr = (pixel_t*) realloc(arr_tmp.y_arr, i * sizeof(pixel_t));
-	CHECK_ALLOCATION(arr_tmp.y_arr); 
-	arr.y_arr = arr_tmp.y_arr; 
-	// Polarity.
-	arr_tmp.p_arr = (polarity_t*) realloc(arr_tmp.p_arr, i * sizeof(polarity_t));
-	CHECK_ALLOCATION(arr_tmp.p_arr); 
-	arr.p_arr = arr_tmp.p_arr; 
-	arr.dim = i; 
-	arr.allocated_space = i; 
-
+	arr = realloc_event_array(arr, i); 
 	chunk_wrap->arr = arr; 
 	return; 
 }
@@ -103,9 +68,7 @@ DLLEXPORT void read_evt2_chunk(const char* fpath, size_t buff_size, evt2_chunk_w
 	FILE* fp = fopen(fpath, "rb"); 
 	CHECK_FILE(fp, fpath); 
 
-	event_array_t arr; 
-	arr.dim = 0; 
-	arr.allocated_space = DEFAULT_ARRAY_DIM; 
+	event_array_t arr = malloc_event_array(DEFAULT_ARRAY_DIM); 
 	chunk_wrap->arr = arr; 
 
 	if (chunk_wrap->bytes_read == 0){
@@ -123,21 +86,6 @@ DLLEXPORT void read_evt2_chunk(const char* fpath, size_t buff_size, evt2_chunk_w
 			return; 
 		}
 	
-
-	// Allocating the array of events.
-	// Timestamp.
-	arr.t_arr = (timestamp_t*) malloc(arr.allocated_space * sizeof(timestamp_t));
-	CHECK_ALLOCATION(arr.t_arr); 
-	// X coordinate.
-	arr.x_arr = (pixel_t*) malloc(arr.allocated_space * sizeof(pixel_t));
-	CHECK_ALLOCATION(arr.x_arr); 
-	// Y coordinate.
-	arr.y_arr = (pixel_t*) malloc(arr.allocated_space * sizeof(pixel_t));
-	CHECK_ALLOCATION(arr.y_arr); 
-	// Polarity.
-	arr.p_arr = (polarity_t*) malloc(arr.allocated_space * sizeof(polarity_t));
-	CHECK_ALLOCATION(arr.p_arr); 
-
 	uint32_t* buff = (uint32_t*) malloc(buff_size * sizeof(uint32_t)); 
 	CHECK_ALLOCATION(buff); 
 
@@ -185,27 +133,7 @@ DLLEXPORT void read_evt2_chunk(const char* fpath, size_t buff_size, evt2_chunk_w
 	}
 	fclose(fp); 
 	free(buff); 
-	// Reallocating to save memory.
-	event_array_t arr_tmp = arr; 
-	// Timestamp.
-	arr_tmp.t_arr = (timestamp_t*) realloc(arr_tmp.t_arr, i * sizeof(timestamp_t));
-	CHECK_ALLOCATION(arr_tmp.t_arr); 
-	arr.t_arr = arr_tmp.t_arr; 
-	// X coordinate.
-	arr_tmp.x_arr = (pixel_t*) realloc(arr_tmp.x_arr, i * sizeof(pixel_t));
-	CHECK_ALLOCATION(arr_tmp.x_arr); 
-	arr.x_arr = arr_tmp.x_arr; 
-	// Y coordinate.
-	arr_tmp.y_arr = (pixel_t*) realloc(arr_tmp.y_arr, i * sizeof(pixel_t));
-	CHECK_ALLOCATION(arr_tmp.y_arr); 
-	arr.y_arr = arr_tmp.y_arr; 
-	// Polarity.
-	arr_tmp.p_arr = (polarity_t*) realloc(arr_tmp.p_arr, i * sizeof(polarity_t));
-	CHECK_ALLOCATION(arr_tmp.p_arr); 
-	arr.p_arr = arr_tmp.p_arr; 
-	arr.dim = i; 
-	arr.allocated_space = i; 
-	
+	arr = realloc_event_array(arr, i); 
 	chunk_wrap->arr = arr; 
 	return; 
 }
@@ -218,8 +146,7 @@ DLLEXPORT void read_evt3_chunk(const char* fpath, size_t buff_size, evt3_chunk_w
 	FILE* fp = fopen(fpath, "rb"); 
 	CHECK_FILE(fp, fpath); 
 
-	event_array_t arr; 
-	arr.dim = 0; arr.allocated_space = DEFAULT_ARRAY_DIM; 
+	event_array_t arr = malloc_event_array(DEFAULT_ARRAY_DIM); 
 	chunk_wrap->arr = arr; 
 
 	if (chunk_wrap->bytes_read == 0){
@@ -240,20 +167,6 @@ DLLEXPORT void read_evt3_chunk(const char* fpath, size_t buff_size, evt3_chunk_w
 			chunk_wrap->bytes_read = 0; 
 			return;
 		}
-
-	// Allocating the array of events.
-	// Timestamp.
-	arr.t_arr = (timestamp_t*) malloc(arr.allocated_space * sizeof(timestamp_t));
-	CHECK_ALLOCATION(arr.t_arr); 
-	// X coordinate.
-	arr.x_arr = (pixel_t*) malloc(arr.allocated_space * sizeof(pixel_t));
-	CHECK_ALLOCATION(arr.x_arr); 
-	// Y coordinate.
-	arr.y_arr = (pixel_t*) malloc(arr.allocated_space * sizeof(pixel_t));
-	CHECK_ALLOCATION(arr.y_arr); 
-	// Polarity.
-	arr.p_arr = (polarity_t*) malloc(arr.allocated_space * sizeof(polarity_t));
-	CHECK_ALLOCATION(arr.p_arr); 
 
 	uint16_t* buff = (uint16_t*) malloc(buff_size * sizeof(uint16_t)); 
 	CHECK_ALLOCATION(buff); 
@@ -338,26 +251,7 @@ DLLEXPORT void read_evt3_chunk(const char* fpath, size_t buff_size, evt3_chunk_w
 	fclose(fp); 
 	free(buff); 
 	// Reallocating to save memory.
-	event_array_t arr_tmp = arr; 
-	// Timestamp.
-	arr_tmp.t_arr = (timestamp_t*) realloc(arr_tmp.t_arr, i * sizeof(timestamp_t));
-	CHECK_ALLOCATION(arr_tmp.t_arr); 
-	arr.t_arr = arr_tmp.t_arr; 
-	// X coordinate.
-	arr_tmp.x_arr = (pixel_t*) realloc(arr_tmp.x_arr, i * sizeof(pixel_t));
-	CHECK_ALLOCATION(arr_tmp.x_arr); 
-	arr.x_arr = arr_tmp.x_arr; 
-	// Y coordinate.
-	arr_tmp.y_arr = (pixel_t*) realloc(arr_tmp.y_arr, i * sizeof(pixel_t));
-	CHECK_ALLOCATION(arr_tmp.y_arr); 
-	arr.y_arr = arr_tmp.y_arr; 
-	// Polarity.
-	arr_tmp.p_arr = (polarity_t*) realloc(arr_tmp.p_arr, i * sizeof(polarity_t));
-	CHECK_ALLOCATION(arr_tmp.p_arr); 
-	arr.p_arr = arr_tmp.p_arr; 
-	arr.dim = i; 
-	arr.allocated_space = i; 
-
+	arr = realloc_event_array(arr, i); 
 	chunk_wrap->arr = arr; 
 	return; 
 }

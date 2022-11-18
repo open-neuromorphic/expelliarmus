@@ -84,6 +84,8 @@ DLLEXPORT size_t cut_evt3(const char*, const char*, size_t, size_t);
 DLLEXPORT event_array_t read_dat(const char*, size_t); 
 DLLEXPORT event_array_t read_evt2(const char*, size_t);
 DLLEXPORT event_array_t read_evt3(const char*, size_t);
+event_array_t realloc_event_array(event_array_t, size_t);
+event_array_t malloc_event_array(size_t);
 void append_event(const event_t*, event_array_t*, size_t); 
 size_t jump_headers(FILE*, FILE*, uint8_t);
 
