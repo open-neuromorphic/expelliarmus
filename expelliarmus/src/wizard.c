@@ -56,9 +56,9 @@ size_t jump_headers(FILE* fp_in, FILE* fp_out, uint8_t copy_file){
 				fwrite(&c, 1, 1, fp_out);  
 		} while (c != 0x0A); 
 		bytes_read += fread(&c, 1, 1, fp_in); 
+		if (c != 0x25) break; 
 		if (copy_file)
 			fwrite(&c, 1, 1, fp_out);  
-		if (c != 0x25) break; 
 	} while (1); 
 	return bytes_read; 
 }
