@@ -116,9 +116,7 @@ class Muggle:
         Return:
             - arr: structured NumPy array of events.
         """
-        while (
-            self.chunk.bytes_read < self.chunk.file_size
-        ):
+        while self.chunk.bytes_read < self.chunk.file_size:
             self.chunk, arr = self._read_fn(
                 fpath=self._fpath,
                 nevents_per_chunk=self._nevents_per_chunk,
