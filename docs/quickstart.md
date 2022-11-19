@@ -1,25 +1,5 @@
-![expelliarmus](docs/_static/Logo.png)
+# Getting started
 
-[![PyPI](https://img.shields.io/pypi/v/expelliarmus)](https://pypi.org/project/expelliarmus/)
-[![codecov](https://codecov.io/gh/fabhertz95/expelliarmus/branch/develop/graph/badge.svg?token=Q0BMYGUSZQ)](https://codecov.io/gh/fabhertz95/expelliarmus)
-[![contributors](https://img.shields.io/github/contributors-anon/fabhertz95/expelliarmus)](https://github.com/fabhertz95/expelliarmus/pulse)
-
-A Python/C library for decoding DVS binary data formats to NumPy structured arrays.
-
-## Supported formats
-- DAT (Prophesee).
-- EVT2 (Prophesee).
-- EVT3 (Prophesee). 
-
-## Installation 
-You can install the library through `pip`:
-```bash
-pip install expelliarmus 
-```
-
-The package is tested on Windows, MacOS and Linux.
-
-## Quickstart
 Shall we start practicing some spells? For that, we need a `Wizard`!
 
 
@@ -29,6 +9,7 @@ wizard = Wizard(encoding="evt3")
 ```
 
 Let's cast a spell called `read(fpath)` and read [this RAW file](https://dataset.prophesee.ai/index.php/s/fB7xvMpE136yakl/download) to a structured NumPy array! 
+
 
 ```python
 arr = wizard.read(fpath="./pedestrians.raw")
@@ -109,8 +90,8 @@ What if you're a poor `Muggle` and you cannot cast any spells? Well, we can try 
 
 ```python
 from expelliarmus import Muggle
-muggle = Muggle(encoding="evt3", fpath="./pedestrians.raw", chunk_size=512)
-print(f"Length of the chunk: {len(next(muggle.read_chunk()))}.")
+muggle = Muggle(encoding="evt3")
+print(f"Length of the chunk: {len(next(muggle.read_chunk(fpath='./pedestrians.raw', nevents_per_chunk=512)))}.")
 ```
 
     Length of the chunk: 512.
@@ -120,8 +101,7 @@ Let's read less events, so that we are able to visualize them
 
 
 ```python
-muggle.set_chunk_size(16)
-print(next(muggle.read_chunk()
+print(next(muggle.read_chunk(fpath="./pedestrians.raw", nevents_per_chunk=16)))
 ```
 
     [(5848837,  610, 296, 1) (5848843,  834, 302, 1) (5848846,  593, 254, 1)
@@ -130,23 +110,3 @@ print(next(muggle.read_chunk()
      (5848904, 1209, 252, 0) (5848905,  709, 307, 0) (5848911,  139, 315, 0)
      (5848918,  603, 301, 1) (5848918,  708, 299, 1) (5848924,  778, 295, 1)
      (5848967,  140, 315, 0)]
-
-
-## Quick usage instructions
-Right now, three encodings are supported: `dat`, `evt2` and `evt3`. `Wizard` can read and cut files, while `Muggle` allows to read files in chunks when these are too large. The constructors are the following:
-
-```python 
-class Wizard(encoding, buff_size, dtype)
-```
-```python
-class Muggle(encoding, fpath, chunk_size, buff_size, dtype)
-```
-
-To read a file we use the `read(fpath)` method, while to cut it the `cut(fpath_in, fpath_out, new_duration)` one from the `Wizard`.
-
-To read in chunks from a file, you can use the `Muggle`'s `read_chunk()` method.
-
-More information about the usage can be found in the source code. Sooner or later we'll publish a proper documentation! 
-
-## Contributing
-Please check our documentation page for more details on contributing.

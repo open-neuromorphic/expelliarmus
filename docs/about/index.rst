@@ -1,0 +1,6 @@
+About
+=====
+
+.. toctree::
+    contributing
+    info
