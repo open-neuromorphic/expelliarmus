@@ -167,8 +167,10 @@ DLLEXPORT event_array_t read_dat(const char* fpath, size_t buff_size){
 	free(buff); 
 	fclose(fp); 
 	// Reallocating the array to save space.
-	arr = realloc_event_array(&arr, arr.dim); 	
-	CHECK_EVENT_ARRAY_SHRINK(arr); 
+	if (arr.dim > 0){
+		arr = realloc_event_array(&arr, arr.dim); 	
+		CHECK_EVENT_ARRAY_SHRINK(arr); 
+	}
 	return arr; 
 }	
 
@@ -237,8 +239,10 @@ DLLEXPORT event_array_t read_evt2(const char* fpath, size_t buff_size){
 	}
 	fclose(fp); 
 	free(buff); 
-	arr = realloc_event_array(&arr, arr.dim); 
-	CHECK_EVENT_ARRAY_SHRINK(arr); 
+	if (arr.dim > 0){
+		arr = realloc_event_array(&arr, arr.dim); 
+		CHECK_EVENT_ARRAY_SHRINK(arr); 
+	}
 	return arr; 
 }
 
@@ -348,8 +352,10 @@ DLLEXPORT event_array_t read_evt3(const char* fpath, size_t buff_size){
 	}
 	fclose(fp); 
 	free(buff); 
-	arr = realloc_event_array(&arr, arr.dim); 
-	CHECK_EVENT_ARRAY_SHRINK(arr); 
+	if (arr.dim > 0){
+		arr = realloc_event_array(&arr, arr.dim); 
+		CHECK_EVENT_ARRAY_SHRINK(arr); 
+	}
 	return arr; 
 }
 

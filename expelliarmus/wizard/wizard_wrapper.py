@@ -29,19 +29,22 @@ def c_read_wrapper(p_fn, fpath, buff_size, dtype):
     assert (
         c_is_void_event_array(byref(c_arr)) == 0
     ), "ERROR: the array could no be created."
-    np_arr = np.empty((c_arr.dim,), dtype=dtype)
-    np_arr["t"] = np.ctypeslib.as_array(c_arr.t_arr, shape=(c_arr.dim,)).astype(
-        np_arr["t"].dtype
-    )
-    np_arr["x"] = np.ctypeslib.as_array(c_arr.x_arr, shape=(c_arr.dim,)).astype(
-        np_arr["x"].dtype
-    )
-    np_arr["y"] = np.ctypeslib.as_array(c_arr.y_arr, shape=(c_arr.dim,)).astype(
-        np_arr["y"].dtype
-    )
-    np_arr["p"] = np.ctypeslib.as_array(c_arr.p_arr, shape=(c_arr.dim,)).astype(
-        np_arr["p"].dtype
-    )
+    if c_arr.dim > 0:
+        np_arr = np.empty((c_arr.dim,), dtype=dtype)
+        np_arr["t"] = np.ctypeslib.as_array(c_arr.t_arr, shape=(c_arr.dim,)).astype(
+            np_arr["t"].dtype
+        )
+        np_arr["x"] = np.ctypeslib.as_array(c_arr.x_arr, shape=(c_arr.dim,)).astype(
+            np_arr["x"].dtype
+        )
+        np_arr["y"] = np.ctypeslib.as_array(c_arr.y_arr, shape=(c_arr.dim,)).astype(
+            np_arr["y"].dtype
+        )
+        np_arr["p"] = np.ctypeslib.as_array(c_arr.p_arr, shape=(c_arr.dim,)).astype(
+            np_arr["p"].dtype
+        )
+    else:
+        np_arr = None
     c_free_arr(c_arr)
     return np_arr
 

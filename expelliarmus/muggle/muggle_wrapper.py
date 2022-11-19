@@ -14,16 +14,6 @@ from expelliarmus.muggle.clib import (
 
 
 def c_chunk_wrapper(p_fn, fpath, buff_size, chunk, nevents_per_chunk, dtype):
-    assert isinstance(fpath, str) or isinstance(fpath, pathlib.Path)
-    fpath = pathlib.Path(fpath).resolve()
-    assert fpath.is_file(), f'Error: the file provided "{str(fpath)}" does not exist.'
-    assert (
-        isinstance(buff_size, int) and buff_size > 0
-    ), "Error: a minimum buffer size of 1 is required."
-    assert (
-        isinstance(nevents_per_chunk, int) and nevents_per_chunk > 0
-    ), "Error: the number of events per chunk has to be larger than 0."
-
     c_fpath = c_char_p(bytes(str(fpath), "utf-8"))
     c_buff_size = c_size_t(buff_size)
     c_nevents_per_chunk = c_size_t(nevents_per_chunk)
@@ -39,7 +29,7 @@ def c_chunk_wrapper(p_fn, fpath, buff_size, chunk, nevents_per_chunk, dtype):
     assert (
         c_is_void_event_array(byref(chunk.arr)) == 0
     ), "ERROR: the array could no be created."
-    if chunk.bytes_read > 0:
+    if chunk.arr.dim > 0:
         np_arr = np.empty((chunk.arr.dim,), dtype=dtype)
         np_arr["t"] = np.ctypeslib.as_array(
             chunk.arr.t_arr, shape=(chunk.arr.dim,)

@@ -30,6 +30,14 @@
 	}\
 }
 
+#define CHECK_CHUNK_SHRINKING(chunk, void_chunk){\
+	if (is_void_event_array(&(chunk->arr))){\
+		fprintf(stderr, "ERROR: The event array shrinking has failed.\n");\
+		*chunk = void_chunk();\
+		return;\
+	}\
+}
+
 #define CHECK_BUFF_ALLOCATION(buff, chunk, void_chunk){\
 	if (buff==NULL){\
 		fprintf(stderr, "ERROR: the buffer used to read the binary file could not be allocated.\n");\
@@ -84,14 +92,29 @@ evt3_chunk_t void_evt3_chunk(){
 	return (evt3_chunk_t){void_event_array(), 0, 0, 0, 0, 0, 0, 0, void_event()}; 
 }
 
+void init_dat_chunk(dat_chunk_t* chunk){
+	return; 
+}
+
+void init_evt2_chunk(evt2_chunk_t* chunk){
+	chunk->time_high = 0; 
+	return; 
+}
+
+void init_evt3_chunk(evt3_chunk_t* chunk){
+	chunk->base_x = 0; 
+	chunk->time_high=0; chunk->time_low=0; chunk->time_high_ovfs=0; chunk->time_low_ovfs=0;
+	chunk->event_tmp = void_event(); 
+	return; 
+}
+
 DLLEXPORT void read_dat_chunk(const char* fpath, size_t buff_size, dat_chunk_t* chunk, size_t nevents_per_chunk){
 	CHECK_FILE_END(chunk, void_dat_chunk); 
 	FILE* fp = fopen(fpath, "rb"); 
 	CHECK_FILE(fp, fpath, chunk, void_dat_chunk); 
 
 	if (chunk->bytes_read == 0){
-		// Chunk initialization.
-		*chunk = void_dat_chunk(); 
+		init_dat_chunk(chunk);
 		// Jumping over the headers.
 		chunk->bytes_read = jump_header(fp, NULL, 0U); 
 		CHECK_JUMP_HEADER(chunk, void_dat_chunk);
@@ -138,8 +161,10 @@ DLLEXPORT void read_dat_chunk(const char* fpath, size_t buff_size, dat_chunk_t* 
 	free(buff); 
 	fclose(fp); 
 	// Reallocating to save memory.
-	chunk->arr = realloc_event_array(&(chunk->arr), chunk->arr.dim); 
-	CHECK_CHUNK_ALLOCATION(chunk, void_dat_chunk);
+	if (chunk->arr.dim > 0){
+		chunk->arr = realloc_event_array(&(chunk->arr), chunk->arr.dim); 
+		CHECK_CHUNK_SHRINKING(chunk, void_dat_chunk);
+	}
 	return; 
 }
 
@@ -149,7 +174,7 @@ DLLEXPORT void read_evt2_chunk(const char* fpath, size_t buff_size, evt2_chunk_t
 	CHECK_FILE(fp, fpath, chunk, void_evt2_chunk); 
 
 	if (chunk->bytes_read == 0){
-		*chunk = void_evt2_chunk(); 
+		init_evt2_chunk(chunk);
 		// Jumping over the headers.
 		chunk->bytes_read = jump_header(fp, NULL, 0U); 
 		CHECK_JUMP_HEADER(chunk, void_evt2_chunk); 
@@ -215,8 +240,10 @@ DLLEXPORT void read_evt2_chunk(const char* fpath, size_t buff_size, evt2_chunk_t
 	}
 	fclose(fp); 
 	free(buff); 
-	chunk->arr = realloc_event_array(&(chunk->arr), chunk->arr.dim); 
-	CHECK_CHUNK_ALLOCATION(chunk, void_evt2_chunk); 
+	if (chunk->arr.dim > 0){
+		chunk->arr = realloc_event_array(&(chunk->arr), chunk->arr.dim);
+		CHECK_CHUNK_SHRINKING(chunk, void_evt2_chunk); 
+	}
 	return; 
 }
 
@@ -226,7 +253,7 @@ DLLEXPORT void read_evt3_chunk(const char* fpath, size_t buff_size, evt3_chunk_t
 	CHECK_FILE(fp, fpath, chunk, void_evt3_chunk); 
 
 	if (chunk->bytes_read == 0){
-		*chunk = void_evt3_chunk(); 
+		init_evt3_chunk(chunk); 
 		// Jumping over the headers.
 		chunk->bytes_read = jump_header(fp, NULL, 0U); 	
 		// Coming back to previous byte.
@@ -328,8 +355,10 @@ DLLEXPORT void read_evt3_chunk(const char* fpath, size_t buff_size, evt3_chunk_t
 	fclose(fp); 
 	free(buff); 
 	// Reallocating to save memory.
-	chunk->arr = realloc_event_array(&(chunk->arr), chunk->arr.dim); 
-	CHECK_CHUNK_ALLOCATION(chunk, void_evt3_chunk); 
+	if (chunk->arr.dim > 0){
+		chunk->arr = realloc_event_array(&(chunk->arr), chunk->arr.dim); 
+		CHECK_CHUNK_SHRINKING(chunk, void_evt3_chunk); 
+	}
 	return; 
 }
 

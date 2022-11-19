@@ -59,6 +59,7 @@ class Muggle:
         elif self._encoding == "EVT3":
             chunk = evt3_chunk_t()
         chunk = set_bytes_read(chunk, 0)
+        chunk = set_file_size(chunk, self._fpath.stat().st_size)
         return chunk
 
     def _get_read_fn(self):
@@ -115,20 +116,16 @@ class Muggle:
         Return:
             - arr: structured NumPy array of events.
         """
-        nevents_read = self._nevents_per_chunk
-        self.chunk = set_file_size(self.chunk, self._fpath.stat().st_size)
         while (
             self.chunk.bytes_read < self.chunk.file_size
-            and nevents_read >= self._nevents_per_chunk
         ):
-            self._chunk, arr = self._read_fn(
+            self.chunk, arr = self._read_fn(
                 fpath=self._fpath,
                 nevents_per_chunk=self._nevents_per_chunk,
                 chunk=self.chunk,
                 buff_size=self._buff_size,
                 dtype=self._dtype,
             )
-            if self._chunk.bytes_read == 0:
+            if arr is None:
                 break
-            nevents_read = len(arr)
             yield arr
