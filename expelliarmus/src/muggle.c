@@ -108,7 +108,7 @@ void init_evt3_chunk(evt3_chunk_t* chunk){
 	return; 
 }
 
-DLLEXPORT void read_dat_chunk(const char* fpath, size_t buff_size, dat_chunk_t* chunk, size_t nevents_per_chunk){
+DLLEXPORT void read_dat_chunk(const char* fpath, size_t buff_size, dat_chunk_t* chunk, size_t chunk_size){
 	CHECK_FILE_END(chunk, void_dat_chunk); 
 	FILE* fp = fopen(fpath, "rb"); 
 	CHECK_FILE(fp, fpath, chunk, void_dat_chunk); 
@@ -139,8 +139,8 @@ DLLEXPORT void read_dat_chunk(const char* fpath, size_t buff_size, dat_chunk_t* 
 	// Values for overflow checking.
 	uint64_t time_ovfs=0, timestamp=0; 
 	// Reading the file.
-	while (i < nevents_per_chunk && (values_read = fread(buff, sizeof(*buff), buff_size, fp)) > 0){
-		for (j=0; i < nevents_per_chunk && j<values_read; j+=2){
+	while (i < chunk_size && (values_read = fread(buff, sizeof(*buff), buff_size, fp)) > 0){
+		for (j=0; i < chunk_size && j<values_read; j+=2){
 			// Event timestamp.
 			if (((uint64_t)(buff[j])) < timestamp) // Overflow.
 				time_ovfs++; 
@@ -168,7 +168,7 @@ DLLEXPORT void read_dat_chunk(const char* fpath, size_t buff_size, dat_chunk_t* 
 	return; 
 }
 
-DLLEXPORT void read_evt2_chunk(const char* fpath, size_t buff_size, evt2_chunk_t* chunk, size_t nevents_per_chunk){
+DLLEXPORT void read_evt2_chunk(const char* fpath, size_t buff_size, evt2_chunk_t* chunk, size_t chunk_size){
 	CHECK_FILE_END(chunk, void_evt2_chunk);
 	FILE* fp = fopen(fpath, "rb"); 
 	CHECK_FILE(fp, fpath, chunk, void_evt2_chunk); 
@@ -202,8 +202,8 @@ DLLEXPORT void read_evt2_chunk(const char* fpath, size_t buff_size, evt2_chunk_t
 	const uint32_t mask_6b=0x3FU, mask_11b=0x7FFU, mask_28b=0xFFFFFFFU;
 	// Temporary variables for overflow detection.
 	uint64_t time_low=0, timestamp=0; 
-	while (i < nevents_per_chunk && (values_read = fread(buff, sizeof(*buff), buff_size, fp)) > 0){
-		for (j=0; i < nevents_per_chunk && j<values_read; j++){
+	while (i < chunk_size && (values_read = fread(buff, sizeof(*buff), buff_size, fp)) > 0){
+		for (j=0; i < chunk_size && j<values_read; j++){
 			// Getting the event type. 
 			event_type = (uint8_t) (buff[j] >> 28); 
 			switch (event_type){
@@ -247,7 +247,7 @@ DLLEXPORT void read_evt2_chunk(const char* fpath, size_t buff_size, evt2_chunk_t
 	return; 
 }
 
-DLLEXPORT void read_evt3_chunk(const char* fpath, size_t buff_size, evt3_chunk_t* chunk, size_t nevents_per_chunk){
+DLLEXPORT void read_evt3_chunk(const char* fpath, size_t buff_size, evt3_chunk_t* chunk, size_t chunk_size){
 	CHECK_FILE_END(chunk, void_evt3_chunk); 
 	FILE* fp = fopen(fpath, "rb"); 
 	CHECK_FILE(fp, fpath, chunk, void_evt3_chunk); 
@@ -279,8 +279,8 @@ DLLEXPORT void read_evt3_chunk(const char* fpath, size_t buff_size, evt3_chunk_t
 	const uint16_t mask_11b=0x7FFU, mask_12b=0xFFFU, mask_8b=0xFFU; 
 	// Temporary variables to handle overflow.
 	uint64_t buff_tmp=0, timestamp=0; 
-	while (i < nevents_per_chunk && (values_read = fread(buff, sizeof(*buff), buff_size, fp)) > 0){
-		for (j=0; i < nevents_per_chunk && j<values_read; j++){
+	while (i < chunk_size && (values_read = fread(buff, sizeof(*buff), buff_size, fp)) > 0){
+		for (j=0; i < chunk_size && j<values_read; j++){
 			// Getting the event type. 
 			event_type = (uint8_t)(buff[j] >> 12); 
 			switch (event_type){

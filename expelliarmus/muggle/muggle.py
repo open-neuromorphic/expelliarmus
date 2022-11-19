@@ -28,7 +28,7 @@ class Muggle:
     Args:
         - encoding: the encoding of the input file, to be chosen among DAT, EVT2 and EVT3.
         - fpath: path to the input file.
-        - nevents_per_chunk: _minimum_ number of events included in the chunk.
+        - chunk_size: _minimum_ number of events included in the chunk.
         - buff_size: the buffer size used to read the binary file.
         - dtype: the dtype of the structured NumPy array.
     """
@@ -37,14 +37,14 @@ class Muggle:
         self,
         encoding: str,
         fpath: Union[str, pathlib.Path],
-        nevents_per_chunk: int,
+        chunk_size: int,
         buff_size: Optional[int] = _DEFAULT_BUFF_SIZE,
         dtype: Optional[np.dtype] = _DEFAULT_DTYPE,
     ):
         self._fpath = check_input_file(fpath, encoding)
         self._encoding = check_encoding(encoding)
-        self._check_errors(nevents_per_chunk, buff_size, dtype)
-        self._nevents_per_chunk = nevents_per_chunk
+        self._check_errors(chunk_size, buff_size, dtype)
+        self._chunk_size = chunk_size
         self._buff_size = buff_size
         self._dtype = dtype
         self._read_fn = self._get_read_fn()
@@ -76,9 +76,9 @@ class Muggle:
         self.reset()
         return
 
-    def set_nevents_per_chunk(self, nevents_per_chunk):
-        self._check_errors(nevents_per_chunk, self._buff_size, self._dtype)
-        self._nevents_per_chunk = nevents_per_chunk
+    def set_chunk_size(self, chunk_size):
+        self._check_errors(chunk_size, self._buff_size, self._dtype)
+        self._chunk_size = chunk_size
         self.reset()
         return
 
@@ -95,12 +95,12 @@ class Muggle:
 
     def _check_errors(
         self,
-        nevents_per_chunk: int,
+        chunk_size: int,
         buff_size: int,
         dtype: np.dtype,
     ):
         assert (
-            nevents_per_chunk > 0
+            chunk_size > 0
         ), "A positive number of events per chunk to be read has to be provided."
         assert (
             isinstance(buff_size, int) and buff_size > 0
@@ -119,7 +119,7 @@ class Muggle:
         while self.chunk.bytes_read < self.chunk.file_size:
             self.chunk, arr = self._read_fn(
                 fpath=self._fpath,
-                nevents_per_chunk=self._nevents_per_chunk,
+                chunk_size=self._chunk_size,
                 chunk=self.chunk,
                 buff_size=self._buff_size,
                 dtype=self._dtype,

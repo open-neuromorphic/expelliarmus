@@ -112,8 +112,8 @@ What if you're a poor `Muggle` and you cannot cast any spells? Well, we can try 
 
 ```python
 from expelliarmus import Muggle
-muggle = Muggle(encoding="evt3")
-print(f"Length of the chunk: {len(next(muggle.read_chunk(fpath='./pedestrians.raw', nevents_per_chunk=512)))}.")
+muggle = Muggle(encoding="evt3", fpath="./pedestrians.raw", chunk_size=512)
+print(f"Length of the chunk: {len(next(muggle.read_chunk()))}.")
 ```
 
     Length of the chunk: 512.
@@ -123,7 +123,8 @@ Let's read less events, so that we are able to visualize them
 
 
 ```python
-print(next(muggle.read_chunk(fpath="./pedestrians.raw", nevents_per_chunk=16)))
+muggle.set_chunk_size(16)
+print(next(muggle.read_chunk()
 ```
 
     [(5848837,  610, 296, 1) (5848843,  834, 302, 1) (5848846,  593, 254, 1)
@@ -142,12 +143,12 @@ Right now, three encodings are supported: `dat`, `evt2` and `evt3`. `Wizard` can
 class Wizard(encoding, buff_size, dtype)
 ```
 ```python
-class Muggle(encoding, buff_size, dtype)
+class Muggle(encoding, fpath, chunk_size, buff_size, dtype)
 ```
 
 To read a file we use the `read(fpath)` method, while to cut it the `cut(fpath_in, fpath_out, new_duration)` one from the `Wizard`.
 
-To read in chunks from a file, you can use the `Muggle`'s `read_chunk(fpath, nevents_per_chunk)` method.
+To read in chunks from a file, you can use the `Muggle`'s `read_chunk()` method.
 
 More information about the usage can be found in the source code. Sooner or later we'll publish a proper documentation! 
 

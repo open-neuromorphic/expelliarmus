@@ -13,10 +13,10 @@ from expelliarmus.muggle.clib import (
 )
 
 
-def c_chunk_wrapper(p_fn, fpath, buff_size, chunk, nevents_per_chunk, dtype):
+def c_chunk_wrapper(p_fn, fpath, buff_size, chunk, chunk_size, dtype):
     c_fpath = c_char_p(bytes(str(fpath), "utf-8"))
     c_buff_size = c_size_t(buff_size)
-    c_nevents_per_chunk = c_size_t(nevents_per_chunk)
+    c_chunk_size = c_size_t(chunk_size)
     if p_fn == read_dat_chunk:
         c_fn = c_read_dat_chunk
     elif p_fn == read_evt2_chunk:
@@ -25,7 +25,7 @@ def c_chunk_wrapper(p_fn, fpath, buff_size, chunk, nevents_per_chunk, dtype):
         c_fn = c_read_evt3_chunk
     else:
         raise Exception("Function not defined.")
-    c_fn(c_fpath, c_buff_size, byref(chunk), c_nevents_per_chunk)
+    c_fn(c_fpath, c_buff_size, byref(chunk), c_chunk_size)
     assert (
         c_is_void_event_array(byref(chunk.arr)) == 0
     ), "ERROR: the array could no be created."
@@ -51,7 +51,7 @@ def c_chunk_wrapper(p_fn, fpath, buff_size, chunk, nevents_per_chunk, dtype):
 
 def read_dat_chunk(
     fpath: Union[str, pathlib.Path],
-    nevents_per_chunk: int,
+    chunk_size: int,
     chunk: Union[dat_chunk_t, evt2_chunk_t, evt3_chunk_t],
     buff_size: int,
     dtype: np.dtype,
@@ -64,14 +64,14 @@ def read_dat_chunk(
         fpath=fpath,
         buff_size=buff_size,
         chunk=chunk,
-        nevents_per_chunk=nevents_per_chunk,
+        chunk_size=chunk_size,
         dtype=dtype,
     )
 
 
 def read_evt2_chunk(
     fpath: Union[str, pathlib.Path],
-    nevents_per_chunk: int,
+    chunk_size: int,
     chunk: Union[dat_chunk_t, evt2_chunk_t, evt3_chunk_t],
     buff_size: int,
     dtype: np.dtype,
@@ -84,14 +84,14 @@ def read_evt2_chunk(
         fpath=fpath,
         buff_size=buff_size,
         chunk=chunk,
-        nevents_per_chunk=nevents_per_chunk,
+        chunk_size=chunk_size,
         dtype=dtype,
     )
 
 
 def read_evt3_chunk(
     fpath: Union[str, pathlib.Path],
-    nevents_per_chunk: int,
+    chunk_size: int,
     chunk: Union[dat_chunk_t, evt2_chunk_t, evt3_chunk_t],
     buff_size: int,
     dtype: np.dtype,
@@ -104,6 +104,6 @@ def read_evt3_chunk(
         fpath=fpath,
         buff_size=buff_size,
         chunk=chunk,
-        nevents_per_chunk=nevents_per_chunk,
+        chunk_size=chunk_size,
         dtype=dtype,
     )

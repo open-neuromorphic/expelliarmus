@@ -136,7 +136,7 @@ def test_chunk_read(
         for dtype in DTYPES:
             muggler = Muggle(
                 fpath=fpath,
-                nevents_per_chunk=chunk_size,
+                chunk_size=chunk_size,
                 encoding=encoding,
                 dtype=dtype,
             )
