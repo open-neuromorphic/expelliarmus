@@ -12,7 +12,7 @@ _SUPPORTED_ENCODINGS = (
 _DEFAULT_DTYPE = np.dtype(
     [("t", np.int64), ("x", np.int16), ("y", np.int16), ("p", np.uint8)]
 )
-_DEFAULT_BUFF_SIZE = 4096
+_DEFAULT_BUFF_SIZE = 8192
 
 
 def check_file_encoding(fpath, encoding):

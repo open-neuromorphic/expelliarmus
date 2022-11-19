@@ -74,6 +74,16 @@ class Wizard:
         ), "The dtype provided is not valid. It should be [('t', type), ('x', type), ('y', type), ('p', type)] in any order."
         return
 
+    def set_encoding(self, encoding: Union[str, pathlib.Path]) -> None:
+        """
+        Sets the encoding proprierty of the class.
+        Args:
+            - encoding: the encoding of the file.
+        """
+        self._encoding = check_encoding(encoding)
+        self._read_fn = self._get_read_fn()
+        self._cut_fn = self._get_cut_fn()
+
     def cut(
         self,
         fpath_in: Union[str, pathlib.Path],

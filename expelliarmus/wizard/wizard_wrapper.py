@@ -1,6 +1,6 @@
 import os
 import pathlib
-from ctypes import c_char_p, c_size_t
+from ctypes import c_char_p, c_size_t, byref
 from typing import Optional, Union
 import numpy as np
 from expelliarmus.wizard.clib import (
@@ -11,6 +11,7 @@ from expelliarmus.wizard.clib import (
     c_cut_evt2,
     c_cut_evt3,
     c_free_arr,
+    c_is_void_event_array,
 )
 
 
@@ -25,6 +26,9 @@ def c_read_wrapper(p_fn, fpath, buff_size, dtype):
         c_arr = c_read_evt3(c_fpath, c_buff_size)
     else:
         raise Exception("Function not defined.")
+    assert (
+        c_is_void_event_array(byref(c_arr)) == 0
+    ), "ERROR: the array could no be created."
     np_arr = np.empty((c_arr.dim,), dtype=dtype)
     np_arr["t"] = np.ctypeslib.as_array(c_arr.t_arr, shape=(c_arr.dim,)).astype(
         np_arr["t"].dtype

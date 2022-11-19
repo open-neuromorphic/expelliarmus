@@ -1,133 +1,151 @@
 #include "wizard.h"
+#include "events.h"
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
 
-DLLEXPORT void free_event_array(event_array_t* arr){
-	free(arr->t_arr); 
-	free(arr->x_arr); 
-	free(arr->y_arr); 
-	free(arr->p_arr); 
-	arr->allocated_space=0; 
-	arr->dim=0; 
+#define CHECK_FILE(fp, fpath, arr){\
+	if (fp==NULL){\
+		fprintf(stderr, "ERROR: the input file \"%s\" could not be opened.\n", fpath); \
+		free_event_array(&arr);\
+		return void_event_array();\
+	}\
 }
 
-void append_event(const event_t* event, event_array_t* arr, size_t i){
-	event_array_t arr_tmp = *arr; 
-	if (i >= arr->allocated_space){
-	  	// Doubling the storage. 
-		// Timestamp.
-		arr_tmp.t_arr = (timestamp_t*) realloc(arr_tmp.t_arr, 2*(arr->allocated_space)*sizeof(timestamp_t));
-		CHECK_ALLOCATION(arr_tmp.t_arr); 
-		arr->t_arr = arr_tmp.t_arr; 
-		// X coordinate.
-		arr_tmp.x_arr = (pixel_t*) realloc(arr_tmp.x_arr, 2*(arr->allocated_space)*sizeof(pixel_t));
-		CHECK_ALLOCATION(arr_tmp.x_arr); 
-		arr->x_arr = arr_tmp.x_arr; 
-		// Y coordinate.
-		arr_tmp.y_arr = (pixel_t*) realloc(arr_tmp.y_arr, 2*(arr->allocated_space)*sizeof(pixel_t));
-		CHECK_ALLOCATION(arr_tmp.y_arr); 
-		arr->y_arr = arr_tmp.y_arr; 
-		// Polarity.
-		arr_tmp.p_arr = (polarity_t*) realloc(arr_tmp.p_arr, 2*(arr->allocated_space)*sizeof(polarity_t));
-		CHECK_ALLOCATION(arr_tmp.p_arr); 
-		arr->p_arr = arr_tmp.p_arr; 
-		arr->allocated_space *= 2; 
-	}
-	// Appending the event to the array.
-	arr->t_arr[i] = event->t; 
-	arr->x_arr[i] = event->x; 
-	arr->y_arr[i] = event->y; 
-	arr->p_arr[i] = event->p; 
-	return; 
+#define CHECK_BUFF_ALLOCATION(buff, arr){\
+	if (buff==NULL){\
+		fprintf(stderr, "ERROR: the buffer used to read the input file could not be allocated.\n"); \
+		free_event_array(&arr);\
+		return void_event_array();\
+	}\
 }
 
-event_array_t realloc_event_array(event_array_t arr, size_t new_dim){
-	event_array_t arr_tmp = arr; 
-	// Timestamp.
-	arr_tmp.t_arr = (timestamp_t*) realloc(arr_tmp.t_arr, new_dim * sizeof(timestamp_t));
-	CHECK_ALLOCATION(arr_tmp.t_arr); 
-	arr.t_arr = arr_tmp.t_arr; 
-	// X coordinate.
-	arr_tmp.x_arr = (pixel_t*) realloc(arr_tmp.x_arr, new_dim * sizeof(pixel_t));
-	CHECK_ALLOCATION(arr_tmp.x_arr); 
-	arr.x_arr = arr_tmp.x_arr; 
-	// Y coordinate.
-	arr_tmp.y_arr = (pixel_t*) realloc(arr_tmp.y_arr, new_dim * sizeof(pixel_t));
-	CHECK_ALLOCATION(arr_tmp.y_arr); 
-	arr.y_arr = arr_tmp.y_arr; 
-	// Polarity.
-	arr_tmp.p_arr = (polarity_t*) realloc(arr_tmp.p_arr, new_dim * sizeof(polarity_t));
-	CHECK_ALLOCATION(arr_tmp.p_arr); 
-	arr.p_arr = arr_tmp.p_arr; 
-	arr.dim = new_dim; 
-	arr.allocated_space = new_dim; 
-	return arr;
+#define CHECK_EVENT_ARRAY_ALLOC(arr){\
+	if (is_void_event_array(&arr)){\
+		fprintf(stderr, "ERROR: the event array could not be allocated in memory.\n");\
+		return arr;\
+	}\
 }
 
-event_array_t malloc_event_array(size_t dim){
-	event_array_t arr; 
-	arr.dim = 0; arr.allocated_space = dim; 
-	// Allocating the array of events.
-	// Timestamp.
-	arr.t_arr = (timestamp_t*) malloc(arr.allocated_space * sizeof(timestamp_t));
-	CHECK_ALLOCATION(arr.t_arr); 
-	// X coordinate.
-	arr.x_arr = (pixel_t*) malloc(arr.allocated_space * sizeof(pixel_t));
-	CHECK_ALLOCATION(arr.x_arr); 
-	// Y coordinate.
-	arr.y_arr = (pixel_t*) malloc(arr.allocated_space * sizeof(pixel_t));
-	CHECK_ALLOCATION(arr.y_arr); 
-	// Polarity.
-	arr.p_arr = (polarity_t*) malloc(arr.allocated_space * sizeof(polarity_t));
-	CHECK_ALLOCATION(arr.p_arr); 
-	return arr; 
+#define CHECK_ADD_EVENT(arr){\
+	if (is_void_event_array(&arr)){\
+		fprintf(stderr, "ERROR: the event could no be added to the array (failed memory reallocation).\n");\
+		return arr;\
+	}\
 }
 
+#define CHECK_EVENT_ARRAY_SHRINK(arr){\
+	if (is_void_event_array(&arr)){\
+		fprintf(stderr, "ERROR: the event array memory space could not be shrinked (failed memory reallocation).\n");\
+		return arr;\
+	}\
+}
 
-/*
- * Functions for reading events to arrays.
- */
+#define EVENT_TYPE_NOT_RECOGNISED(event_type, arr){\
+	fprintf(stderr, "ERROR: event type not recognised: 0x%x.\n", event_type);\
+	free_event_array(&arr);\
+	return void_event_array();\
+}\
 
-size_t jump_headers(FILE* fp_in, FILE* fp_out, uint8_t copy_file){
+#define CUT_CHECK_FILE(fp, fpath){\
+	if (fp==NULL){\
+		fprintf(stderr, "ERROR: the input file \"%s\" could not be opened.\n", fpath);\
+		return 0;\
+	}\
+}
+
+#define CUT_CHECK_BUFF_ALLOCATION(buff){\
+	if (buff==NULL){\
+		fprintf(stderr, "ERROR: the buffer used to read the input file could not be allocated.\n");\
+		return 0;\
+	}\
+}
+
+#define CHECK_FWRITE(fn, expected){\
+	if (expected != fn){\
+		fprintf(stderr, "ERROR: fwrite failed.\n");\
+		return 0;\
+	}\
+}
+
+#define CHECK_FSEEK(fn, arr){\
+	if (fn != 0){\
+		fprintf(stderr, "ERROR: fseek failed.\n");\
+		free_event_array(&arr);\
+		return void_event_array();\
+	}\
+}
+
+#define CUT_CHECK_FSEEK(fn){\
+	if (fn != 0){\
+		fprintf(stderr, "ERROR: fseek failed.\n");\
+		return 0;\
+	}\
+}
+
+#define CUT_EVENT_TYPE_NOT_RECOGNISED(event_type){\
+	fprintf(stderr, "ERROR: event type not recognised: 0x%x.\n", event_type);\
+	return 0;\
+}\
+
+#define CHECK_JUMP_HEADER(fn, arr){\
+	if (fn == 0){\
+		fprintf(stderr, "ERROR: jump_header failed.\n");\
+		free_event_array(&arr);\
+		return void_event_array();\
+	}\
+}
+
+#define CUT_CHECK_JUMP_HEADER(fn){\
+	if (fn == 0){\
+		fprintf(stderr, "ERROR: jump_header failed.\n");\
+		return 0;\
+	}\
+}
+
+size_t jump_header(FILE* fp_in, FILE* fp_out, uint8_t copy_file){
 	size_t bytes_read = 0; 
 	uint8_t c; 
 	 do {
 	   	do { 
 			bytes_read += fread(&c, 1, 1, fp_in); 
 			if (copy_file)
-				fwrite(&c, 1, 1, fp_out);  
+				CHECK_FWRITE(fwrite(&c, 1, 1, fp_out), 1);  
 		} while (c != 0x0A); 
 		bytes_read += fread(&c, 1, 1, fp_in); 
 		if (c != 0x25) break; 
 		if (copy_file)
-			fwrite(&c, 1, 1, fp_out);  
+			CHECK_FWRITE(fwrite(&c, 1, 1, fp_out), 1);  
 	} while (1); 
 	return bytes_read; 
 }
-	
 
 DLLEXPORT event_array_t read_dat(const char* fpath, size_t buff_size){
+	// Allocating the array.
+	event_array_t arr = malloc_event_array(DEFAULT_ARRAY_DIM); 
+	CHECK_EVENT_ARRAY_ALLOC(arr); 
+
 	FILE* fp = fopen(fpath, "rb"); 
-	CHECK_FILE(fp, fpath); 
+	CHECK_FILE(fp, fpath, arr); 
 
 	// Jumping over the headers.
-	jump_headers(fp, NULL, 0U); 
+	CHECK_JUMP_HEADER(jump_header(fp, NULL, 0U), arr); 
 	// Jumping a byte.
-	fseek(fp, 1, SEEK_CUR); 
-
-	// Now we can start to have some fun.
-	event_array_t arr = malloc_event_array(DEFAULT_ARRAY_DIM); 
+	CHECK_FSEEK(fseek(fp, 1, SEEK_CUR), arr); 
 
 	// Buffer to read binary data.
 	uint32_t* buff = (uint32_t*) malloc(buff_size * sizeof(uint32_t));
-	CHECK_ALLOCATION(buff); 
+	CHECK_BUFF_ALLOCATION(buff, arr); 
 	
 	// Temporary event data structure.
-	event_t event_tmp; event_tmp.x=0; event_tmp.y=0; event_tmp.t=0; event_tmp.p=0;  
+	event_t event_tmp = void_event();
+	// Indices to keep track of how many items are read from the file.
 	size_t values_read=0, j=0, i=0; 
+	// Masks to extract bits.
 	const uint32_t mask_4b=0xFU, mask_14b=0x3FFFU;
+	// Values to keep track of overflows.
 	uint64_t time_ovfs=0, timestamp=0; 
+	// Reading the file.
 	while ((values_read = fread(buff, sizeof(*buff), buff_size, fp)) > 0){
 		for (j=0; j<values_read; j+=2){
 			// Event timestamp.
@@ -136,43 +154,52 @@ DLLEXPORT event_array_t read_dat(const char* fpath, size_t buff_size){
 			timestamp = (time_ovfs<<32) | ((uint64_t)buff[j]); 
 			CHECK_TIMESTAMP_MONOTONICITY(timestamp, event_tmp.t);
 			event_tmp.t = (timestamp_t) timestamp; 
-			// Event polarity.
-			event_tmp.p = (polarity_t) ((buff[j+1] >> 28) & mask_4b); 
-			// Event y address.
-			event_tmp.y = (pixel_t) ((buff[j+1] >> 14) & mask_14b); 
 			// Event x address. 
 			event_tmp.x = (pixel_t) (buff[j+1] & mask_14b); 
-			append_event(&event_tmp, &arr, i++); 
+			// Event y address.
+			event_tmp.y = (pixel_t) ((buff[j+1] >> 14) & mask_14b); 
+			// Event polarity.
+			event_tmp.p = (polarity_t) ((buff[j+1] >> 28) & mask_4b); 
+			add_event(&event_tmp, &arr, i++); 
+			CHECK_ADD_EVENT(arr); 
 		}
 	}
 	free(buff); 
 	fclose(fp); 
-	arr = realloc_event_array(arr, i); 	
+	// Reallocating the array to save space.
+	arr = realloc_event_array(&arr, arr.dim); 	
+	CHECK_EVENT_ARRAY_SHRINK(arr); 
 	return arr; 
 }	
 
 DLLEXPORT event_array_t read_evt2(const char* fpath, size_t buff_size){
+	// Allocating the event array.
+	event_array_t arr = malloc_event_array(DEFAULT_ARRAY_DIM); 
+	CHECK_EVENT_ARRAY_ALLOC(arr); 
+
 	FILE* fp = fopen(fpath, "rb"); 
-	CHECK_FILE(fp, fpath); 
+	CHECK_FILE(fp, fpath, arr); 
 
 	// Jumping over the headers.
-	jump_headers(fp, NULL, 0U); 	
+	CHECK_JUMP_HEADER(jump_header(fp, NULL, 0U), arr); 	
 	// Coming back to previous byte.
-	fseek(fp, -1, SEEK_CUR); 
-
-	// Preparing the data structure. 
-	event_array_t arr = malloc_event_array(DEFAULT_ARRAY_DIM); 
+	CHECK_FSEEK(fseek(fp, -1, SEEK_CUR), arr); 
 
 	// Buffer to read the file.
 	uint32_t* buff = (uint32_t*) malloc(buff_size * sizeof(uint32_t)); 
-	CHECK_ALLOCATION(buff); 
-	// Stuff to handle the bitstream.
+	CHECK_BUFF_ALLOCATION(buff, arr); 
+
+	// The byte that identifies the event type.
 	uint8_t event_type; 
-	event_t event_tmp; event_tmp.t=0; event_tmp.p=0; event_tmp.x=0; event_tmp.y=0;   
+	// Temporary event data structure.
+	event_t event_tmp = void_event();
+	// Indices to access the input file.
 	size_t i=0, j=0, values_read=0; 
+	// Masks to extract bits.
 	const uint32_t mask_6b=0x3FU, mask_11b=0x7FFU, mask_28b=0xFFFFFFFU;
-	uint64_t time_high=0, time_low=0; 
-	uint64_t timestamp; 
+	// Values to handle overflows.
+	uint64_t time_high=0, time_low=0, timestamp=0; 
+	// Reading the file.
 	while ((values_read = fread(buff, sizeof(buff[0]), buff_size, fp)) > 0){
 		for (j=0; j<values_read; j++){
 			// Getting the event type. 
@@ -189,7 +216,8 @@ DLLEXPORT event_array_t read_evt2(const char* fpath, size_t buff_size){
 					// Getting event addresses.
 					event_tmp.x = (pixel_t) ((buff[j] >> 11) & mask_11b); 
 					event_tmp.y = (pixel_t) (buff[j] & mask_11b); 
-					append_event(&event_tmp, &arr, i++); 
+					add_event(&event_tmp, &arr, i++); 
+					CHECK_ADD_EVENT(arr); 
 					break; 
 
 				case EVT2_TIME_HIGH:
@@ -203,39 +231,49 @@ DLLEXPORT event_array_t read_evt2(const char* fpath, size_t buff_size){
 					break; 
 
 				default:
-					fprintf(stderr, "Error: event type not valid: 0x%x.\n", event_type); 
-					exit(EXIT_FAILURE); 
+					EVENT_TYPE_NOT_RECOGNISED(event_type, arr); 
 			}
 		}
 	}
 	fclose(fp); 
 	free(buff); 
-	arr = realloc_event_array(arr, i); 
+	arr = realloc_event_array(&arr, arr.dim); 
+	CHECK_EVENT_ARRAY_SHRINK(arr); 
 	return arr; 
 }
 
 DLLEXPORT event_array_t read_evt3(const char* fpath, size_t buff_size){
+	// Allocating the event array.
+	event_array_t arr = malloc_event_array(DEFAULT_ARRAY_DIM); 
+	CHECK_EVENT_ARRAY_ALLOC(arr); 
+
 	FILE* fp = fopen(fpath, "rb"); 
-	CHECK_FILE(fp, fpath); 
+	CHECK_FILE(fp, fpath, arr); 
 
 	// Jumping over the headers.
-	jump_headers(fp, NULL, 0U); 
+	CHECK_JUMP_HEADER(jump_header(fp, NULL, 0U), arr); 
 	
 	// Coming back to previous byte.
-	fseek(fp, -1, SEEK_CUR); 
+	CHECK_FSEEK(fseek(fp, -1, SEEK_CUR), arr); 
 
-	// Preparing the data structure. 
-	event_array_t arr = malloc_event_array(DEFAULT_ARRAY_DIM); 
-
+	// Buffer used to read the binary file.
 	uint16_t* buff = (uint16_t*) malloc(buff_size * sizeof(uint16_t)); 
-	CHECK_ALLOCATION(buff); 
+	CHECK_BUFF_ALLOCATION(buff, arr); 
+	// Indices to read the file.
 	size_t values_read=0, j=0, i=0; 
+	// Byte that identifies the event type.
 	uint8_t event_type; 
-	event_t event_tmp; event_tmp.t=0; event_tmp.x=0; event_tmp.y=0; event_tmp.p=0;  
 
+	// Temporary event data structure.
+	event_t event_tmp = void_event();
+
+	// Counters used to keep track of number of events encoded in vectors and of the base x address of these.
 	uint16_t base_x=0, k=0, num_vect_events=0; 
+	// Masks to extract bits.
 	const uint16_t mask_11b=0x7FFU, mask_12b=0xFFFU, mask_8b=0xFFU; 
+	// Temporary values to handle overflows.
 	uint64_t buff_tmp=0, time_high=0, time_low=0, timestamp=0, time_high_ovfs=0, time_low_ovfs=0; 
+	// Reading the file.
 	while ((values_read = fread(buff, sizeof(*buff), buff_size, fp)) > 0){
 		for (j=0; j<values_read; j++){
 			// Getting the event type. 
@@ -248,7 +286,8 @@ DLLEXPORT event_array_t read_evt3(const char* fpath, size_t buff_size){
 				case EVT3_EVT_ADDR_X:
 					event_tmp.p = (polarity_t) ((buff[j] >> 11)%2); 
 					event_tmp.x = (pixel_t)(buff[j] & mask_11b);
-					append_event(&event_tmp, &arr, i++); 
+					add_event(&event_tmp, &arr, i++); 
+					CHECK_ADD_EVENT(arr); 
 					break; 
 
 				case EVT3_VECT_BASE_X:
@@ -268,7 +307,8 @@ DLLEXPORT event_array_t read_evt3(const char* fpath, size_t buff_size){
 					for (k=0; k<num_vect_events; k++){
 						if (buff_tmp%2){
 							event_tmp.x = (pixel_t)(base_x + k); 
-							append_event(&event_tmp, &arr, i++); 
+							add_event(&event_tmp, &arr, i++); 
+							CHECK_ADD_EVENT(arr); 
 						}
 						buff_tmp = buff_tmp >> 1; 
 					}
@@ -302,14 +342,14 @@ DLLEXPORT event_array_t read_evt3(const char* fpath, size_t buff_size){
 					break; 
 
 				default:
-					fprintf(stderr, "Error: event type not valid: 0x%x peppa.\n", event_type); 
-					exit(EXIT_FAILURE); 
+					EVENT_TYPE_NOT_RECOGNISED(event_type, arr); 
 			}
 		}
 	}
 	fclose(fp); 
 	free(buff); 
-	arr = realloc_event_array(arr, i); 
+	arr = realloc_event_array(&arr, arr.dim); 
+	CHECK_EVENT_ARRAY_SHRINK(arr); 
 	return arr; 
 }
 
@@ -319,25 +359,27 @@ DLLEXPORT event_array_t read_evt3(const char* fpath, size_t buff_size){
 
 DLLEXPORT size_t cut_dat(const char* fpath_in, const char* fpath_out, size_t new_duration, size_t buff_size){
 	FILE* fp_in = fopen(fpath_in, "rb"); 
-	CHECK_FILE(fp_in, fpath_in); 
+	CUT_CHECK_FILE(fp_in, fpath_in); 
 	FILE* fp_out = fopen(fpath_out, "wb"); 
-	CHECK_FILE(fp_out, fpath_out); 
+	CUT_CHECK_FILE(fp_out, fpath_out); 
 
 	// Jumping over the headers.
 	uint8_t c; 
-	jump_headers(fp_in, fp_out, 1U); 
-	fwrite(&c, 1, 1, fp_out);  
+	CUT_CHECK_JUMP_HEADER(jump_header(fp_in, fp_out, 1U)); 
+	CHECK_FWRITE(fwrite(&c, 1, 1, fp_out), 1);  
 	fread(&c, 1, 1, fp_in); 
-	fwrite(&c, 1, 1, fp_out);  
+	CHECK_FWRITE(fwrite(&c, 1, 1, fp_out), 1);  
 	
 	// Buffer to read binary data.
 	uint32_t* buff = (uint32_t*) malloc(buff_size * sizeof(uint32_t));
-	CHECK_ALLOCATION(buff); 
+	CUT_CHECK_BUFF_ALLOCATION(buff); 
 	
-	// Temporary event data structure.
+	// Indices to read the file.
 	size_t values_read=0, j=0, i=0; 
+	// Values to keep track of overflows and of first timestamp encountered.
 	uint64_t time_ovfs=0, timestamp=0, first_timestamp=0; 
-	new_duration *= 1000; // Converting to microseconds.
+	// Converting duration from milliseconds to microseconds.
+	new_duration *= 1000; 
 	while ((timestamp-first_timestamp) < (uint64_t)new_duration && (values_read = fread(buff, sizeof(*buff), buff_size, fp_in)) > 0){
 		for (j=0; (timestamp-first_timestamp) < (uint64_t)new_duration && j<values_read; j+=2){
 			// Event timestamp.
@@ -346,8 +388,8 @@ DLLEXPORT size_t cut_dat(const char* fpath_in, const char* fpath_out, size_t new
 			timestamp = (uint64_t) buff[j]; 
 			if (i++ == 0)
 				first_timestamp = timestamp; 
-			fwrite(&buff[j], sizeof(*buff), 2, fp_out);
 		}
+		CHECK_FWRITE(fwrite(buff, sizeof(*buff), j, fp_out), j); 
 	}
 	free(buff); 
 	fclose(fp_in); 
@@ -357,25 +399,31 @@ DLLEXPORT size_t cut_dat(const char* fpath_in, const char* fpath_out, size_t new
 
 DLLEXPORT size_t cut_evt2(const char* fpath_in, const char* fpath_out, size_t new_duration, size_t buff_size){
 	FILE* fp_in = fopen(fpath_in, "rb"); 
-	CHECK_FILE(fp_in, fpath_in); 
+	CUT_CHECK_FILE(fp_in, fpath_in); 
 	FILE* fp_out = fopen(fpath_out, "wb"); 
-	CHECK_FILE(fp_out, fpath_out); 
+	CUT_CHECK_FILE(fp_out, fpath_out); 
 
 	// Jumping over the headers.
-	jump_headers(fp_in, fp_out, 1U); 	
+	CUT_CHECK_JUMP_HEADER(jump_header(fp_in, fp_out, 1U)); 	
 	// Coming back to previous byte.
-	fseek(fp_in, -1, SEEK_CUR); 
+	CUT_CHECK_FSEEK(fseek(fp_in, -1, SEEK_CUR)); 
 
+	// Buffer to read the binary file.
 	uint32_t* buff = (uint32_t*) malloc(buff_size * sizeof(uint32_t)); 
-	CHECK_ALLOCATION(buff); 
+	CUT_CHECK_BUFF_ALLOCATION(buff); 
+
+	// Byte to check the event type.
 	uint8_t event_type; 
+	// Indices to read the file.
 	size_t i=0, j=0, values_read=0; 
+	// Values to keep track of first timestamp and overflows.
 	uint64_t first_timestamp=0, timestamp=0, time_high=0, time_low=0;
+	// Masks to extract bits.
 	const uint32_t mask_28b = 0xFFFFFFFU, mask_6b=0x3FU; 
-	new_duration *= 1000; // Converting to microseconds.
+	// Converting duration from milliseconds to microseconds.
+	new_duration *= 1000;
 	while ((timestamp-first_timestamp) < (uint64_t)new_duration && (values_read = fread(buff, sizeof(*buff), buff_size, fp_in)) > 0){
 		for (j=0; (timestamp-first_timestamp) < (uint64_t)new_duration && j<values_read; j++){
-			fwrite(&buff[j], sizeof(*buff), 1, fp_out); 
 			// Getting the event type. 
 			event_type = (uint8_t) (buff[j] >> 28); 
 			switch (event_type){
@@ -400,10 +448,10 @@ DLLEXPORT size_t cut_evt2(const char* fpath_in, const char* fpath_out, size_t ne
 					break; 
 
 				default:
-					fprintf(stderr, "Error: event type not valid: 0x%x 0x%x.\n", event_type, EVT2_CD_ON); 
-					exit(EXIT_FAILURE); 
+					CUT_EVENT_TYPE_NOT_RECOGNISED(event_type); 
 			}
 		}
+		CHECK_FWRITE(fwrite(buff, sizeof(*buff), j, fp_out), j); 
 	}
 	fclose(fp_out); 
 	fclose(fp_in); 
@@ -413,31 +461,35 @@ DLLEXPORT size_t cut_evt2(const char* fpath_in, const char* fpath_out, size_t ne
 
 DLLEXPORT size_t cut_evt3(const char* fpath_in, const char* fpath_out, size_t new_duration, size_t buff_size){
 	FILE* fp_in = fopen(fpath_in, "rb"); 
-	CHECK_FILE(fp_in, fpath_in); 
+	CUT_CHECK_FILE(fp_in, fpath_in); 
 	FILE* fp_out = fopen(fpath_out, "w+b"); 
-	CHECK_FILE(fp_out, fpath_out); 
+	CUT_CHECK_FILE(fp_out, fpath_out); 
 
 	// Jumping over the headers.
-	jump_headers(fp_in, fp_out, 1U); 	
+	CUT_CHECK_JUMP_HEADER(jump_header(fp_in, fp_out, 1U)); 	
 	// Coming back to previous byte.
-	fseek(fp_in, -1, SEEK_CUR); 
+	CUT_CHECK_FSEEK(fseek(fp_in, -1, SEEK_CUR)); 
 
-	size_t i = 0; 
-
+	// Buffer to read the binary file.
 	uint16_t* buff = (uint16_t*) malloc(buff_size * sizeof(uint16_t)); 
-	CHECK_ALLOCATION(buff); 
-	size_t values_read=0, j=0; 
+	CUT_CHECK_BUFF_ALLOCATION(buff); 
 
+	// Indices to access the binary file.
+	size_t values_read=0, j=0, i=0; 
+
+	// Temporary values to keep track of vectorized events.
 	uint64_t buff_tmp=0, k=0, num_vect_events=0; 
+	// Masks to extract bits.
 	const uint16_t mask_8b = 0xFFU, mask_12b = 0xFFFU; 
+	// Flags to recognise event type and end of file.
 	uint8_t event_type=0, recording_finished=0, last_events_acquired=0, get_out=0; 
+	// Temporary values.
 	uint64_t first_timestamp=0, timestamp=0, time_high=0, time_high_ovfs=0, time_low=0, time_low_ovfs=0; 
 	// Converting duration to microseconds.
 	new_duration *= 1000; 
 
 	while (!get_out && (values_read = fread(buff, sizeof(*buff), buff_size, fp_in)) > 0){
 		for (j=0; !get_out && j<values_read; j++){
-			fwrite(&buff[j], sizeof(*buff), 1, fp_out); 
 			// Getting the event type. 
 			event_type = (buff[j] >> 12); 
 			switch (event_type){
@@ -508,10 +560,10 @@ DLLEXPORT size_t cut_evt3(const char* fpath_in, const char* fpath_out, size_t ne
 					break; 
 
 				default:
-					fprintf(stderr, "Error: event type not valid: 0x%x.\n", event_type); 
-					exit(EXIT_FAILURE); 
+					CUT_EVENT_TYPE_NOT_RECOGNISED(event_type); 
 			}
 		}
+		CHECK_FWRITE(fwrite(buff, sizeof(*buff), j, fp_out), j); 
 	}
 	fclose(fp_in); 
 	fclose(fp_out); 

@@ -27,7 +27,7 @@ for root, dirs, files in os.walk(_ROOT_PATH):
 clib = CDLL(str(lib_path))
 
 # Setting up arguments and return types.
-class dat_chunk_wrap_t(Structure):
+class dat_chunk_t(Structure):
     _fields_ = [
         ("arr", event_array_t),
         ("bytes_read", c_size_t),
@@ -35,7 +35,7 @@ class dat_chunk_wrap_t(Structure):
     ]
 
 
-class evt2_chunk_wrap_t(Structure):
+class evt2_chunk_t(Structure):
     _fields_ = [
         ("arr", event_array_t),
         ("bytes_read", c_size_t),
@@ -44,7 +44,7 @@ class evt2_chunk_wrap_t(Structure):
     ]
 
 
-class evt3_chunk_wrap_t(Structure):
+class evt3_chunk_t(Structure):
     _fields_ = [
         ("arr", event_array_t),
         ("bytes_read", c_size_t),
@@ -59,28 +59,28 @@ class evt3_chunk_wrap_t(Structure):
 
 
 def set_file_size(
-    chunk_wrap: Union[dat_chunk_wrap_t, evt2_chunk_wrap_t, evt3_chunk_wrap_t],
+    chunk: Union[dat_chunk_t, evt2_chunk_t, evt3_chunk_t],
     file_size: int,
 ):
-    chunk_wrap.file_size = c_size_t(file_size)
-    return chunk_wrap
+    chunk.file_size = c_size_t(file_size)
+    return chunk
 
 
 def set_bytes_read(
-    chunk_wrap: Union[dat_chunk_wrap_t, evt2_chunk_wrap_t, evt3_chunk_wrap_t],
+    chunk: Union[dat_chunk_t, evt2_chunk_t, evt3_chunk_t],
     bytes_read: int,
 ):
-    chunk_wrap.bytes_read = c_size_t(bytes_read)
-    return chunk_wrap
+    chunk.bytes_read = c_size_t(bytes_read)
+    return chunk
 
 
 c_read_dat_chunk = clib.read_dat_chunk
 c_read_evt2_chunk = clib.read_evt2_chunk
 c_read_evt3_chunk = clib.read_evt3_chunk
-for c_chunk_fn, chunk_wrap_t in (
-    (c_read_dat_chunk, dat_chunk_wrap_t),
-    (c_read_evt2_chunk, evt2_chunk_wrap_t),
-    (c_read_evt3_chunk, evt3_chunk_wrap_t),
+for c_chunk_fn, chunk_t in (
+    (c_read_dat_chunk, dat_chunk_t),
+    (c_read_evt2_chunk, evt2_chunk_t),
+    (c_read_evt3_chunk, evt3_chunk_t),
 ):
-    c_chunk_fn.argtypes = [c_char_p, c_size_t, POINTER(chunk_wrap_t), c_size_t]
+    c_chunk_fn.argtypes = [c_char_p, c_size_t, POINTER(chunk_t), c_size_t]
     c_chunk_fn.restype = None
