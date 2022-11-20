@@ -33,31 +33,13 @@ DLLEXPORT void free_event_array(event_array_t* arr){
 	arr->dim=0; 
 }
 
-void add_event(const event_t* event, event_array_t* arr, size_t i){
-	if (i >= arr->allocated_space){
-		event_array_t tmp = realloc_event_array(arr, 2*arr->allocated_space); // Doubling the storage.
-		if (is_void_event_array(&tmp))
-			free_event_array(arr); 
-		*arr = tmp; 
-	}
-	// Appending the event to the array.
-	if (!is_void_event_array(arr)){
-		arr->t_arr[i] = event->t; 
-		arr->x_arr[i] = event->x; 
-		arr->y_arr[i] = event->y; 
-		arr->p_arr[i] = event->p; 
-		arr->dim++; 
-	} 
-	return; 
-}
-
 event_array_t realloc_event_array(event_array_t* arr, size_t new_dim){
 	// Timestamp.
 	arr->t_arr = (timestamp_t*) realloc(arr->t_arr, new_dim * sizeof(timestamp_t));
 	// X coordinate.
-	arr->x_arr = (pixel_t*) realloc(arr->x_arr, new_dim * sizeof(pixel_t));
+	arr->x_arr = (address_t*) realloc(arr->x_arr, new_dim * sizeof(address_t));
 	// Y coordinate.
-	arr->y_arr = (pixel_t*) realloc(arr->y_arr, new_dim * sizeof(pixel_t));
+	arr->y_arr = (address_t*) realloc(arr->y_arr, new_dim * sizeof(address_t));
 	// Polarity.
 	arr->p_arr = (polarity_t*) realloc(arr->p_arr, new_dim * sizeof(polarity_t));
 	// Checking reallocation.
@@ -74,9 +56,9 @@ event_array_t malloc_event_array(size_t dim){
 	// Timestamp.
 	arr.t_arr = (timestamp_t*) malloc(arr.allocated_space * sizeof(timestamp_t));
 	// X coordinate.
-	arr.x_arr = (pixel_t*) malloc(arr.allocated_space * sizeof(pixel_t));
+	arr.x_arr = (address_t*) malloc(arr.allocated_space * sizeof(address_t));
 	// Y coordinate.
-	arr.y_arr = (pixel_t*) malloc(arr.allocated_space * sizeof(pixel_t));
+	arr.y_arr = (address_t*) malloc(arr.allocated_space * sizeof(address_t));
 	// Polarity.
 	arr.p_arr = (polarity_t*) malloc(arr.allocated_space * sizeof(polarity_t));
 	// Error checking.

@@ -154,9 +154,9 @@ DLLEXPORT event_array_t read_dat(const char* fpath, size_t buff_size){
 
 			arr.t_arr[i] = (timestamp_t) timestamp; 
 			// Event x address. 
-			arr.x_arr[i] = (pixel_t) (buff[j+1] & mask_14b); 
+			arr.x_arr[i] = (address_t) (buff[j+1] & mask_14b); 
 			// Event y address.
-			arr.y_arr[i] = (pixel_t) ((buff[j+1] >> 14) & mask_14b); 
+			arr.y_arr[i] = (address_t) ((buff[j+1] >> 14) & mask_14b); 
 			// Event polarity.
 			arr.p_arr[i++] = (polarity_t) ((buff[j+1] >> 28) & mask_4b); 
 		}
@@ -219,8 +219,8 @@ DLLEXPORT event_array_t read_evt2(const char* fpath, size_t buff_size){
 
 					arr.t_arr[i] = (timestamp_t) timestamp; 
 					// Getting event addresses.
-					arr.x_arr[i] = (pixel_t) ((buff[j] >> 11) & mask_11b); 
-					arr.y_arr[i] = (pixel_t) (buff[j] & mask_11b); 
+					arr.x_arr[i] = (address_t) ((buff[j] >> 11) & mask_11b); 
+					arr.y_arr[i] = (address_t) (buff[j] & mask_11b); 
 					arr.p_arr[i++] = (polarity_t) event_type; 
 					break; 
 
@@ -290,12 +290,12 @@ DLLEXPORT event_array_t read_evt3(const char* fpath, size_t buff_size){
 			event_type = (uint8_t)(buff[j] >> 12); 
 			switch (event_type){
 				case EVT3_EVT_ADDR_Y:
-					arr.y_arr[i] = (pixel_t)(buff[j] & mask_11b);
+					arr.y_arr[i] = (address_t)(buff[j] & mask_11b);
 					break; 
 
 				case EVT3_EVT_ADDR_X:
 					arr.p_arr[i] = (polarity_t) ((buff[j] >> 11)%2); 
-					arr.x_arr[i++] = (pixel_t)(buff[j] & mask_11b);
+					arr.x_arr[i++] = (address_t)(buff[j] & mask_11b);
 					arr.y_arr[i] = arr.y_arr[i-1];
 					arr.t_arr[i] = arr.t_arr[i-1];
 					break; 
@@ -316,7 +316,7 @@ DLLEXPORT event_array_t read_evt3(const char* fpath, size_t buff_size){
 					}
 					for (k=0; k<num_vect_events; k++){
 						if (buff_tmp%2){
-							arr.x_arr[i++] = (pixel_t)(base_x + k); 
+							arr.x_arr[i++] = (address_t)(base_x + k); 
 							arr.y_arr[i] = arr.y_arr[i-1];
 							arr.p_arr[i] = arr.p_arr[i-1];
 							arr.t_arr[i] = arr.t_arr[i-1];

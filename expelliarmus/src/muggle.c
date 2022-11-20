@@ -155,9 +155,9 @@ DLLEXPORT void read_dat_chunk(const char* fpath, size_t buff_size, dat_chunk_t* 
 
 			chunk->arr.t_arr[k] = (timestamp_t) timestamp; 
 			// Event x address. 
-			chunk->arr.x_arr[k] = (pixel_t) (buff[j+1] & mask_14b); 
+			chunk->arr.x_arr[k] = (address_t) (buff[j+1] & mask_14b); 
 			// Event y address.
-			chunk->arr.y_arr[k] = (pixel_t) ((buff[j+1] >> 14) & mask_14b); 
+			chunk->arr.y_arr[k] = (address_t) ((buff[j+1] >> 14) & mask_14b); 
 			// Event polarity.
 			chunk->arr.p_arr[k++] = (polarity_t) ((buff[j+1] >> 28) & mask_4b); 
 		}
@@ -225,8 +225,8 @@ DLLEXPORT void read_evt2_chunk(const char* fpath, size_t buff_size, evt2_chunk_t
 
 					chunk->arr.t_arr[k] = (timestamp_t) timestamp; 
 					// Getting event addresses.
-					chunk->arr.x_arr[k] = (pixel_t) ((buff[j] >> 11) & mask_11b); 
-					chunk->arr.y_arr[k] = (pixel_t) (buff[j] & mask_11b); 
+					chunk->arr.x_arr[k] = (address_t) ((buff[j] >> 11) & mask_11b); 
+					chunk->arr.y_arr[k] = (address_t) (buff[j] & mask_11b); 
 					chunk->arr.p_arr[k++] = (polarity_t) event_type; 
 					break; 
 
@@ -294,7 +294,7 @@ DLLEXPORT void read_evt3_chunk(const char* fpath, size_t buff_size, evt3_chunk_t
 			event_type = (uint8_t)(buff[j] >> 12); 
 			switch (event_type){
 				case EVT3_EVT_ADDR_Y:
-					chunk->arr.y_arr[k] = (pixel_t)(buff[j] & mask_11b);
+					chunk->arr.y_arr[k] = (address_t)(buff[j] & mask_11b);
 					break; 
 
 				case EVT3_EVT_ADDR_X:
@@ -304,7 +304,7 @@ DLLEXPORT void read_evt3_chunk(const char* fpath, size_t buff_size, evt3_chunk_t
 					}
 
 					chunk->arr.p_arr[k] = (polarity_t) ((buff[j] >> 11)%2); 
-					chunk->arr.x_arr[k++] = (pixel_t)(buff[j] & mask_11b);
+					chunk->arr.x_arr[k++] = (address_t)(buff[j] & mask_11b);
 					chunk->arr.y_arr[k] = chunk->arr.y_arr[k-1]; 
 					chunk->arr.t_arr[k] = chunk->arr.t_arr[k-1]; 
 					break; 
@@ -330,7 +330,7 @@ DLLEXPORT void read_evt3_chunk(const char* fpath, size_t buff_size, evt3_chunk_t
 					}
 					for (z=0; z<num_vect_events; z++){
 						if (buff_tmp%2){
-							chunk->arr.x_arr[k++] = (pixel_t)(chunk->base_x + z); 
+							chunk->arr.x_arr[k++] = (address_t)(chunk->base_x + z); 
 							chunk->arr.y_arr[k] = chunk->arr.y_arr[k-1]; 
 							chunk->arr.t_arr[k] = chunk->arr.t_arr[k-1]; 
 							chunk->arr.p_arr[k] = chunk->arr.p_arr[k-1]; 

@@ -12,22 +12,22 @@
 #define DLLEXPORT
 #endif
 
-#define DEFAULT_ARRAY_DIM 8192
+#define DEFAULT_ARRAY_DIM (1U << 15) 
 
 typedef int64_t timestamp_t;  
-typedef int16_t pixel_t; 
+typedef int16_t address_t; 
 typedef uint8_t polarity_t; 
 
 typedef struct event_s {
 	timestamp_t t; 
-	pixel_t x, y; 
+	address_t x, y; 
 	polarity_t p; 
 } event_t; 
 
 typedef struct event_array_s {
 	timestamp_t* t_arr; 
-	pixel_t* x_arr; 
-	pixel_t* y_arr; 
+	address_t* x_arr; 
+	address_t* y_arr; 
 	polarity_t* p_arr; 
 	size_t dim; 
 	size_t allocated_space;
@@ -42,7 +42,6 @@ DLLEXPORT void free_event_array(event_array_t*);
 DLLEXPORT unsigned int is_void_event_array(event_array_t*);
 event_array_t realloc_event_array(event_array_t*, size_t);
 event_array_t malloc_event_array(size_t);
-void add_event(const event_t*, event_array_t*, size_t); 
 event_array_t void_event_array();
 event_t void_event();
 
