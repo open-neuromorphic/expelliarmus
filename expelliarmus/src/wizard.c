@@ -27,13 +27,6 @@
 	}\
 }
 
-#define CHECK_ADD_EVENT(arr){\
-	if (is_void_event_array(&arr)){\
-		fprintf(stderr, "ERROR: the event could no be added to the array (failed memory reallocation).\n");\
-		return arr;\
-	}\
-}
-
 #define CHECK_EVENT_ARRAY_SHRINK(arr){\
 	if (is_void_event_array(&arr)){\
 		fprintf(stderr, "ERROR: the event array memory space could not be shrinked (failed memory reallocation).\n");\
@@ -136,9 +129,7 @@ DLLEXPORT event_array_t read_dat(const char* fpath, size_t buff_size){
 	// Buffer to read binary data.
 	uint32_t* buff = (uint32_t*) malloc(buff_size * sizeof(uint32_t));
 	CHECK_BUFF_ALLOCATION(buff, arr); 
-	
-	// Temporary event data structure.
-	event_t event_tmp = void_event();
+
 	// Indices to keep track of how many items are read from the file.
 	size_t values_read=0, j=0, i=0; 
 	// Masks to extract bits.
@@ -152,21 +143,28 @@ DLLEXPORT event_array_t read_dat(const char* fpath, size_t buff_size){
 			if (((uint64_t)buff[j]) < timestamp) // Overflow.
 				time_ovfs++; 
 			timestamp = (time_ovfs<<32) | ((uint64_t)buff[j]); 
-			CHECK_TIMESTAMP_MONOTONICITY(timestamp, event_tmp.t);
-			event_tmp.t = (timestamp_t) timestamp; 
+			if (i>0)
+				CHECK_TIMESTAMP_MONOTONICITY(timestamp, arr.t_arr[i-1]);
+
+			// Reallocation.
+			if (i >= arr.allocated_space){
+				arr = realloc_event_array(&arr, 10*arr.allocated_space); 
+				CHECK_EVENT_ARRAY_ALLOC(arr); 
+			}
+
+			arr.t_arr[i] = (timestamp_t) timestamp; 
 			// Event x address. 
-			event_tmp.x = (pixel_t) (buff[j+1] & mask_14b); 
+			arr.x_arr[i] = (pixel_t) (buff[j+1] & mask_14b); 
 			// Event y address.
-			event_tmp.y = (pixel_t) ((buff[j+1] >> 14) & mask_14b); 
+			arr.y_arr[i] = (pixel_t) ((buff[j+1] >> 14) & mask_14b); 
 			// Event polarity.
-			event_tmp.p = (polarity_t) ((buff[j+1] >> 28) & mask_4b); 
-			add_event(&event_tmp, &arr, i++); 
-			CHECK_ADD_EVENT(arr); 
+			arr.p_arr[i++] = (polarity_t) ((buff[j+1] >> 28) & mask_4b); 
 		}
 	}
 	free(buff); 
 	fclose(fp); 
 	// Reallocating the array to save space.
+	arr.dim = i; 
 	if (arr.dim > 0){
 		arr = realloc_event_array(&arr, arr.dim); 	
 		CHECK_EVENT_ARRAY_SHRINK(arr); 
@@ -193,8 +191,6 @@ DLLEXPORT event_array_t read_evt2(const char* fpath, size_t buff_size){
 
 	// The byte that identifies the event type.
 	uint8_t event_type; 
-	// Temporary event data structure.
-	event_t event_tmp = void_event();
 	// Indices to access the input file.
 	size_t i=0, j=0, values_read=0; 
 	// Masks to extract bits.
@@ -209,17 +205,23 @@ DLLEXPORT event_array_t read_evt2(const char* fpath, size_t buff_size){
 			switch (event_type){
 				case EVT2_CD_ON:
 				case EVT2_CD_OFF:
-					event_tmp.p = (polarity_t) event_type; 
 					// Getting 6LSBs of the time stamp. 
 					time_low = ((uint64_t)((buff[j] >> 22) & mask_6b)); 
 					timestamp = (time_high << 6) | time_low;
-					CHECK_TIMESTAMP_MONOTONICITY(timestamp, event_tmp.t);
-					event_tmp.t = (timestamp_t) timestamp; 
+					if (i>0)
+						CHECK_TIMESTAMP_MONOTONICITY(timestamp, arr.t_arr[i-1]);
+					
+					// Reallocation.
+					if (i >= arr.allocated_space){
+						arr = realloc_event_array(&arr, 10*arr.allocated_space); 
+						CHECK_EVENT_ARRAY_ALLOC(arr); 
+					}
+
+					arr.t_arr[i] = (timestamp_t) timestamp; 
 					// Getting event addresses.
-					event_tmp.x = (pixel_t) ((buff[j] >> 11) & mask_11b); 
-					event_tmp.y = (pixel_t) (buff[j] & mask_11b); 
-					add_event(&event_tmp, &arr, i++); 
-					CHECK_ADD_EVENT(arr); 
+					arr.x_arr[i] = (pixel_t) ((buff[j] >> 11) & mask_11b); 
+					arr.y_arr[i] = (pixel_t) (buff[j] & mask_11b); 
+					arr.p_arr[i++] = (polarity_t) event_type; 
 					break; 
 
 				case EVT2_TIME_HIGH:
@@ -239,6 +241,7 @@ DLLEXPORT event_array_t read_evt2(const char* fpath, size_t buff_size){
 	}
 	fclose(fp); 
 	free(buff); 
+	arr.dim = i; 
 	if (arr.dim > 0){
 		arr = realloc_event_array(&arr, arr.dim); 
 		CHECK_EVENT_ARRAY_SHRINK(arr); 
@@ -268,9 +271,6 @@ DLLEXPORT event_array_t read_evt3(const char* fpath, size_t buff_size){
 	// Byte that identifies the event type.
 	uint8_t event_type; 
 
-	// Temporary event data structure.
-	event_t event_tmp = void_event();
-
 	// Counters used to keep track of number of events encoded in vectors and of the base x address of these.
 	uint16_t base_x=0, k=0, num_vect_events=0; 
 	// Masks to extract bits.
@@ -280,22 +280,28 @@ DLLEXPORT event_array_t read_evt3(const char* fpath, size_t buff_size){
 	// Reading the file.
 	while ((values_read = fread(buff, sizeof(*buff), buff_size, fp)) > 0){
 		for (j=0; j<values_read; j++){
+			// Reallocation.
+			if (i >= arr.allocated_space){
+				arr = realloc_event_array(&arr, 10*arr.allocated_space); 
+				CHECK_EVENT_ARRAY_ALLOC(arr); 
+			}
+
 			// Getting the event type. 
 			event_type = (uint8_t)(buff[j] >> 12); 
 			switch (event_type){
 				case EVT3_EVT_ADDR_Y:
-					event_tmp.y = (pixel_t)(buff[j] & mask_11b);
+					arr.y_arr[i] = (pixel_t)(buff[j] & mask_11b);
 					break; 
 
 				case EVT3_EVT_ADDR_X:
-					event_tmp.p = (polarity_t) ((buff[j] >> 11)%2); 
-					event_tmp.x = (pixel_t)(buff[j] & mask_11b);
-					add_event(&event_tmp, &arr, i++); 
-					CHECK_ADD_EVENT(arr); 
+					arr.p_arr[i] = (polarity_t) ((buff[j] >> 11)%2); 
+					arr.x_arr[i++] = (pixel_t)(buff[j] & mask_11b);
+					arr.y_arr[i] = arr.y_arr[i-1];
+					arr.t_arr[i] = arr.t_arr[i-1];
 					break; 
 
 				case EVT3_VECT_BASE_X:
-					event_tmp.p = (polarity_t) ((buff[j] >> 11)%2); 
+					arr.p_arr[i] = (polarity_t) ((buff[j] >> 11)%2); 
 					base_x = (uint16_t)(buff[j] & mask_11b);
 					break; 
 
@@ -310,9 +316,10 @@ DLLEXPORT event_array_t read_evt3(const char* fpath, size_t buff_size){
 					}
 					for (k=0; k<num_vect_events; k++){
 						if (buff_tmp%2){
-							event_tmp.x = (pixel_t)(base_x + k); 
-							add_event(&event_tmp, &arr, i++); 
-							CHECK_ADD_EVENT(arr); 
+							arr.x_arr[i++] = (pixel_t)(base_x + k); 
+							arr.y_arr[i] = arr.y_arr[i-1];
+							arr.p_arr[i] = arr.p_arr[i-1];
+							arr.t_arr[i] = arr.t_arr[i-1];
 						}
 						buff_tmp = buff_tmp >> 1; 
 					}
@@ -326,8 +333,9 @@ DLLEXPORT event_array_t read_evt3(const char* fpath, size_t buff_size){
 						time_low_ovfs++; 
 					time_low = buff_tmp; 
 					timestamp = (time_high_ovfs<<24) + ((time_high+time_low_ovfs)<<12) + time_low;
-					CHECK_TIMESTAMP_MONOTONICITY(timestamp, event_tmp.t);
-					event_tmp.t = (timestamp_t) timestamp; 
+					if (i>0)
+						CHECK_TIMESTAMP_MONOTONICITY(timestamp, arr.t_arr[i-1]);
+					arr.t_arr[i] = (timestamp_t) timestamp; 
 					break; 
 
 				case EVT3_TIME_HIGH:
@@ -336,8 +344,9 @@ DLLEXPORT event_array_t read_evt3(const char* fpath, size_t buff_size){
 						time_high_ovfs++; 
 					time_high = buff_tmp; 
 					timestamp = (time_high_ovfs<<24) + ((time_high+time_low_ovfs)<<12) + time_low;
-					CHECK_TIMESTAMP_MONOTONICITY(timestamp, event_tmp.t);
-					event_tmp.t = (timestamp_t) timestamp; 
+					if (i > 0)
+						CHECK_TIMESTAMP_MONOTONICITY(timestamp, arr.t_arr[i-1]);
+					arr.t_arr[i] = (timestamp_t) timestamp; 
 					break; 
 
 				case EVT3_EXT_TRIGGER:
@@ -352,6 +361,7 @@ DLLEXPORT event_array_t read_evt3(const char* fpath, size_t buff_size){
 	}
 	fclose(fp); 
 	free(buff); 
+	arr.dim = i; 
 	if (arr.dim > 0){
 		arr = realloc_event_array(&arr, arr.dim); 
 		CHECK_EVENT_ARRAY_SHRINK(arr); 
