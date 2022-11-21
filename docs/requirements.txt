@@ -1,0 +1,5 @@
+numpy
+matplotlib
+h5py
+requests
+pathlib
