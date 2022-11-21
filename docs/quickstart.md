@@ -65,13 +65,13 @@ The files are consistent:
 
 
 ```python
-print(f"First original sample: {arr[0]} ! First cut sample: {cut_arr[0]}.")
-print(f"{nevents}th original sample: {arr[nevents-1]} ! Last cut sample: {cut_arr[-1]}.")
+print(f"First original sample: {arr[0]} | First cut sample: {cut_arr[0]}.")
+print(f"{nevents}th original sample: {arr[nevents-1]} | Last cut sample: {cut_arr[-1]}.")
 print((arr[:nevents]==cut_arr[:]).all())
 ```
 
-    First original sample: (5840504, 707, 297, 0) ! First cut sample: (5840504, 707, 297, 0).
-    540th original sample: (5853218, 1208, 253, 0) ! Last cut sample: (5853218, 1208, 253, 0).
+    First original sample: (5840504, 707, 297, 0) | First cut sample: (5840504, 707, 297, 0).
+    540th original sample: (5853218, 1208, 253, 0) | Last cut sample: (5853218, 1208, 253, 0).
     True
 
 
@@ -85,13 +85,12 @@ print(f"New recording duration: {((cut_arr['t'][-1] - cut_arr['t'][0])/1000):.2f
     New recording duration: 12.71 ms
 
 
-What if you're a poor `Muggle` and you cannot cast any spells? Well, we can try to read the files one chunk at time...
+What if you wand is not powerful enough to read the full recoding to memory? Well, we can try to read the files one chunk at time...
 
 
 ```python
-from expelliarmus import Muggle
-muggle = Muggle(encoding="evt3")
-print(f"Length of the chunk: {len(next(muggle.read_chunk(fpath='./pedestrians.raw', nevents_per_chunk=512)))}.")
+wizard.setup_chunk(fpath="./pedestrians.raw", chunk_size=512)
+print(f"Length of the chunk: {len(next(wizard.read_chunk()))}.")
 ```
 
     Length of the chunk: 512.
@@ -101,7 +100,8 @@ Let's read less events, so that we are able to visualize them
 
 
 ```python
-print(next(muggle.read_chunk(fpath="./pedestrians.raw", nevents_per_chunk=16)))
+wizard.setup_chunk(fpath="./pedestrians.raw", chunk_size=16)
+print(next(muggle.read_chunk()))
 ```
 
     [(5848837,  610, 296, 1) (5848843,  834, 302, 1) (5848846,  593, 254, 1)

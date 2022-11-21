@@ -84,13 +84,13 @@ The files are consistent:
 
 
 ```python
-print(f"First original sample: {arr[0]} ! First cut sample: {cut_arr[0]}.")
-print(f"{nevents}th original sample: {arr[nevents-1]} ! Last cut sample: {cut_arr[-1]}.")
+print(f"First original sample: {arr[0]} | First cut sample: {cut_arr[0]}.")
+print(f"{nevents}th original sample: {arr[nevents-1]} | Last cut sample: {cut_arr[-1]}.")
 print((arr[:nevents]==cut_arr[:]).all())
 ```
 
-    First original sample: (5840504, 707, 297, 0) ! First cut sample: (5840504, 707, 297, 0).
-    540th original sample: (5853218, 1208, 253, 0) ! Last cut sample: (5853218, 1208, 253, 0).
+    First original sample: (5840504, 707, 297, 0) | First cut sample: (5840504, 707, 297, 0).
+    540th original sample: (5853218, 1208, 253, 0) | Last cut sample: (5853218, 1208, 253, 0).
     True
 
 
@@ -104,13 +104,12 @@ print(f"New recording duration: {((cut_arr['t'][-1] - cut_arr['t'][0])/1000):.2f
     New recording duration: 12.71 ms
 
 
-What if you're a poor `Muggle` and you cannot cast any spells? Well, we can try to read the files one chunk at time...
+What if you wand is not strong enough for handling spells on very large recordings? Well, we can try to read the files one chunk at time...
 
 
 ```python
-from expelliarmus import Muggle
-muggle = Muggle(encoding="evt3", fpath="./pedestrians.raw", chunk_size=512)
-print(f"Length of the chunk: {len(next(muggle.read_chunk()))}.")
+wizard.setup_chunk(fpath="./pedestrians.raw", chunk_size=512)
+print(f"Length of the chunk: {len(next(wizard.read_chunk()))}.")
 ```
 
     Length of the chunk: 512.
@@ -120,8 +119,8 @@ Let's read less events, so that we are able to visualize them
 
 
 ```python
-muggle.set_chunk_size(16)
-print(next(muggle.read_chunk()
+wizard.setup_chunk(fpath="./pedestrians.raw", chunk_size=16)
+print(next(wizard.read_chunk()
 ```
 
     [(5848837,  610, 296, 1) (5848843,  834, 302, 1) (5848846,  593, 254, 1)
@@ -131,22 +130,6 @@ print(next(muggle.read_chunk()
      (5848918,  603, 301, 1) (5848918,  708, 299, 1) (5848924,  778, 295, 1)
      (5848967,  140, 315, 0)]
 
-
-## Quick usage instructions
-Right now, three encodings are supported: `dat`, `evt2` and `evt3`. `Wizard` can read and cut files, while `Muggle` allows to read files in chunks when these are too large. The constructors are the following:
-
-```python 
-class Wizard(encoding, buff_size, dtype)
-```
-```python
-class Muggle(encoding, fpath, chunk_size, buff_size, dtype)
-```
-
-To read a file we use the `read(fpath)` method, while to cut it the `cut(fpath_in, fpath_out, new_duration)` one from the `Wizard`.
-
-To read in chunks from a file, you can use the `Muggle`'s `read_chunk()` method.
-
-More information about the usage can be found in the source code. Sooner or later we'll publish a proper documentation! 
 
 ## Contributing
 Please check our documentation page for more details on contributing.
