@@ -85,7 +85,7 @@ print(f"New recording duration: {((cut_arr['t'][-1] - cut_arr['t'][0])/1000):.2f
     New recording duration: 12.71 ms
 
 
-What if you wand is not powerful enough to read the full recoding to memory? Well, we can try to read the files one chunk at time...
+What if your wand is not powerful enough to read the full recording to memory? Well, we can try to read the files one chunk of events at time...
 
 
 ```python
