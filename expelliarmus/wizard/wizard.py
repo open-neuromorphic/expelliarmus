@@ -38,7 +38,7 @@ class Wizard:
     def __init__(
         self,
         encoding: str,
-        fpath: Union[str, pathlib.Path],
+        fpath: Optional[Union[str, pathlib.Path]] = None,
         chunk_size: Optional[int] = 8192,
         buff_size: Optional[int] = _DEFAULT_BUFF_SIZE,
     ):
@@ -53,7 +53,10 @@ class Wizard:
             ), "ERROR: The chunk size has to be larger than 12 for the EVT3 encoding."
         else:
             assert chunk_size > 0, "ERROR: The chunk size has to be larger than 0."
-        self._fpath = check_input_file(fpath=fpath, encoding=self._encoding)
+        if not (fpath is None):
+            self._fpath = check_input_file(fpath=fpath, encoding=self._encoding)
+        else:
+            self._fpath = None
         self._chunk_size = chunk_size
         self.cargo = self._get_cargo()
         return
@@ -66,7 +69,7 @@ class Wizard:
             c_size_t(self._chunk_size),
             1,
             0,
-            c_size_t(self._fpath.stat().st_size),
+            0,
         )
         if self._encoding == "DAT":
             cargo = dat_cargo_t(events_info, 0, 0)
@@ -83,7 +86,7 @@ class Wizard:
         """
         Function that sets the input file.
         """
-        self._fpath = check_input_file(fpath)
+        self._fpath = check_input_file(fpath, encoding=self._encoding)
         return
 
     def set_chunk_size(self, chunk_size: int) -> None:
@@ -107,7 +110,7 @@ class Wizard:
         """
         Function used to reset the generator, so that the file can be read from the beginning.
         """
-        if self.cargo:
+        if not (self.cargo is None):
             del self.cargo
         self.cargo = self._get_cargo()
         return
@@ -137,6 +140,9 @@ class Wizard:
             - nevents: the number of events encoded in the output file.
         """
         if fpath_in is None:
+            assert not (
+                self._fpath is None
+            ), "ERROR: An input file must be set or provided."
             fpath_in = self._fpath
         else:
             fpath_in = check_input_file(fpath=fpath_in, encoding=self._encoding)
@@ -162,6 +168,9 @@ class Wizard:
             - arr: the structured NumPy array.
         """
         if fpath is None:
+            assert not (
+                self._fpath is None
+            ), "ERROR: An input file must be set or provided."
             fpath = self._fpath
         else:
             fpath = check_input_file(fpath, self._encoding)
@@ -176,6 +185,8 @@ class Wizard:
         Returns:
             - arr: structured NumPy array of events.
         """
+        assert not (self._fpath is None), "ERROR: An input file must be set."
+        self.cargo.events_info.file_size = c_size_t(self._fpath.stat().st_size)
         while self.cargo.events_info.dim > 0:
             arr, self.cargo, status = c_read_chunk_wrapper(
                 encoding=self._encoding,
