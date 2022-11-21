@@ -25,13 +25,13 @@ Shall we start practicing some spells? For that, we need a `Wizard`!
 
 ```python
 from expelliarmus import Wizard
-wizard = Wizard(encoding="evt3")
 ```
 
-Let's cast a spell called `read(fpath)` and read [this RAW file](https://dataset.prophesee.ai/index.php/s/fB7xvMpE136yakl/download) to a structured NumPy array! 
+Let's cast a spell called `read()` and read [this RAW file](https://dataset.prophesee.ai/index.php/s/fB7xvMpE136yakl/download) to a structured NumPy array! 
 
 ```python
-arr = wizard.read(fpath="./pedestrians.raw")
+wizard = Wizard(encoding="evt3", fpath="./pedestrians.raw")
+arr = wizard.read()
 print(arr.shape) # Number of events encoded to the NumPy array.
 ```
 
@@ -62,7 +62,7 @@ If we would like to reduce the EVT3 file size, we can use the `cut(fpath_in, fpa
 
 
 ```python
-nevents = wizard.cut(fpath_in="./pedestrians.raw", fpath_out="./pedestrians_cut.raw", new_duration=12)
+nevents = wizard.cut(fpath_out="./pedestrians_cut.raw", new_duration=12)
 print(f"Number of events embedded in the cut file: {nevents}.") # The number of events embedded in the output file.
 ```
 
@@ -108,7 +108,7 @@ What if you wand is not strong enough for handling spells on very large recordin
 
 
 ```python
-wizard.setup_chunk(fpath="./pedestrians.raw", chunk_size=512)
+wizard.set_chunk_size(chunk_size=512)
 print(f"Length of the chunk: {len(next(wizard.read_chunk()))}.")
 ```
 
@@ -119,7 +119,7 @@ Let's read less events, so that we are able to visualize them
 
 
 ```python
-wizard.setup_chunk(fpath="./pedestrians.raw", chunk_size=16)
+wizard.set_chunk_size(chunk_size=16)
 print(next(wizard.read_chunk()
 ```
 

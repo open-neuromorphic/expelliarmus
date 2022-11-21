@@ -13,22 +13,6 @@ elif platform.system() == "Windows":  # Findus system.
 else:
     raise Exception("The OS has not been recognized.")
 
-COORDS = ["t", "x", "y", "p"]
-DATA_TYPES = [
-    (np.int64, np.uint64, np.int64, np.uint64),
-    (np.uint32, np.uint16, np.int32, np.int16),
-    (np.uint32, np.uint16, np.int32, np.int16),
-    (bool, np.uint8, np.int8, np.int16),
-]
-
-DTYPES = []
-for coord_i in range(len(COORDS)):
-    COORDS = COORDS[1:] + COORDS[:1]
-    DATA_TYPES = DATA_TYPES[1:] + DATA_TYPES[:1]
-    for data_types in zip(*DATA_TYPES):
-        tmp = [(COORDS[i], data_type) for i, data_type in enumerate(data_types)]
-        DTYPES.append(np.dtype(tmp))
-
 CHUNK_SIZES = tuple([2**i for i in range(7, 16 + 1)])
 
 
@@ -78,20 +62,20 @@ def test_cut(
     fpath_out.touch()
     assert fpath_out.is_file()
     # Checking that the desired number of events has been encoded to the output file.
-    ref_wizard = Wizard(encoding=encoding)
-    ref_arr = ref_wizard.read(fpath_in)
-    for dtype in DTYPES:
-        wizard = Wizard(encoding=encoding, dtype=dtype)
-        nevents_out = wizard.cut(fpath_in, fpath_out, new_duration=new_duration)
-        arr = wizard.read(fpath_out)
-        assert (
-            len(arr) == nevents_out
-        ), "The lenght of the array does not coincide with the number of events returned by the C function."
-        assert (
-            arr["t"][-1] - arr["t"][0]
-        ) >= new_duration * 1000, f"Error: the actual duration of the recording is {(arr['t'][-1] - arr['t'][0])/1000:.2f} ms instead of {new_duration} ms."
-        # Checking that the cut is consistent.
-        _test_fields(ref_arr[:nevents_out], arr, sensor_size)
+    wizard = Wizard(encoding=encoding, fpath=fpath_in)
+    ref_arr = wizard.read()
+    nevents_out = wizard.cut(
+        fpath_in=fpath_in, fpath_out=fpath_out, new_duration=new_duration
+    )
+    arr = wizard.read(fpath=fpath_out)
+    assert (
+        len(arr) == nevents_out
+    ), "The lenght of the array does not coincide with the number of events returned by the C function."
+    assert (
+        arr["t"][-1] - arr["t"][0]
+    ) >= new_duration * 1000, f"Error: the actual duration of the recording is {(arr['t'][-1] - arr['t'][0])/1000:.2f} ms instead of {new_duration} ms."
+    # Checking that the cut is consistent.
+    _test_fields(ref_arr[:nevents_out], arr, sensor_size)
     # Cleaning up.
     shutil.rmtree(fpath_out.parent)
     return
@@ -108,8 +92,8 @@ def test_read(
     assert fpath.is_file()
     fpath_ref = pathlib.Path("tests", "sample-files", fname.split(".")[0] + ".npy")
     ref_arr = np.load(fpath_ref)
-    wizard = Wizard(encoding=encoding)
-    arr = wizard.read(fpath)
+    wizard = Wizard(encoding=encoding, fpath=fpath)
+    arr = wizard.read()
     assert (
         len(arr) == expected_nevents
     ), "Error: the number of events in the array does not coincide with the expected one."
@@ -128,17 +112,15 @@ def test_chunk_read(
     ref_fpath = pathlib.Path("tests", "sample-files", fname.split(".")[0] + ".npy")
     ref_arr = np.load(ref_fpath)
     tot_nevents = len(ref_arr)
-    wizard = Wizard(encoding=encoding)
+    wizard = Wizard(encoding=encoding, fpath=fpath)
     for chunk_size in CHUNK_SIZES:
-        wizard.setup_chunk(fpath, chunk_size)
+        wizard.set_chunk_size(chunk_size)
         for repetition in range(2):
             chunk_offset = 0
             for chunk_arr in wizard.read_chunk():
                 nevents = len(chunk_arr)
                 _test_fields(
-                    ref_arr[
-                        chunk_offset : min(chunk_offset + nevents, tot_nevents)
-                    ],
+                    ref_arr[chunk_offset : min(chunk_offset + nevents, tot_nevents)],
                     chunk_arr,
                     sensor_size,
                 )
