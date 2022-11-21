@@ -8,3 +8,4 @@ sphinx-book-theme
 sphinx-gallery
 myst_nb
 ipywidgets
+autoapi
