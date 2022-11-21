@@ -62,8 +62,21 @@ def test_cut(
     fpath_out.touch()
     assert fpath_out.is_file()
     # Checking that the desired number of events has been encoded to the output file.
-    wizard = Wizard(encoding=encoding, fpath=fpath_in)
+    wizard = Wizard(encoding=encoding)
+    wizard.set_file(fpath=fpath_in)
     ref_arr = wizard.read()
+    nevents_out = wizard.cut(
+        fpath_out=fpath_out, new_duration=new_duration
+    )
+    arr = wizard.read(fpath=fpath_out)
+    assert (
+        len(arr) == nevents_out
+    ), "The lenght of the array does not coincide with the number of events returned by the C function."
+    assert (
+        arr["t"][-1] - arr["t"][0]
+    ) >= new_duration * 1000, f"Error: the actual duration of the recording is {(arr['t'][-1] - arr['t'][0])/1000:.2f} ms instead of {new_duration} ms."
+    # Checking that the cut is consistent.
+    _test_fields(ref_arr[:nevents_out], arr, sensor_size)
     nevents_out = wizard.cut(
         fpath_in=fpath_in, fpath_out=fpath_out, new_duration=new_duration
     )
