@@ -111,6 +111,15 @@ def test_read(
         len(arr) == expected_nevents
     ), "Error: the number of events in the array does not coincide with the expected one."
     _test_fields(ref_arr, arr, sensor_size)
+    try:
+        wizard.set_encoding("stocazzo")
+    except:
+        print("Stocazzo!")
+    wizard._encoding = "peppa_pig"
+    try:
+        wizard.read()
+    except:
+        print("Stocazzo!")
     return
 
 
@@ -126,6 +135,7 @@ def test_chunk_read(
     ref_arr = np.load(ref_fpath)
     tot_nevents = len(ref_arr)
     wizard = Wizard(encoding=encoding, fpath=fpath)
+    wizard.set_encoding(encoding)
     for chunk_size in CHUNK_SIZES:
         wizard.set_chunk_size(chunk_size)
         for repetition in range(2):
