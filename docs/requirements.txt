@@ -3,3 +3,8 @@ matplotlib
 h5py
 requests
 pathlib
+sphinx>=4.0
+sphinx-book-theme
+sphinx-gallery
+myst_nb
+ipywidgets
