@@ -47,7 +47,7 @@ def c_read_wrapper(encoding: str, fpath: Union[str, Path], buff_size: int):
         elif encoding == "EVT3":
             status = c_read_evt3(c_fpath, arr, byref(cargo), c_buff_size)
         else:
-            raise Exception("Function not defined.")
+            raise Exception("Encoding not valid.")
     return (arr, status) if dim > 0 and status == 0 else (None, status)
 
 
@@ -69,7 +69,7 @@ def c_read_chunk_wrapper(
         arr = zeros((cargo.events_info.dim + 12,), dtype=event_t)
         status = c_read_evt3(c_fpath, arr, byref(cargo), c_buff_size)
     else:
-        raise Exception("Function not defined.")
+        raise Exception("Encoding not valid.")
     return (
         (arr[: cargo.events_info.dim], cargo, status)
         if status == 0
