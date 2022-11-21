@@ -37,15 +37,12 @@ setup(
     version="1.1.1",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    packages=["expelliarmus", "expelliarmus.muggle", "expelliarmus.wizard"],
-    # py_modules=["expelliarmus.wizard.wizard", "expelliarmus.muggle.muggle"],
+    packages=["expelliarmus", "expelliarmus.wizard"],
     ext_modules=[
         CTypesExtension(
             "expelliarmus",
             [
                 str(pathlib.Path("expelliarmus", "src", "wizard.c")),
-                str(pathlib.Path("expelliarmus", "src", "muggle.c")),
-                str(pathlib.Path("expelliarmus", "src", "events.c")),
             ],
         ),
     ],

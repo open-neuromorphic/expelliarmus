@@ -4,7 +4,7 @@ import platform
 import shutil
 import numpy as np
 from typing import Callable, Union, Optional
-from expelliarmus import Muggle, Wizard
+from expelliarmus import Wizard
 
 if platform.system() in ("Linux", "Darwin"):  # Unix system.
     TMPDIR = pathlib.Path("/tmp")
@@ -108,16 +108,12 @@ def test_read(
     assert fpath.is_file()
     fpath_ref = pathlib.Path("tests", "sample-files", fname.split(".")[0] + ".npy")
     ref_arr = np.load(fpath_ref)
-    for dtype in DTYPES:
-        wizard = Wizard(encoding=encoding, dtype=dtype)
-        arr = wizard.read(fpath)
-        assert (
-            arr.dtype == dtype
-        ), "Error: the resulting dtype does not coincide with the desired one."
-        assert (
-            len(arr) == expected_nevents
-        ), "Error: the number of events in the array does not coincide with the expected one."
-        _test_fields(ref_arr, arr, sensor_size)
+    wizard = Wizard(encoding=encoding)
+    arr = wizard.read(fpath)
+    assert (
+        len(arr) == expected_nevents
+    ), "Error: the number of events in the array does not coincide with the expected one."
+    _test_fields(ref_arr, arr, sensor_size)
     return
 
 
@@ -132,25 +128,20 @@ def test_chunk_read(
     ref_fpath = pathlib.Path("tests", "sample-files", fname.split(".")[0] + ".npy")
     ref_arr = np.load(ref_fpath)
     tot_nevents = len(ref_arr)
+    wizard = Wizard(encoding=encoding)
     for chunk_size in CHUNK_SIZES:
-        for dtype in DTYPES:
-            muggler = Muggle(
-                fpath=fpath,
-                chunk_size=chunk_size,
-                encoding=encoding,
-                dtype=dtype,
-            )
-            for repetition in range(2):
-                chunk_offset = 0
-                for chunk_arr in muggler.read_chunk():
-                    nevents = len(chunk_arr)
-                    _test_fields(
-                        ref_arr[
-                            chunk_offset : min(chunk_offset + nevents, tot_nevents)
-                        ],
-                        chunk_arr,
-                        sensor_size,
-                    )
-                    chunk_offset += nevents
-                muggler.reset()
+        wizard.setup_chunk(fpath, chunk_size)
+        for repetition in range(2):
+            chunk_offset = 0
+            for chunk_arr in wizard.read_chunk():
+                nevents = len(chunk_arr)
+                _test_fields(
+                    ref_arr[
+                        chunk_offset : min(chunk_offset + nevents, tot_nevents)
+                    ],
+                    chunk_arr,
+                    sensor_size,
+                )
+                chunk_offset += nevents
+            wizard.reset()
     return

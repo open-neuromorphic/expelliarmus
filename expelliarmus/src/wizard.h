@@ -39,13 +39,37 @@
 #define DLLEXPORT
 #endif
 
+typedef struct {
+	event_cargo_t events_info; 
+	timestamp_t last_t; 
+	uint64_t time_ovfs; 
+} dat_cargo_t; 
+
+typedef struct {
+	event_cargo_t events_info; 
+	timestamp_t last_t; 
+	uint64_t time_high; 
+} evt2_cargo_t;
+
+typedef struct {
+	event_cargo_t events_info; 
+	uint64_t time_high; 
+	uint64_t time_low; 
+	uint64_t time_high_ovfs; 
+	uint64_t time_low_ovfs; 
+	uint16_t base_x; 
+	event_t last_event; 
+} evt3_cargo_t;
 
 DLLEXPORT size_t cut_dat(const char*, const char*, size_t, size_t);
 DLLEXPORT size_t cut_evt2(const char*, const char*, size_t, size_t);
 DLLEXPORT size_t cut_evt3(const char*, const char*, size_t, size_t);
-DLLEXPORT event_array_t read_dat(const char*, size_t); 
-DLLEXPORT event_array_t read_evt2(const char*, size_t);
-DLLEXPORT event_array_t read_evt3(const char*, size_t);
+DLLEXPORT int read_dat(const char*, event_t*, dat_cargo_t*, size_t); 
+DLLEXPORT int read_evt2(const char*, event_t*, evt2_cargo_t*, size_t);
+DLLEXPORT int read_evt3(const char*, event_t*, evt3_cargo_t*, size_t);
+DLLEXPORT size_t measure_dat(const char*, size_t); 
+DLLEXPORT size_t measure_evt2(const char*, size_t);
+DLLEXPORT size_t measure_evt3(const char*, size_t);
 size_t jump_header(FILE*, FILE*, uint8_t);
 
 #endif

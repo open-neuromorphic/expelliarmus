@@ -1,14 +1,19 @@
 from typing import Union, Optional
 import pathlib
 import shutil
-import numpy as np
+from numpy import dtype as np_dtype
+from ctypes import c_size_t
+from expelliarmus.wizard.clib import (
+    event_t,
+    dat_cargo_t,
+    evt2_cargo_t,
+    evt3_cargo_t,
+    events_cargo_t,
+)
 from expelliarmus.wizard.wizard_wrapper import (
-    read_dat,
-    read_evt2,
-    read_evt3,
-    cut_dat,
-    cut_evt2,
-    cut_evt3,
+    c_read_wrapper,
+    c_cut_wrapper,
+    c_read_chunk_wrapper,
 )
 from expelliarmus.utils import (
     check_file_encoding,
@@ -33,45 +38,61 @@ class Wizard:
         self,
         encoding: str,
         buff_size: Optional[int] = _DEFAULT_BUFF_SIZE,
-        dtype: Optional[np.dtype] = _DEFAULT_DTYPE,
+        dtype: Optional[np_dtype] = _DEFAULT_DTYPE,
     ):
         self._check_errors(buff_size, dtype)
         self._encoding = check_encoding(encoding)
         self._buff_size = buff_size
-        self._read_fn = self._get_read_fn()
-        self._cut_fn = self._get_cut_fn()
         self._dtype = dtype
+        self._chunk_size = 0
+        self._fpath = None
+        self.cargo = None
         return
 
-    def _get_read_fn(self):
+    def _get_cargo(self):
+        events_info = events_cargo_t(
+            c_size_t(self._chunk_size),
+            1,
+            0,
+            c_size_t(self._fpath.stat().st_size),
+        )
         if self._encoding == "DAT":
-            read_fn = read_dat
+            cargo = dat_cargo_t(events_info, 0, 0)
         elif self._encoding == "EVT2":
-            read_fn = read_evt2
+            cargo = evt2_cargo_t(events_info, 0, 0)
         elif self._encoding == "EVT3":
-            read_fn = read_evt3
-        return read_fn
-
-    def _get_cut_fn(self):
-        if self._encoding == "DAT":
-            cut_fn = cut_dat
-        elif self._encoding == "EVT2":
-            cut_fn = cut_evt2
-        elif self._encoding == "EVT3":
-            cut_fn = cut_evt3
-        return cut_fn
+            event = event_t(0, 0, 0, 0)
+            cargo = evt3_cargo_t(events_info, 0, 0, 0, 0, 0, event)
+        else:
+            raise Exception("ERROR: Encoding not valid.")
+        return cargo
 
     def _check_errors(
         self,
         buff_size: int,
-        dtype: np.dtype,
+        dtype: np_dtype,
     ):
         assert (
             isinstance(buff_size, int) and buff_size > 0
         ), "Error: the buffer size for the binary read has to be larger than 0."
         assert (
-            isinstance(dtype, np.dtype) and len(dtype) == 4
+            isinstance(dtype, np_dtype) and len(dtype) == 4
         ), "The dtype provided is not valid. It should be [('t', type), ('x', type), ('y', type), ('p', type)] in any order."
+        return
+
+    def setup_chunk(self, fpath, chunk_size):
+        self._fpath = check_input_file(fpath, self._encoding)
+        assert chunk_size > 0, "ERROR: The chunk size has to be larger than 0."
+        if self._encoding == "EVT3":
+            assert chunk_size > 12, "ERROR: For EVT3 at least 12 events have to be read."
+        self._chunk_size = chunk_size
+        self.reset()
+        return
+
+    def reset(self):
+        if self.cargo:
+            del self.cargo
+        self.cargo = self._get_cargo()
         return
 
     def set_encoding(self, encoding: Union[str, pathlib.Path]) -> None:
@@ -81,8 +102,7 @@ class Wizard:
             - encoding: the encoding of the file.
         """
         self._encoding = check_encoding(encoding)
-        self._read_fn = self._get_read_fn()
-        self._cut_fn = self._get_cut_fn()
+        return
 
     def cut(
         self,
@@ -104,7 +124,8 @@ class Wizard:
         assert (
             isinstance(new_duration, int) and new_duration > 0
         ), "A positive duration, expressed in milliseconds, needs to be provided."
-        nevents = self._cut_fn(
+        nevents = c_cut_wrapper(
+            encoding=self._encoding,
             fpath_in=fpath_in,
             fpath_out=fpath_out,
             new_duration=new_duration,
@@ -121,4 +142,24 @@ class Wizard:
             - arr: the structured NumPy array.
         """
         fpath = check_input_file(fpath, self._encoding)
-        return self._read_fn(fpath=fpath, buff_size=self._buff_size, dtype=self._dtype)
+        arr, status = c_read_wrapper(encoding=self._encoding, fpath=fpath, buff_size=self._buff_size)
+        assert status==0, "ERROR: Something went wrong while reading the file."
+        return arr
+
+    def read_chunk(self):
+        """
+        Return:
+            - arr: structured NumPy array of events.
+        """
+        assert self._fpath, "ERROR: The file is not set."
+        assert self._chunk_size > 0, "ERROR: The chunk size is not set."
+        while self.cargo.events_info.dim > 0:
+            arr, self.cargo, status = c_read_chunk_wrapper(
+                encoding=self._encoding,
+                fpath=self._fpath,
+                cargo=self.cargo,
+                buff_size=self._buff_size,
+            )
+            if arr is None or status != 0:
+                break
+            yield arr

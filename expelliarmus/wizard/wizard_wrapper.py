@@ -1,177 +1,95 @@
-import os
-import pathlib
+from pathlib import Path
 from ctypes import c_char_p, c_size_t, byref
 from typing import Optional, Union
-import numpy as np
+from numpy import zeros
 from expelliarmus.wizard.clib import (
+    event_t,
+    events_cargo_t,
+    dat_cargo_t,
+    evt2_cargo_t,
+    evt3_cargo_t,
     c_read_dat,
     c_read_evt2,
     c_read_evt3,
+    c_measure_dat,
+    c_measure_evt2,
+    c_measure_evt3,
     c_cut_dat,
     c_cut_evt2,
     c_cut_evt3,
-    c_free_arr,
-    c_is_void_event_array,
 )
 
 
-def c_read_wrapper(p_fn, fpath, buff_size, dtype):
+def c_read_wrapper(encoding: str, fpath: Union[str, Path], buff_size: int):
     c_fpath = c_char_p(bytes(str(fpath), "utf-8"))
     c_buff_size = c_size_t(buff_size)
-    if p_fn == read_dat:
-        c_arr = c_read_dat(c_fpath, c_buff_size)
-    elif p_fn == read_evt2:
-        c_arr = c_read_evt2(c_fpath, c_buff_size)
-    elif p_fn == read_evt3:
-        c_arr = c_read_evt3(c_fpath, c_buff_size)
+    if encoding == "DAT":
+        dim = c_measure_dat(c_fpath, c_buff_size)
+        events_info = events_cargo_t(dim, 0, 0, 0)
+        cargo = dat_cargo_t(events_info, 0, 0)
+    elif encoding == "EVT2":
+        dim = c_measure_evt2(c_fpath, c_buff_size)
+        events_info = events_cargo_t(dim, 0, 0, 0)
+        cargo = evt2_cargo_t(events_info, 0, 0)
+    elif encoding == "EVT3":
+        dim = c_measure_evt3(c_fpath, c_buff_size)
+        events_info = events_cargo_t(dim, 0, 0, 0)
+        last_event = event_t(0, 0, 0, 0)
+        cargo = evt3_cargo_t(events_info, 0, 0, 0, 0, 0, last_event)
+    else:
+        raise Exception("Encoding not valid.")
+    if dim > 0:
+        arr = zeros((dim,), dtype=event_t)
+        if encoding == "DAT":
+            status = c_read_dat(c_fpath, arr, byref(cargo), c_buff_size)
+        elif encoding == "EVT2":
+            status = c_read_evt2(c_fpath, arr, byref(cargo), c_buff_size)
+        elif encoding == "EVT3":
+            status = c_read_evt3(c_fpath, arr, byref(cargo), c_buff_size)
+        else:
+            raise Exception("Function not defined.")
+    return (arr, status) if dim > 0 and status == 0 else (None, status)
+
+
+def c_read_chunk_wrapper(
+    encoding: str,
+    fpath: Union[str, Path],
+    cargo: Union[dat_cargo_t, evt2_cargo_t, evt3_cargo_t],
+    buff_size: int,
+):
+    c_fpath = c_char_p(bytes(str(fpath), "utf-8"))
+    c_buff_size = c_size_t(buff_size)
+    if encoding == "DAT":
+        arr = zeros((cargo.events_info.dim,), dtype=event_t)
+        status = c_read_dat(c_fpath, arr, byref(cargo), c_buff_size)
+    elif encoding == "EVT2":
+        arr = zeros((cargo.events_info.dim,), dtype=event_t)
+        status = c_read_evt2(c_fpath, arr, byref(cargo), c_buff_size)
+    elif encoding == "EVT3":
+        arr = zeros((cargo.events_info.dim+12,), dtype=event_t)
+        status = c_read_evt3(c_fpath, arr, byref(cargo), c_buff_size)
     else:
         raise Exception("Function not defined.")
-    assert (
-        c_is_void_event_array(byref(c_arr)) == 0
-    ), "ERROR: the array could no be created."
-    if c_arr.dim > 0:
-        np_arr = np.empty((c_arr.dim,), dtype=dtype)
-        np_arr["t"] = np.ctypeslib.as_array(c_arr.t_arr, shape=(c_arr.dim,)).astype(
-            np_arr["t"].dtype
-        )
-        np_arr["x"] = np.ctypeslib.as_array(c_arr.x_arr, shape=(c_arr.dim,)).astype(
-            np_arr["x"].dtype
-        )
-        np_arr["y"] = np.ctypeslib.as_array(c_arr.y_arr, shape=(c_arr.dim,)).astype(
-            np_arr["y"].dtype
-        )
-        np_arr["p"] = np.ctypeslib.as_array(c_arr.p_arr, shape=(c_arr.dim,)).astype(
-            np_arr["p"].dtype
-        )
-    else:
-        np_arr = None
-    c_free_arr(c_arr)
-    return np_arr
+    return (arr[:cargo.events_info.dim], cargo, status) if status==0 else (None, cargo, status)
 
 
-def c_cut_wrapper(p_fn, fpath_in, fpath_out, new_duration, buff_size):
+def c_cut_wrapper(
+    encoding: str,
+    fpath_in: Union[str, Path],
+    fpath_out: Union[str, Path],
+    new_duration: int,
+    buff_size: int,
+):
     c_fpath_in = c_char_p(bytes(str(fpath_in), "utf-8"))
     c_fpath_out = c_char_p(bytes(str(fpath_out), "utf-8"))
     c_new_duration = c_size_t(new_duration)
     c_buff_size = c_size_t(buff_size)
-    if p_fn == cut_dat:
+    if encoding == "DAT":
         c_dim = c_cut_dat(c_fpath_in, c_fpath_out, c_new_duration, c_buff_size)
-    elif p_fn == cut_evt2:
+    elif encoding == "EVT2":
         c_dim = c_cut_evt2(c_fpath_in, c_fpath_out, c_new_duration, c_buff_size)
-    elif p_fn == cut_evt3:
+    elif encoding == "EVT3":
         c_dim = c_cut_evt3(c_fpath_in, c_fpath_out, c_new_duration, c_buff_size)
     else:
-        raise Exception("Function not defined.")
+        raise Exception("Encoding not valid.")
     return c_dim
-
-
-# Actual stuff you should care about.
-
-
-def read_dat(
-    fpath: Union[pathlib.Path, str],
-    buff_size: int,
-    dtype: np.dtype,
-) -> np.ndarray:
-    """
-    Function that reads a DAT binary file to a structured NumPy array.
-    Args:
-        - fpath: path to the DAT file.
-        - buff_size: size of the buffer used to read the binary file.
-        - dtype: the types for the structured array.
-    Returns:
-        - arr: a structured NumPy array that encodes (timestamp, x_address, y_address, polarity).
-    """
-    return c_read_wrapper(read_dat, fpath, buff_size, dtype)
-
-
-def read_evt2(
-    fpath: Union[pathlib.Path, str],
-    buff_size: int,
-    dtype: np.dtype,
-) -> np.ndarray:
-    """
-    Function that reads a EVT2 binary file to a structured NumPy array.
-    Args:
-        - fpath: path to the EVT2 file.
-        - buff_size: size of the buffer used to read the binary file.
-        - dtype: the types for the structured array.
-    Returns:
-        - arr: a structured NumPy array that encodes (timestamp, x_address, y_address, polarity).
-    """
-    return c_read_wrapper(read_evt2, fpath, buff_size, dtype)
-
-
-def read_evt3(
-    fpath: Union[pathlib.Path, str],
-    buff_size: int,
-    dtype: np.dtype,
-) -> np.ndarray:
-    """
-    Function that reads a EVT3 binary file to a structured NumPy array.
-    Args:
-        - fpath: path to the DAT file.
-        - buff_size: size of the buffer used to read the binary file.
-        - dtype: the types for the structured array.
-    Returns:
-        - arr: a structured NumPy array that encodes (timestamp, x_address, y_address, polarity).
-    """
-    return c_read_wrapper(read_evt3, fpath, buff_size, dtype)
-
-
-def cut_dat(
-    fpath_in: Union[pathlib.Path, str],
-    fpath_out: Union[pathlib.Path, str],
-    new_duration: int,
-    buff_size: int,
-) -> int:
-    """
-    Function that reads a DAT binary file and cuts it to a limited number of events.
-    Args:
-        - fpath_in: path to the input DAT file.
-        - fpath_out: path to the output DAT file.
-        - new_duration: new time duration of the recording expressed in milliseconds.
-        - buff_size: size of the buffer used to read the binary file.
-    Returns:
-        - dim: the number of events encoded in the output file.
-    """
-    return c_cut_wrapper(cut_dat, fpath_in, fpath_out, new_duration, buff_size)
-
-
-def cut_evt2(
-    fpath_in: Union[pathlib.Path, str],
-    fpath_out: Union[pathlib.Path, str],
-    new_duration: int,
-    buff_size: int,
-) -> int:
-    """
-    Function that reads a EVT2 binary file and cuts it to a limited number of events.
-    Args:
-        - fpath_in: path to the input EVT2 file.
-        - fpath_out: path to the output EVT2 file.
-        - new_duration: new time duration of the recording expressed in milliseconds.
-        - max_nevents: number of events to be written in the output file.
-        - buff_size: size of the buffer used to read the binary file.
-    Returns:
-        - dim: the number of events encoded in the output file.
-    """
-    return c_cut_wrapper(cut_evt2, fpath_in, fpath_out, new_duration, buff_size)
-
-
-def cut_evt3(
-    fpath_in: Union[pathlib.Path, str],
-    fpath_out: Union[pathlib.Path, str],
-    new_duration: int,
-    buff_size: int,
-) -> int:
-    """
-    Function that reads a EVT3 binary file and cuts it to a limited number of events.
-    Args:
-        - fpath_in: path to the input EVT3 file.
-        - fpath_out: path to the output EVT3 file.
-        - new_duration: new time duration of the recording expressed in milliseconds.
-        - buff_size: size of the buffer used to read the binary file.
-    Returns:
-        - dim: the number of events encoded in the output file.
-    """
-    return c_cut_wrapper(cut_evt3, fpath_in, fpath_out, new_duration, buff_size)
