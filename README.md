@@ -120,7 +120,7 @@ Let's read less events, so that we are able to visualize them
 
 ```python
 wizard.set_chunk_size(chunk_size=16)
-print(next(wizard.read_chunk()
+print(next(wizard.read_chunk()))
 ```
 
     [(5848837,  610, 296, 1) (5848843,  834, 302, 1) (5848846,  593, 254, 1)
