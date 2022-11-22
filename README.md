@@ -137,8 +137,8 @@ print(next(wizard.read_chunk()))
 
 Here it is a small benchmark using `expelliarmus` on the file formats supported. The data shows the file size, read time for the full file and read time for reading the file in chunks. The performance is compared against HDF5, HDF5 LZF, HDF5 GZIP and NumPy.
 
-[!evt2_full](images/evt2_full_read.png)
-[!evt3_chunk_read](images/evt3_chunk_read.png)
+![evt_full_read](images/evt3_full_read.png)
+![evt3_chunk_read](images/evt3_chunk_read.png)
 
 ## Contributing
 Please check our documentation page for more details on contributing.
