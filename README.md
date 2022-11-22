@@ -22,6 +22,9 @@ pip install expelliarmus
 
 The package is tested on Windows, MacOS and Linux.
 
+## Documentation
+Check out [readthedocs](https://expelliarmus.readthedocs.io)!
+
 ## Quickstart
 Shall we start practicing some spells? For that, we need a `Wizard`!
 
