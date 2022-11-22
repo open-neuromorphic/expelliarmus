@@ -43,7 +43,6 @@ class events_cargo_t(Structure):
         ("dim", c_size_t),
         ("is_chunk", c_uint8),
         ("bytes_read", c_size_t),
-        ("file_size", c_size_t),
     ]
 
 

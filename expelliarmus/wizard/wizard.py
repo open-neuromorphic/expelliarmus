@@ -69,7 +69,6 @@ class Wizard:
             c_size_t(self._chunk_size),
             1,
             0,
-            0,
         )
         if self._encoding == "DAT":
             cargo = dat_cargo_t(events_info, 0, 0)
@@ -186,7 +185,6 @@ class Wizard:
             - arr: structured NumPy array of events.
         """
         assert not (self._fpath is None), "ERROR: An input file must be set."
-        self.cargo.events_info.file_size = c_size_t(self._fpath.stat().st_size)
         while self.cargo.events_info.dim > 0:
             arr, self.cargo, status = c_read_chunk_wrapper(
                 encoding=self._encoding,
