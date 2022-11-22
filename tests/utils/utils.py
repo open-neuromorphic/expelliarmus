@@ -149,4 +149,6 @@ def test_chunk_read(
                 )
                 chunk_offset += nevents
             wizard.reset()
+            _test_fields(ref_arr, np.concatenate([chunk for chunk in wizard.read_chunk()]), sensor_size=sensor_size)
+            wizard.reset()
     return

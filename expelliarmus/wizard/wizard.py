@@ -177,7 +177,7 @@ class Wizard:
             encoding=self._encoding, fpath=fpath, buff_size=self._buff_size
         )
         assert status == 0, "ERROR: Something went wrong while reading the file."
-        return arr
+        return arr 
 
     def read_chunk(self) -> ndarray:
         """
