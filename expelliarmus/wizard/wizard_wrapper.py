@@ -25,15 +25,15 @@ def c_read_wrapper(encoding: str, fpath: Union[str, Path], buff_size: int):
     c_buff_size = c_size_t(buff_size)
     if encoding == "DAT":
         dim = c_measure_dat(c_fpath, c_buff_size)
-        events_info = events_cargo_t(dim, 0, 0, 0)
+        events_info = events_cargo_t(dim, 0, 0)
         cargo = dat_cargo_t(events_info, 0, 0)
     elif encoding == "EVT2":
         dim = c_measure_evt2(c_fpath, c_buff_size)
-        events_info = events_cargo_t(dim, 0, 0, 0)
+        events_info = events_cargo_t(dim, 0, 0)
         cargo = evt2_cargo_t(events_info, 0, 0)
     elif encoding == "EVT3":
         dim = c_measure_evt3(c_fpath, c_buff_size)
-        events_info = events_cargo_t(dim, 0, 0, 0)
+        events_info = events_cargo_t(dim, 0, 0)
         last_event = event_t(0, 0, 0, 0)
         cargo = evt3_cargo_t(events_info, 0, 0, 0, 0, 0, last_event)
     else:

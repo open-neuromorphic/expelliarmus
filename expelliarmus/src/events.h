@@ -27,7 +27,6 @@ typedef struct {
 	size_t dim; 
 	uint8_t is_chunk; 
 	size_t bytes_read; 
-	size_t file_size; 
 } event_cargo_t; 
 
 #define CHECK_TIMESTAMP_MONOTONICITY(timestamp, prev_timestamp){\
