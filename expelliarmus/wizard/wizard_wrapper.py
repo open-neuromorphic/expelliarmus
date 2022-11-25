@@ -1,7 +1,7 @@
 from pathlib import Path
 from ctypes import c_char_p, c_size_t, byref
 from typing import Optional, Union
-from numpy import zeros
+from numpy import empty
 from expelliarmus.wizard.clib import (
     event_t,
     events_cargo_t,
@@ -21,6 +21,18 @@ from expelliarmus.wizard.clib import (
 
 
 def c_read_wrapper(encoding: str, fpath: Union[str, Path], buff_size: int):
+    # Error handling.
+    if not isinstance(encoding, str):
+        raise TypeError("ERROR: The encoding must be a string among 'DAT', 'EVT2' and 'EVT3'.")
+    if not (isinstance(fpath, str) or isinstance(fpath, Path)):
+        raise TypeError("ERROR: The file path must be a string or a pathlib.Path object.")
+    if not isinstance(buff_size, int):
+        raise TypeError("ERROR: The buffer size must be an integer larger than 0.")
+    if encoding not in ("DAT", "EVT2", "EVT3"):
+        raise ValueError("ERROR: The encoding provided is not valid.")
+    if buff_size <= 0:
+        raise ValueError("ERROR: The buffer size must be larger than 0.")
+
     c_fpath = c_char_p(bytes(str(fpath), "utf-8"))
     c_buff_size = c_size_t(buff_size)
     if encoding == "DAT":
@@ -36,10 +48,8 @@ def c_read_wrapper(encoding: str, fpath: Union[str, Path], buff_size: int):
         events_info = events_cargo_t(dim, 0, 0)
         last_event = event_t(0, 0, 0, 0)
         cargo = evt3_cargo_t(events_info, 0, 0, 0, 0, 0, last_event)
-    else:
-        raise Exception("Encoding not valid.")
     if dim > 0:
-        arr = zeros((dim,), dtype=event_t)
+        arr = empty((dim,), dtype=event_t)
         if encoding == "DAT":
             status = c_read_dat(c_fpath, arr, byref(cargo), c_buff_size)
         elif encoding == "EVT2":
@@ -60,13 +70,13 @@ def c_read_chunk_wrapper(
     c_fpath = c_char_p(bytes(str(fpath), "utf-8"))
     c_buff_size = c_size_t(buff_size)
     if encoding == "DAT":
-        arr = zeros((cargo.events_info.dim,), dtype=event_t)
+        arr = empty((cargo.events_info.dim,), dtype=event_t)
         status = c_read_dat(c_fpath, arr, byref(cargo), c_buff_size)
     elif encoding == "EVT2":
-        arr = zeros((cargo.events_info.dim,), dtype=event_t)
+        arr = empty((cargo.events_info.dim,), dtype=event_t)
         status = c_read_evt2(c_fpath, arr, byref(cargo), c_buff_size)
     elif encoding == "EVT3":
-        arr = zeros((cargo.events_info.dim + 12,), dtype=event_t)
+        arr = empty((cargo.events_info.dim + 12,), dtype=event_t)
         status = c_read_evt3(c_fpath, arr, byref(cargo), c_buff_size)
     else:
         raise Exception("Encoding not valid.")

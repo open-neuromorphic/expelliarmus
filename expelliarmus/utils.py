@@ -49,9 +49,8 @@ def check_input_file(fpath, encoding):
 
 
 def check_output_file(fpath, encoding):
-    assert isinstance(fpath, str) or isinstance(
-        fpath, pathlib.Path
-    ), "The type of the file path provided is not valid."
+    if not (isinstance(fpath, str) or isinstance(fpath, Path)):
+        raise TypeError("ERROR: The file path provided must be a string or a pathlib.Path object.")
     fpath = pathlib.Path(fpath).resolve()
     assert fpath.parent.is_dir(), "The output directory does not exist."
     check_file_encoding(fpath, encoding)
@@ -59,3 +58,14 @@ def check_output_file(fpath, encoding):
     assert fpath.is_file(), "The output file specified cannot be created."
     check_file_encoding(fpath, encoding)
     return fpath
+
+def check_chunk_size(chunk_size, encoding):
+    if not (isinstance(chunk_size, int)):
+        raise TypeError("ERROR: The chunk size must be a positive integer number.")
+    if encoding == "EVT3":
+        if chunk_size < 12: 
+            raise ValueError("ERROR: The chunk size has to be larger than 12 for the EVT3 encoding.")
+    else:
+        if chunk_size <= 0: 
+            raise ValueError("ERROR: The chunk size has to be larger than 0.")
+    return chunk_size
