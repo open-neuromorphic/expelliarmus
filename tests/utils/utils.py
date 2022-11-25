@@ -105,21 +105,37 @@ def test_read(
     assert fpath.is_file()
     fpath_ref = pathlib.Path("tests", "sample-files", fname.split(".")[0] + ".npy")
     ref_arr = np.load(fpath_ref)
+
+    # # Assertion error on fpath in the constructor.
+    # try:
+    #     wizard = Wizard(encoding=encoding, fpath="non_existing_path")
+    # except AssertionError:
+    #     print("The fpath check in the constructor works.")
+
+
+    # # Assertion error on encoding in the constructor.
+    # try:
+    #     wizard = Wizard(encoding="non_existing_encoding", fpath=fpath)
+    # except AssertionError:
+    #     print("The encoding check in the constructor works.")
+
+    # # Error checking in set_encoding.
+    # try:
+    #     wizard.set_encoding("peppapig")
+    # except AssertionError:
+    #     print("The assertion encoding check works in set_encoding().")
+
     wizard = Wizard(encoding=encoding, fpath=fpath)
     arr = wizard.read()
     assert (
         len(arr) == expected_nevents
     ), "Error: the number of events in the array does not coincide with the expected one."
     _test_fields(ref_arr, arr, sensor_size)
-    try:
-        wizard.set_encoding("stocazzo")
-    except:
-        print("Stocazzo!")
-    wizard._encoding = "peppa_pig"
-    try:
-        wizard.read()
-    except:
-        print("Stocazzo!")
+    # wizard._encoding = "peppa_pig"
+    # try:
+    #     wizard.read()
+    # except AssertionError:
+    #     print("The assertion encoding check works.")
     return
 
 

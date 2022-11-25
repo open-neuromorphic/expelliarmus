@@ -42,17 +42,12 @@ class Wizard:
         chunk_size: Optional[int] = 8192,
         buff_size: Optional[int] = _DEFAULT_BUFF_SIZE,
     ):
-        assert (
-            isinstance(buff_size, int) and buff_size > 0
-        ), "ERROR: The buffer size to read the file has to be an integere and it must have a size larger than 0."
+        if not (isinstance(buff_size, int)):
+            raise TypeError("ERROR: The buffer size must be a positive integer.")
+        if buff_size <= 0:
+            raise ValueError("ERROR: The buffer size must be a positive integer.")
         self._buff_size = buff_size
         self._encoding = check_encoding(encoding)
-        if self._encoding == "EVT3":
-            assert (
-                chunk_size > 12
-            ), "ERROR: The chunk size has to be larger than 12 for the EVT3 encoding."
-        else:
-            assert chunk_size > 0, "ERROR: The chunk size has to be larger than 0."
         if not (fpath is None):
             self._fpath = check_input_file(fpath=fpath, encoding=self._encoding)
         else:
@@ -78,7 +73,7 @@ class Wizard:
             event = event_t(0, 0, 0, 0)
             cargo = evt3_cargo_t(events_info, 0, 0, 0, 0, 0, event)
         else:
-            raise Exception("ERROR: Encoding not valid.")
+            raise ValueError("ERROR: Encoding not valid.")
         return cargo
 
     def set_file(self, fpath: Union[str, pathlib.Path]) -> None:
@@ -96,11 +91,13 @@ class Wizard:
             - fpath: path to the input file.
             - chunk_size: size of the chunks ot be read.
         """
-        assert chunk_size > 0, "ERROR: The chunk size has to be larger than 0."
         if self._encoding == "EVT3":
-            assert (
-                chunk_size > 12
-            ), "ERROR: For EVT3 at least 12 events have to be read."
+            if chunk_size < 12: 
+                raise ValueError("ERROR: The chunk size has to be larger than 12 for the EVT3 encoding.")
+        else:
+            if chunk_size <= 0: 
+                raise ValueError("ERROR: The chunk size has to be larger than 0.")
+        assert chunk_size > 0, "ERROR: The chunk size has to be larger than 0."
         self._chunk_size = chunk_size
         self.cargo = self._get_cargo()
         return
