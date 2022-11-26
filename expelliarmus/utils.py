@@ -48,10 +48,12 @@ def check_output_file(fpath, encoding):
     if not (isinstance(fpath, str) or isinstance(fpath, Path)):
         raise TypeError("ERROR: The file path provided must be a string or a pathlib.Path object.")
     fpath = Path(fpath).resolve()
-    assert fpath.parent.is_dir(), "The output directory does not exist."
+    if not fpath.parent.is_dir():
+        raise NotADirectoryError("ERROR: The output file directory does not exist.")
     check_file_encoding(fpath, encoding)
     fpath.touch()
-    assert fpath.is_file(), "The output file specified cannot be created."
+    if not fpath.is_file():
+        raise SystemError("ERROR: The output file could not be created.")
     check_file_encoding(fpath, encoding)
     return fpath
 

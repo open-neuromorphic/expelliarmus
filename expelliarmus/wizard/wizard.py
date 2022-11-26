@@ -17,6 +17,7 @@ from expelliarmus.wizard.wizard_wrapper import (
     c_read_chunk_wrapper,
 )
 from expelliarmus.utils import (
+    check_chunk_size,
     check_file_encoding,
     check_encoding,
     check_input_file,
@@ -52,7 +53,7 @@ class Wizard:
             self._fpath = check_input_file(fpath=fpath, encoding=self._encoding)
         else:
             self._fpath = None
-        self._chunk_size = chunk_size
+        self._chunk_size = check_chunk_size(chunk_size)
         self.cargo = self._get_cargo()
         return
 
@@ -91,14 +92,7 @@ class Wizard:
             - fpath: path to the input file.
             - chunk_size: size of the chunks ot be read.
         """
-        if self._encoding == "EVT3":
-            if chunk_size < 12: 
-                raise ValueError("ERROR: The chunk size has to be larger than 12 for the EVT3 encoding.")
-        else:
-            if chunk_size <= 0: 
-                raise ValueError("ERROR: The chunk size has to be larger than 0.")
-        assert chunk_size > 0, "ERROR: The chunk size has to be larger than 0."
-        self._chunk_size = chunk_size
+        self._chunk_size = check_chunk_size(chunk_size, encoding)
         self.cargo = self._get_cargo()
         return
 
@@ -136,16 +130,16 @@ class Wizard:
             - nevents: the number of events encoded in the output file.
         """
         if fpath_in is None:
-            assert not (
-                self._fpath is None
-            ), "ERROR: An input file must be set or provided."
+            if self._fpath is None: 
+                raise ValueError("ERROR: An input file must be set or provided.")
             fpath_in = self._fpath
         else:
             fpath_in = check_input_file(fpath=fpath_in, encoding=self._encoding)
         fpath_out = check_output_file(fpath=fpath_out, encoding=self._encoding)
-        assert (
-            isinstance(new_duration, int) and new_duration > 0
-        ), "A positive duration, expressed in milliseconds, needs to be provided."
+        if not (isinstance(new_duration, int)):
+            raise TypeError("ERROR: The new duration must be an integer positive number (not integer).")
+        if new_duration <= 0:
+            raise ValueError("ERROR: The new duration must be positive.")
         nevents = c_cut_wrapper(
             encoding=self._encoding,
             fpath_in=fpath_in,
@@ -163,17 +157,17 @@ class Wizard:
         Returns:
             - arr: the structured NumPy array.
         """
-        if fpath is None:
-            assert not (
-                self._fpath is None
-            ), "ERROR: An input file must be set or provided."
-            fpath = self._fpath
+        if fpath_in is None:
+            if self._fpath is None: 
+                raise ValueError("ERROR: An input file must be set or provided.")
+            fpath_in = self._fpath
         else:
-            fpath = check_input_file(fpath, self._encoding)
+            fpath_in = check_input_file(fpath=fpath_in, encoding=self._encoding)
         arr, status = c_read_wrapper(
             encoding=self._encoding, fpath=fpath, buff_size=self._buff_size
         )
-        assert status == 0, "ERROR: Something went wrong while reading the file."
+        if status != 0:
+            raise RuntimeError("ERROR: Something went wrong while creating the array from the file.")
         return arr 
 
     def read_chunk(self) -> ndarray:
@@ -181,7 +175,8 @@ class Wizard:
         Returns:
             - arr: structured NumPy array of events.
         """
-        assert not (self._fpath is None), "ERROR: An input file must be set."
+        if self._fpath is None:
+            raise ValueError("ERROR: An input file must be set.")
         while self.cargo.events_info.dim > 0:
             arr, self.cargo, status = c_read_chunk_wrapper(
                 encoding=self._encoding,
