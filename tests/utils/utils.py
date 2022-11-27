@@ -192,7 +192,16 @@ def test_chunk_read(
     with raises(TypeError):
         wizard = Wizard(encoding=encoding, fpath=fpath, chunk_size=2.1)
 
+    # Error checking on using read_chunk() with no fpath.
+    wizard = Wizard(encoding=encoding, chunk_size=512)
+    with raises(ValueError):
+        next(wizard.read_chunk())
+
     wizard = Wizard(encoding=encoding, fpath=fpath)
+
+    # Error checking on setting private attribute.
+    with raises(AttributeError):
+        wizard.chunk_size = 21
 
     # Error checking in set_chunk_size.
     with raises(ValueError):
