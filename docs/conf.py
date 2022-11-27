@@ -71,7 +71,7 @@ html_static_path = ["_static"]
 
 # Deciding which members to add to the documentation.
 def skip_internal_modules(app, what, name, obj, skip, options):
-    if what == "module" or (what == "package"):
+    if what == "module" and name not in ("expelliarmus.wizard.wizard",):
         skip = True
     return skip
 
