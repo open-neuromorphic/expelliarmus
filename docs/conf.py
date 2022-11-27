@@ -18,7 +18,14 @@ extensions = [
 autodoc_typehints = "both"
 autoapi_type = "python"
 autoapi_dirs = ["../expelliarmus"]
-
+autoapi_options = [
+    "members",
+    "undoc-members",
+    "show-inheritance",
+    "show-module-summary",
+    "special-members",
+    "imported-members",
+]
 
 # Napoleon settings
 napoleon_google_docstring = True
@@ -61,3 +68,13 @@ html_theme_options = {
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ["_static"]
+
+# Deciding which members to add to the documentation.
+def skip_internal_modules(app, what, name, obj, skip, options):
+    if what == "module" or (what == "package"):
+        skip = True
+    return skip
+
+
+def setup(sphinx):
+    sphinx.connect("autoapi-skip-member", skip_internal_modules)
