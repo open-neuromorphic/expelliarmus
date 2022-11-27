@@ -22,6 +22,9 @@ from expelliarmus.utils import (
     check_encoding,
     check_input_file,
     check_output_file,
+    check_buff_size,
+    check_external_file,
+    check_new_duration,
     _DEFAULT_DTYPE,
     _DEFAULT_BUFF_SIZE,
 )
@@ -34,6 +37,7 @@ class Wizard:
         - encoding: the encoding of the file, to be chosen among DAT, EVT2 and EVT3.
         - fpath: the file to be read, either in chunks or fully.
         - buff_size: the size of the buffer used to read the binary file.
+        - chunk_size: the chunk lenght when reading files in chunks.
     """
 
     def __init__(
@@ -43,45 +47,71 @@ class Wizard:
         chunk_size: Optional[int] = 8192,
         buff_size: Optional[int] = _DEFAULT_BUFF_SIZE,
     ):
-        if not (isinstance(buff_size, int)):
-            raise TypeError("ERROR: The buffer size must be a positive integer.")
-        if buff_size <= 0:
-            raise ValueError("ERROR: The buffer size must be a positive integer.")
-        self._buff_size = buff_size
+        self._buff_size = check_buff_size(buff_size)
         self._encoding = check_encoding(encoding)
-        if not (fpath is None):
-            self._fpath = check_input_file(fpath=fpath, encoding=self._encoding)
-        else:
+        if fpath is None:
             self._fpath = None
-        self._chunk_size = check_chunk_size(chunk_size)
+        else:
+            self._fpath = check_input_file(fpath=fpath, encoding=self._encoding)
+        self._chunk_size = check_chunk_size(chunk_size, encoding)
         self.cargo = self._get_cargo()
         return
+
+    @property
+    def encoding(self):
+        return self._encoding
+
+    @property
+    def fpath(self):
+        return self._fpath
+
+    @property
+    def buff_size(self):
+        return self._buff_size
+
+    @property
+    def chunk_size(self):
+        return self._chunk_size
+
+    @encoding.setter
+    def encoding(self, value):
+        raise AttributeError("ERROR: Denied setting of private attribute _encoding.")
+
+    @fpath.setter
+    def fpath(self, value):
+        raise AttributeError("ERROR: Denied setting of private attribute _fpath.")
+
+    @buff_size.setter
+    def buff_size(self, value):
+        raise AttributeError("ERROR: Denied setting of private attribute _buff_size.")
+
+    @chunk_size.setter
+    def chunk_size(self, value):
+        raise AttributeError("ERROR: Denied setting of private attribute _chunk_size.")
 
     def _get_cargo(self) -> Union[dat_cargo_t, evt2_cargo_t, evt3_cargo_t]:
         """
         Generates the cargo that carries information to the C code.
         """
         events_info = events_cargo_t(
-            c_size_t(self._chunk_size),
+            c_size_t(self.chunk_size),
             1,
             0,
         )
-        if self._encoding == "DAT":
+        if self.encoding == "DAT":
             cargo = dat_cargo_t(events_info, 0, 0)
-        elif self._encoding == "EVT2":
+        elif self.encoding == "EVT2":
             cargo = evt2_cargo_t(events_info, 0, 0)
-        elif self._encoding == "EVT3":
+        elif self.encoding == "EVT3":
             event = event_t(0, 0, 0, 0)
             cargo = evt3_cargo_t(events_info, 0, 0, 0, 0, 0, event)
-        else:
-            raise ValueError("ERROR: Encoding not valid.")
         return cargo
 
     def set_file(self, fpath: Union[str, pathlib.Path]) -> None:
         """
         Function that sets the input file.
         """
-        self._fpath = check_input_file(fpath, encoding=self._encoding)
+        self._fpath = check_input_file(fpath, encoding=self.encoding)
         return
 
     def set_chunk_size(self, chunk_size: int) -> None:
@@ -92,16 +122,7 @@ class Wizard:
             - fpath: path to the input file.
             - chunk_size: size of the chunks ot be read.
         """
-        self._chunk_size = check_chunk_size(chunk_size, encoding)
-        self.cargo = self._get_cargo()
-        return
-
-    def reset(self) -> None:
-        """
-        Function used to reset the generator, so that the file can be read from the beginning.
-        """
-        if not (self.cargo is None):
-            del self.cargo
+        self._chunk_size = check_chunk_size(chunk_size, self.encoding)
         self.cargo = self._get_cargo()
         return
 
@@ -112,6 +133,24 @@ class Wizard:
             - encoding: the encoding of the file.
         """
         self._encoding = check_encoding(encoding)
+        return
+
+    def set_buff_size(self, buff_size: int) -> None:
+        """
+        Sets te buffer size used to read the binary file.
+        Args:
+            - buff_size: the buffer size specified.
+        """
+        self._buff_size = check_buff_size(buff_size)
+        return
+
+    def reset(self) -> None:
+        """
+        Function used to reset the generator, so that the file can be read from the beginning.
+        """
+        if not (self.cargo is None):
+            del self.cargo
+        self.cargo = self._get_cargo()
         return
 
     def cut(
@@ -129,23 +168,15 @@ class Wizard:
         Returns:
             - nevents: the number of events encoded in the output file.
         """
-        if fpath_in is None:
-            if self._fpath is None: 
-                raise ValueError("ERROR: An input file must be set or provided.")
-            fpath_in = self._fpath
-        else:
-            fpath_in = check_input_file(fpath=fpath_in, encoding=self._encoding)
-        fpath_out = check_output_file(fpath=fpath_out, encoding=self._encoding)
-        if not (isinstance(new_duration, int)):
-            raise TypeError("ERROR: The new duration must be an integer positive number (not integer).")
-        if new_duration <= 0:
-            raise ValueError("ERROR: The new duration must be positive.")
+        fpath_in = check_external_file(fpath_in, self.fpath, self.encoding)
+        fpath_out = check_output_file(fpath=fpath_out, encoding=self.encoding)
+        new_duration = check_new_duration(new_duration)
         nevents = c_cut_wrapper(
-            encoding=self._encoding,
+            encoding=self.encoding,
             fpath_in=fpath_in,
             fpath_out=fpath_out,
             new_duration=new_duration,
-            buff_size=self._buff_size,
+            buff_size=self.buff_size,
         )
         return nevents
 
@@ -157,32 +188,29 @@ class Wizard:
         Returns:
             - arr: the structured NumPy array.
         """
-        if fpath_in is None:
-            if self._fpath is None: 
-                raise ValueError("ERROR: An input file must be set or provided.")
-            fpath_in = self._fpath
-        else:
-            fpath_in = check_input_file(fpath=fpath_in, encoding=self._encoding)
+        fpath = check_external_file(fpath, self.fpath, self.encoding)
         arr, status = c_read_wrapper(
-            encoding=self._encoding, fpath=fpath, buff_size=self._buff_size
+            encoding=self.encoding, fpath=fpath, buff_size=self.buff_size
         )
         if status != 0:
-            raise RuntimeError("ERROR: Something went wrong while creating the array from the file.")
-        return arr 
+            raise RuntimeError(
+                "ERROR: Something went wrong while creating the array from the file."
+            )
+        return arr
 
     def read_chunk(self) -> ndarray:
         """
         Returns:
             - arr: structured NumPy array of events.
         """
-        if self._fpath is None:
+        if self.fpath is None:
             raise ValueError("ERROR: An input file must be set.")
         while self.cargo.events_info.dim > 0:
             arr, self.cargo, status = c_read_chunk_wrapper(
-                encoding=self._encoding,
-                fpath=self._fpath,
+                encoding=self.encoding,
+                fpath=self.fpath,
                 cargo=self.cargo,
-                buff_size=self._buff_size,
+                buff_size=self.buff_size,
             )
             if arr is None or status != 0:
                 break

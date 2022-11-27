@@ -5,6 +5,7 @@ import shutil
 import numpy as np
 from typing import Callable, Union, Optional
 from expelliarmus import Wizard
+from pytest import raises
 
 if platform.system() in ("Linux", "Darwin"):  # Unix system.
     TMPDIR = pathlib.Path("/tmp")
@@ -61,13 +62,30 @@ def test_cut(
     fpath_out = fpath_out.joinpath(fname_out)
     fpath_out.touch()
     assert fpath_out.is_file()
-    # Checking that the desired number of events has been encoded to the output file.
+
     wizard = Wizard(encoding=encoding)
-    wizard.set_file(fpath=fpath_in)
+
+    # Error checking on unset fpath.
+    with raises(ValueError):
+        wizard.cut(fpath_out=fpath_out, new_duration=new_duration)
+
+    wizard.set_file(fpath_in)
+
+    # Error checking on new_duration.
+    with raises(TypeError):
+        wizard.cut(fpath_out=fpath_out, new_duration=12.2)
+    with raises(ValueError):
+        wizard.cut(fpath_out=fpath_out, new_duration=-12)
+
+    # Error checking on fpath_out.
+    with raises(TypeError):
+        wizard.cut(fpath_out=12, new_duration=new_duration)
+    with raises(ValueError):
+        wizard.cut(fpath_out="peppapig", new_duration=new_duration)
+
+    # Checking that the desired number of events has been encoded to the output file.
     ref_arr = wizard.read()
-    nevents_out = wizard.cut(
-        fpath_out=fpath_out, new_duration=new_duration
-    )
+    nevents_out = wizard.cut(fpath_out=fpath_out, new_duration=new_duration)
     arr = wizard.read(fpath=fpath_out)
     assert (
         len(arr) == nevents_out
@@ -106,36 +124,53 @@ def test_read(
     fpath_ref = pathlib.Path("tests", "sample-files", fname.split(".")[0] + ".npy")
     ref_arr = np.load(fpath_ref)
 
-    # # Assertion error on fpath in the constructor.
-    # try:
-    #     wizard = Wizard(encoding=encoding, fpath="non_existing_path")
-    # except AssertionError:
-    #     print("The fpath check in the constructor works.")
-
-
-    # # Assertion error on encoding in the constructor.
-    # try:
-    #     wizard = Wizard(encoding="non_existing_encoding", fpath=fpath)
-    # except AssertionError:
-    #     print("The encoding check in the constructor works.")
-
-    # # Error checking in set_encoding.
-    # try:
-    #     wizard.set_encoding("peppapig")
-    # except AssertionError:
-    #     print("The assertion encoding check works in set_encoding().")
+    # Error handling in the constructor.
+    with raises(ValueError):
+        wizard = Wizard(encoding=encoding, fpath="non_existing_path")
+    with raises(ValueError):
+        wizard = Wizard(encoding="non_existing_encoding", fpath=fpath)
+    with raises(ValueError):
+        wizard = Wizard(encoding=encoding, fpath=fpath, buff_size=-1)
+    with raises(TypeError):
+        wizard = Wizard(encoding=encoding, fpath=3)
+    with raises(TypeError):
+        wizard = Wizard(encoding=3, fpath=fpath)
+    with raises(TypeError):
+        wizard = Wizard(encoding=encoding, fpath=fpath, buff_size=1.21)
 
     wizard = Wizard(encoding=encoding, fpath=fpath)
+
+    # Error checking in set_encoding.
+    with raises(ValueError):
+        wizard.set_encoding("peppapig")
+    with raises(TypeError):
+        wizard.set_encoding(1.2123)
+
+    # Error checking in set_buff_size.
+    with raises(ValueError):
+        wizard.set_buff_size(-1)
+    with raises(TypeError):
+        wizard.set_buff_size(1.2123)
+
+    # Error checking in set_fpath.
+    with raises(ValueError):
+        wizard.set_file("peppapig")
+    with raises(TypeError):
+        wizard.set_file(1.2123)
+
+    # Error checking on private attributes.
+    with raises(AttributeError):
+        wizard.encoding = "dat"
+    with raises(AttributeError):
+        wizard.fpath = "./somewhere"
+    with raises(AttributeError):
+        wizard.buff_size = 321
+
     arr = wizard.read()
     assert (
         len(arr) == expected_nevents
-    ), "Error: the number of events in the array does not coincide with the expected one."
+    ), "ERROR: the number of events in the array does not coincide with the expected one."
     _test_fields(ref_arr, arr, sensor_size)
-    # wizard._encoding = "peppa_pig"
-    # try:
-    #     wizard.read()
-    # except AssertionError:
-    #     print("The assertion encoding check works.")
     return
 
 
@@ -150,8 +185,22 @@ def test_chunk_read(
     ref_fpath = pathlib.Path("tests", "sample-files", fname.split(".")[0] + ".npy")
     ref_arr = np.load(ref_fpath)
     tot_nevents = len(ref_arr)
+
+    # Error checking in constructor.
+    with raises(ValueError):
+        wizard = Wizard(encoding=encoding, fpath=fpath, chunk_size=-2)
+    with raises(TypeError):
+        wizard = Wizard(encoding=encoding, fpath=fpath, chunk_size=2.1)
+
     wizard = Wizard(encoding=encoding, fpath=fpath)
-    wizard.set_encoding(encoding)
+
+    # Error checking in set_chunk_size.
+    with raises(ValueError):
+        wizard.set_chunk_size(-23)
+    with raises(TypeError):
+        wizard.set_chunk_size(1.2123)
+
+    wizard = Wizard(encoding=encoding, fpath=fpath)
     for chunk_size in CHUNK_SIZES:
         wizard.set_chunk_size(chunk_size)
         for repetition in range(2):
@@ -165,6 +214,10 @@ def test_chunk_read(
                 )
                 chunk_offset += nevents
             wizard.reset()
-            _test_fields(ref_arr, np.concatenate([chunk for chunk in wizard.read_chunk()]), sensor_size=sensor_size)
+            _test_fields(
+                ref_arr,
+                np.concatenate([chunk for chunk in wizard.read_chunk()]),
+                sensor_size=sensor_size,
+            )
             wizard.reset()
     return

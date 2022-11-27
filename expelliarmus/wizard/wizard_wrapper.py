@@ -2,6 +2,7 @@ from pathlib import Path
 from ctypes import c_char_p, c_size_t, byref
 from typing import Optional, Union
 from numpy import empty
+from expelliarmus.utils import _SUPPORTED_ENCODINGS
 from expelliarmus.wizard.clib import (
     event_t,
     events_cargo_t,
@@ -23,12 +24,16 @@ from expelliarmus.wizard.clib import (
 def c_read_wrapper(encoding: str, fpath: Union[str, Path], buff_size: int):
     # Error handling.
     if not isinstance(encoding, str):
-        raise TypeError("ERROR: The encoding must be a string among 'DAT', 'EVT2' and 'EVT3'.")
+        raise TypeError(
+            "ERROR: The encoding must be a string among 'DAT', 'EVT2' and 'EVT3'."
+        )
     if not (isinstance(fpath, str) or isinstance(fpath, Path)):
-        raise TypeError("ERROR: The file path must be a string or a pathlib.Path object.")
+        raise TypeError(
+            "ERROR: The file path must be a string or a pathlib.Path object."
+        )
     if not isinstance(buff_size, int):
         raise TypeError("ERROR: The buffer size must be an integer larger than 0.")
-    if encoding not in ("DAT", "EVT2", "EVT3"):
+    if encoding not in _SUPPORTED_ENCODINGS:
         raise ValueError("ERROR: The encoding provided is not valid.")
     if buff_size <= 0:
         raise ValueError("ERROR: The buffer size must be larger than 0.")
@@ -56,8 +61,6 @@ def c_read_wrapper(encoding: str, fpath: Union[str, Path], buff_size: int):
             status = c_read_evt2(c_fpath, arr, byref(cargo), c_buff_size)
         elif encoding == "EVT3":
             status = c_read_evt3(c_fpath, arr, byref(cargo), c_buff_size)
-        else:
-            raise Exception("Encoding not valid.")
     return (arr, status) if dim > 0 and status == 0 else (None, status)
 
 
@@ -67,6 +70,23 @@ def c_read_chunk_wrapper(
     cargo: Union[dat_cargo_t, evt2_cargo_t, evt3_cargo_t],
     buff_size: int,
 ):
+    if not (isinstance(fpath, str) or isinstance(fpath, Path)):
+        raise TypeError(
+            "ERROR: The file path must be a string or a pathlib.Path object."
+        )
+    if not isinstance(buff_size, int):
+        raise TypeError("ERROR: The buffer size must be an integer larger than 0.")
+    if encoding not in _SUPPORTED_ENCODINGS:
+        raise ValueError("ERROR: The encoding provided is not valid.")
+    if buff_size <= 0:
+        raise ValueError("ERROR: The buffer size must be larger than 0.")
+    if not (
+        isinstance(cargo, dat_cargo_t)
+        or isinstance(cargo, evt2_cargo_t)
+        or isinstance(cargo, evt3_cargo_t)
+    ):
+        raise TypeError("ERROR: The cargo type is not supported.")
+
     c_fpath = c_char_p(bytes(str(fpath), "utf-8"))
     c_buff_size = c_size_t(buff_size)
     if encoding == "DAT":
@@ -78,8 +98,6 @@ def c_read_chunk_wrapper(
     elif encoding == "EVT3":
         arr = empty((cargo.events_info.dim + 12,), dtype=event_t)
         status = c_read_evt3(c_fpath, arr, byref(cargo), c_buff_size)
-    else:
-        raise Exception("Encoding not valid.")
     return (
         (arr[: cargo.events_info.dim], cargo, status)
         if status == 0
@@ -94,6 +112,25 @@ def c_cut_wrapper(
     new_duration: int,
     buff_size: int,
 ):
+    if not (isinstance(fpath_in, str) or isinstance(fpath_in, Path)):
+        raise TypeError(
+            "ERROR: The input file path must be a string or a pathlib.Path object."
+        )
+    if not (isinstance(fpath_out, str) or isinstance(fpath_out, Path)):
+        raise TypeError(
+            "ERROR: The output file path must be a string or a pathlib.Path object."
+        )
+    if not isinstance(buff_size, int):
+        raise TypeError("ERROR: The buffer size must be an integer larger than 0.")
+    if buff_size <= 0:
+        raise ValueError("ERROR: The buffer size must be larger than 0.")
+    if encoding not in _SUPPORTED_ENCODINGS:
+        raise ValueError("ERROR: The encoding provided is not valid.")
+    if not isinstance(new_duration, int):
+        raise TypeError("ERROR: The new duration must be a positive integer.")
+    if new_duration <= 0:
+        raise ValueError("ERROR: The new duration must be larger than zero.")
+
     c_fpath_in = c_char_p(bytes(str(fpath_in), "utf-8"))
     c_fpath_out = c_char_p(bytes(str(fpath_out), "utf-8"))
     c_new_duration = c_size_t(new_duration)
@@ -104,6 +141,4 @@ def c_cut_wrapper(
         c_dim = c_cut_evt2(c_fpath_in, c_fpath_out, c_new_duration, c_buff_size)
     elif encoding == "EVT3":
         c_dim = c_cut_evt3(c_fpath_in, c_fpath_out, c_new_duration, c_buff_size)
-    else:
-        raise Exception("Encoding not valid.")
     return c_dim
