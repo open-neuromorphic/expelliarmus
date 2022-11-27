@@ -5,7 +5,7 @@
 
 Expelliarmus makes it easy to decode binary formats from event cameras directly into NumPy structured arrays. The following formats are supported at the moment:
 
-- DAT
+- `DAT <https://docs.prophesee.ai/stable/data/file_formats/dat.html>`_
 - `EVT2 <https://docs.prophesee.ai/stable/data/encoding_formats/evt2.html>`_
 - `EVT3 <https://docs.prophesee.ai/stable/data/encoding_formats/evt3.html>`_ 
 
