@@ -20,6 +20,13 @@ You can install the library through `pip`:
 pip install expelliarmus 
 ```
 
+If this command fails on your Apple M1 machine, please clone the repository and then install through `pip` locally:
+```bash
+git clone https://github.com/fabhertz95/expelliarmus.git
+cd expelliarmus
+pip install .
+```
+
 The package is tested on Windows, MacOS and Linux.
 
 ## Documentation
