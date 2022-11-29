@@ -37,14 +37,12 @@ setup(
     version="1.1.4",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    packages=["expelliarmus", "expelliarmus.wizard"],
+    packages=["expelliarmus", "expelliarmus.wizard", "expelliarmus.src",],
     ext_modules=[
         CTypesExtension(
             "expelliarmus",
             [
                 str(pathlib.Path("expelliarmus", "src", "wizard.c")),
-                str(pathlib.Path("expelliarmus", "src", "wizard.h")),
-                str(pathlib.Path("expelliarmus", "src", "events.h")),
             ],
         ),
     ],
