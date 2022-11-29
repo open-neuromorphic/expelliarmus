@@ -34,10 +34,10 @@ setup(
     maintainer="Fabrizio Ottati, Gregor Lenz",
     maintainer_email="fabriziottati@gmail.com, mail@lenzgregor.com",
     url="https://github.com/fabhertz95/expelliarmus",
-    version="1.1.4",
+    version="1.1.5",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    packages=["expelliarmus", "expelliarmus.wizard", "expelliarmus.src",],
+    packages=["expelliarmus", "expelliarmus.wizard",],
     ext_modules=[
         CTypesExtension(
             "expelliarmus",
