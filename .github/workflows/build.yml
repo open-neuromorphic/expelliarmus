@@ -70,6 +70,7 @@ jobs:
   build_sdist:
     name: Build source distribution
     runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
     steps:
       - uses: actions/checkout@v3
       - run: pipx run build --sdist
