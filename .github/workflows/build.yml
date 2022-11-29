@@ -43,29 +43,29 @@ jobs:
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v2
 
-#   build_wheels:
-#     name: Build wheels on ${{ matrix.os }}
-#     runs-on: ${{ matrix.os }}
-#     if: github.ref == 'refs/heads/main'
-#     strategy:
-#       matrix:
-#         os: [ubuntu-latest, macOS-latest, windows-latest]
-# 
-#     steps:
-#       - uses: actions/checkout@v3
-#       - uses: actions/setup-python@v3
-#       - name: Install cibuildwheel
-#         run: python -m pip install cibuildwheel==2.11.2
-# 
-#       - name: Build wheels
-#         run: python -m cibuildwheel --output-dir wheelhouse
-#         # to supply options, put them in 'env', like:
-#         # env:
-#         #   CIBW_SOME_OPTION: value
-# 
-#       - uses: actions/upload-artifact@v3
-#         with:
-#           path: ./wheelhouse/*.whl
+  build_wheels:
+    name: Build wheels on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    if: github.ref == 'refs/heads/main'
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macOS-latest, windows-latest]
+
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v3
+      - name: Install cibuildwheel
+        run: python -m pip install cibuildwheel==2.11.2
+
+      - name: Build wheels
+        run: python -m cibuildwheel --output-dir wheelhouse
+        # to supply options, put them in 'env', like:
+        # env:
+        #   CIBW_SOME_OPTION: value
+
+      - uses: actions/upload-artifact@v3
+        with:
+          path: ./wheelhouse/*.whl
 
   build_sdist:
     name: Build source distribution
@@ -79,7 +79,7 @@ jobs:
           path: dist/*.tar.gz
                 
   upload_pypi:
-      needs: [build_sdist, multitest]
+      needs: [build_sdist, multitest, build_wheels]
       runs-on: ubuntu-latest
       if: github.ref == 'refs/heads/main'
       steps:
