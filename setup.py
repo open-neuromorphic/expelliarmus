@@ -34,7 +34,7 @@ setup(
     maintainer="Fabrizio Ottati, Gregor Lenz",
     maintainer_email="fabriziottati@gmail.com, mail@lenzgregor.com",
     url="https://github.com/fabhertz95/expelliarmus",
-    version="1.1.3",
+    version="1.1.4",
     long_description=long_description,
     long_description_content_type="text/markdown",
     packages=["expelliarmus", "expelliarmus.wizard"],
@@ -43,6 +43,8 @@ setup(
             "expelliarmus",
             [
                 str(pathlib.Path("expelliarmus", "src", "wizard.c")),
+                str(pathlib.Path("expelliarmus", "src", "wizard.h")),
+                str(pathlib.Path("expelliarmus", "src", "events.h")),
             ],
         ),
     ],
