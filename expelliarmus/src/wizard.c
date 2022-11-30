@@ -83,6 +83,7 @@ size_t jump_header(FILE* fp_in, FILE* fp_out, uint8_t copy_file){
 	do {
 		do { 
 			bytes_read += fread(&c, 1, 1, fp_in); 
+			// No header check.
 			if (bytes_read == 1 && c != 0x25)
 				return bytes_read; 
 			if (copy_file)
