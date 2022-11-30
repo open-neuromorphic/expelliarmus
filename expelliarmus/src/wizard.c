@@ -80,9 +80,11 @@
 size_t jump_header(FILE* fp_in, FILE* fp_out, uint8_t copy_file){
 	size_t bytes_read = 0; 
 	uint8_t c; 
-	 do {
-	   	do { 
+	do {
+		do { 
 			bytes_read += fread(&c, 1, 1, fp_in); 
+			if (bytes_read == 1 && c != 0x25)
+				return bytes_read; 
 			if (copy_file)
 				CHECK_FWRITE(fwrite(&c, 1, 1, fp_out), 1);  
 		} while (c != 0x0A); 
@@ -264,7 +266,9 @@ DLLEXPORT int read_evt2(const char* fpath, event_t* arr, evt2_cargo_t* cargo, si
 
 				case EVT2_EXT_TRIGGER:
 				case EVT2_OTHERS:
+					break;
 				case EVT2_CONTINUED:
+					fprintf(stderr, "CONTINUED EVENT!\n"); 
 					break; 
 
 				default:
