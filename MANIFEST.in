@@ -1,1 +1,1 @@
-include potter/src/potter.h potter/src/potter.c potter/potter.py
+include expelliarmus/src/wizard.h expelliarmus/src/wizard.c expelliarmus/src/events.h

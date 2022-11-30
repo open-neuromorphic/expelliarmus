@@ -20,7 +20,7 @@ You can install the library through `pip`:
 pip install expelliarmus 
 ```
 
-The package is tested on Windows, MacOS and Linux.
+The package is tested on Windows, MacOS and Linux. Join us on [Discord](https://discord.gg/JParSCNe5k) to propose features or to signal bugs!
 
 ## Documentation
 Check out [readthedocs](https://expelliarmus.readthedocs.io)!

@@ -70,6 +70,7 @@ jobs:
   build_sdist:
     name: Build source distribution
     runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
     steps:
       - uses: actions/checkout@v3
       - run: pipx run build --sdist
@@ -78,7 +79,7 @@ jobs:
           path: dist/*.tar.gz
                 
   upload_pypi:
-      needs: [build_wheels, build_sdist, multitest]
+      needs: [build_sdist, multitest, build_wheels]
       runs-on: ubuntu-latest
       if: github.ref == 'refs/heads/main'
       steps:
