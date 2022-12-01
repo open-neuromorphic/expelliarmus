@@ -18,7 +18,7 @@ from expelliarmus.wizard.clib import (
     c_cut_dat,
     c_cut_evt2,
     c_cut_evt3,
-    c_compress_evt2,
+    c_save_evt2,
 )
 
 
@@ -64,7 +64,7 @@ def c_read_wrapper(encoding: str, fpath: Union[str, Path], buff_size: int):
             status = c_read_evt3(c_fpath, arr, byref(cargo), c_buff_size)
     return (arr, status) if dim > 0 and status == 0 else (None, status)
 
-def c_compress_wrapper(encoding: str, fpath: Union[str, Path], arr: ndarray, buff_size: int):
+def c_save_wrapper(encoding: str, fpath: Union[str, Path], arr: ndarray, buff_size: int):
     # Error handling.
     if not isinstance(encoding, str):
         raise TypeError(
@@ -96,14 +96,14 @@ def c_compress_wrapper(encoding: str, fpath: Union[str, Path], arr: ndarray, buf
     else:
         loc_arr = arr
     if encoding == "DAT":
-        raise NotImplementedError("ERROR: The DAT compression is not implemented.")
+        raise NotImplementedError("ERROR: The DAT saveion is not implemented.")
     elif encoding == "EVT2":
         cargo = evt2_cargo_t(events_info, 0, 0)
-        status = c_compress_evt2(c_fpath, loc_arr, byref(cargo), c_buff_size)
+        status = c_save_evt2(c_fpath, loc_arr, byref(cargo), c_buff_size)
     elif encoding == "EVT3":
         last_event = event_t(0, 0, 0, 0)
         cargo = evt3_cargo_t(events_info, 0, 0, 0, 0, 0, last_event)
-        status = c_compress_evt3(c_fpath, loc_arr, byref(cargo), c_buff_size)
+        status = c_save_evt3(c_fpath, loc_arr, byref(cargo), c_buff_size)
     return status
 
 def c_read_chunk_wrapper(

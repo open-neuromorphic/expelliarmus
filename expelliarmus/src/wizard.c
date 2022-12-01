@@ -283,7 +283,7 @@ DLLEXPORT int read_evt2(const char* fpath, event_t* arr, evt2_cargo_t* cargo, si
 	return 0; 
 }
 
-DLLEXPORT int compress_evt2(const char* fpath, event_t* arr, evt2_cargo_t* cargo, size_t buff_size){
+DLLEXPORT int save_evt2(const char* fpath, event_t* arr, evt2_cargo_t* cargo, size_t buff_size){
 	char header[100]; 
 	sprintf(header, "%c This EVT2 file has been generated through expelliarmus (https://github.com/fabhertz95/expelliarmus.git) %c", (char)HEADER_START, (char)HEADER_END); 
 	const size_t header_len = strlen(header); 
@@ -536,7 +536,7 @@ DLLEXPORT int read_evt3(const char* fpath, event_t* arr, evt3_cargo_t* cargo, si
 	return 0; 
 }
 
-DLLEXPORT int compress_evt3(const char* fpath, event_t* arr, evt3_cargo_t* cargo, size_t buff_size){
+DLLEXPORT int save_evt3(const char* fpath, event_t* arr, evt3_cargo_t* cargo, size_t buff_size){
 	FILE* fp = fopen(fpath, "rb"); 
 	CHECK_FILE(fp, fpath); 
 

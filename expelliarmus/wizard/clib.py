@@ -104,32 +104,32 @@ c_read_evt3.argtypes = [
 c_read_evt3.restype = c_int
 
 # Compression functions.
-# c_compress_dat = clib.compress_dat
-# c_compress_dat.argtypes = [
+# c_save_dat = clib.save_dat
+# c_save_dat.argtypes = [
 #     c_char_p,
 #     ndpointer(dtype=event_t, ndim=1),
 #     POINTER(dat_cargo_t),
 #     c_size_t,
 # ]
-# c_compress_dat.restype = c_int
+# c_save_dat.restype = c_int
 
-c_compress_evt2 = clib.compress_evt2
-c_compress_evt2.argtypes = [
+c_save_evt2 = clib.save_evt2
+c_save_evt2.argtypes = [
     c_char_p,
     ndpointer(dtype=event_t, ndim=1),
     POINTER(evt2_cargo_t),
     c_size_t,
 ]
-c_compress_evt2.restype = c_int
+c_save_evt2.restype = c_int
 
-# c_compress_evt3 = clib.compress_evt3
-# c_compress_evt3.argtypes = [
+# c_save_evt3 = clib.save_evt3
+# c_save_evt3.argtypes = [
 #     c_char_p,
 #     ndpointer(dtype=event_t, ndim=1),
 #     POINTER(evt3_cargo_t),
 #     c_size_t,
 # ]
-# c_compress_evt3.restype = c_int
+# c_save_evt3.restype = c_int
 
 # Cut functions.
 ARGTYPES_CUT = [c_char_p, c_char_p, c_size_t, c_size_t]
