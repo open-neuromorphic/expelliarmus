@@ -15,6 +15,7 @@ from expelliarmus.wizard.wizard_wrapper import (
     c_read_wrapper,
     c_cut_wrapper,
     c_read_chunk_wrapper,
+    c_compress_wrapper,
 )
 from expelliarmus.utils import (
     check_chunk_size,
@@ -25,7 +26,6 @@ from expelliarmus.utils import (
     check_buff_size,
     check_external_file,
     check_new_duration,
-    _DEFAULT_DTYPE,
     _DEFAULT_BUFF_SIZE,
 )
 
@@ -216,6 +216,33 @@ class Wizard:
                 "ERROR: Something went wrong while creating the array from the file."
             )
         return arr
+
+    def compress(
+        self,
+        fpath: Union[str, pathlib.Path],
+        arr: ndarray,
+    ) -> None:
+        """
+        Compresses the provided to the chosen encoding format.
+
+        :param fpath: path to output file.
+        :param arr: the NumPy array to be compressed.
+
+        :returns: the number of events encoded in the output file.
+        """
+        fpath= check_output_file(fpath=fpath, encoding=self.encoding)
+        status = c_compress_wrapper(
+            encoding=self.encoding,
+            fpath=fpath,
+            arr=arr, 
+            buff_size=self.buff_size,
+        )
+        if status != 0:
+            raise RuntimeError(
+                "ERROR: Something went wrong while compressing the array."
+            )
+        return 
+
 
     def read_chunk(self) -> ndarray:
         """

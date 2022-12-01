@@ -5,6 +5,10 @@
 #include <stdint.h>
 #include "events.h"
 
+// Headers delimiters.
+#define HEADER_START 0x25
+#define HEADER_END 0x0A
+
 // DAT format constants.
 #define DAT_EVENT_2D 0x0U
 #define DAT_EVENT_CD 0x0C
@@ -61,15 +65,28 @@ typedef struct {
 	event_t last_event; 
 } evt3_cargo_t;
 
-DLLEXPORT size_t cut_dat(const char*, const char*, size_t, size_t);
-DLLEXPORT size_t cut_evt2(const char*, const char*, size_t, size_t);
-DLLEXPORT size_t cut_evt3(const char*, const char*, size_t, size_t);
-DLLEXPORT int read_dat(const char*, event_t*, dat_cargo_t*, size_t); 
-DLLEXPORT int read_evt2(const char*, event_t*, evt2_cargo_t*, size_t);
-DLLEXPORT int read_evt3(const char*, event_t*, evt3_cargo_t*, size_t);
+/********************
+ * DAT
+ ********************/
 DLLEXPORT size_t measure_dat(const char*, size_t); 
+DLLEXPORT int read_dat(const char*, event_t*, dat_cargo_t*, size_t); 
+DLLEXPORT size_t cut_dat(const char*, const char*, size_t, size_t);
+/********************
+ * EVT2
+ ********************/
 DLLEXPORT size_t measure_evt2(const char*, size_t);
+DLLEXPORT int read_evt2(const char*, event_t*, evt2_cargo_t*, size_t);
+DLLEXPORT int compress_evt2(const char*, event_t*, evt2_cargo_t*, size_t);
+DLLEXPORT size_t cut_evt2(const char*, const char*, size_t, size_t);
+/********************
+ * EVT3
+ ********************/
 DLLEXPORT size_t measure_evt3(const char*, size_t);
+DLLEXPORT int read_evt3(const char*, event_t*, evt3_cargo_t*, size_t);
+DLLEXPORT size_t cut_evt3(const char*, const char*, size_t, size_t);
+/********************
+ * Utilities.
+ ********************/
 size_t jump_header(FILE*, FILE*, uint8_t);
 
 #endif
