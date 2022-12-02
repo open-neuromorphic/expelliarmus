@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 
 #define CHECK_FILE(fp, fpath){\
 	if (fp==NULL){\
@@ -78,20 +79,22 @@
 }\
 
 size_t jump_header(FILE* fp_in, FILE* fp_out, uint8_t copy_file){
-	size_t bytes_read = 0; 
-	uint8_t c; 
-	do {
-		do { 
-			bytes_read += fread(&c, 1, 1, fp_in); 
+	size_t bytes_done = 0; 
+	uint8_t c, header_begins; 
+	 do {
+		header_begins = 1; 
+	   	do { 
+			bytes_done += fread(&c, 1, 1, fp_in); 
+			if (header_begins && c != HEADER_START){
+				CHECK_FSEEK(fseek(fp_in, -1, SEEK_CUR)); 
+				return --bytes_done; 
+			} else
+				header_begins = 0; 
 			if (copy_file)
 				CHECK_FWRITE(fwrite(&c, 1, 1, fp_out), 1);  
-		} while (c != 0x0A); 
-		bytes_read += fread(&c, 1, 1, fp_in); 
-		if (c != 0x25) break; 
-		if (copy_file)
-			CHECK_FWRITE(fwrite(&c, 1, 1, fp_out), 1);  
+		} while (c != HEADER_END); 
 	} while (1); 
-	return bytes_read; 
+	return 0; 
 }
 
 DLLEXPORT size_t measure_dat(const char* fpath, size_t buff_size){
@@ -101,7 +104,7 @@ DLLEXPORT size_t measure_dat(const char* fpath, size_t buff_size){
 	// Jumping over the headers.
 	CHECK_JUMP_HEADER(jump_header(fp, NULL, 0U)); 
 	// Jumping a byte.
-	CHECK_FSEEK(fseek(fp, 1, SEEK_CUR)); 
+	CHECK_FSEEK(fseek(fp, 2, SEEK_CUR)); 
 
 	// Buffer to read binary data.
 	uint64_t* buff = (uint64_t*) malloc(buff_size * sizeof(uint64_t));
@@ -120,14 +123,13 @@ DLLEXPORT int read_dat(const char* fpath, event_t* arr, dat_cargo_t* cargo, size
 	FILE* fp = fopen(fpath, "rb"); 
 	CHECK_FILE(fp, fpath); 
 
-	if (cargo->events_info.bytes_read == 0){
+	if (cargo->events_info.bytes_done == 0){
 		// Jumping over the headers.
-		CHECK_JUMP_HEADER((cargo->events_info.bytes_read=jump_header(fp, NULL, 0U))); 
-		// Jumping a byte.
-		CHECK_FSEEK(fseek(fp, 1, SEEK_CUR)); 
-		cargo->events_info.bytes_read++; 
+		CHECK_JUMP_HEADER((cargo->events_info.bytes_done=jump_header(fp, NULL, 0U))); 
+		CHECK_FSEEK(fseek(fp, 2, SEEK_CUR)); 
+		cargo->events_info.bytes_done += 2; 
 	} else
-		CHECK_FSEEK(fseek(fp, (long)cargo->events_info.bytes_read, SEEK_SET)); 
+		CHECK_FSEEK(fseek(fp, (long)cargo->events_info.bytes_done, SEEK_SET)); 
 
 	// Buffer to read binary data.
 	uint32_t* buff = (uint32_t*) malloc(buff_size * sizeof(uint32_t));
@@ -156,7 +158,7 @@ DLLEXPORT int read_dat(const char* fpath, event_t* arr, dat_cargo_t* cargo, size
 			// Event polarity.
 			arr[i].p = (polarity_t) ((buff[j+1] >> 28) & mask_4b); 
 		}
-		cargo->events_info.bytes_read += j*sizeof(*buff); 
+		cargo->events_info.bytes_done += j*sizeof(*buff); 
 	}
 	free(buff); 
 	fclose(fp); 
@@ -166,14 +168,16 @@ DLLEXPORT int read_dat(const char* fpath, event_t* arr, dat_cargo_t* cargo, size
 	return 0; 
 }	
 
+/********************
+ * EVT2
+ ********************/
+
 DLLEXPORT size_t measure_evt2(const char* fpath, size_t buff_size){
 	FILE* fp = fopen(fpath, "rb"); 
 	CHECK_FILE(fp, fpath); 
 
 	// Jumping over the headers.
 	CHECK_JUMP_HEADER(jump_header(fp, NULL, 0U)); 	
-	// Coming back to previous byte.
-	CHECK_FSEEK(fseek(fp, -1, SEEK_CUR)); 
 
 	// Buffer to read the file.
 	uint32_t* buff = (uint32_t*) malloc(buff_size * sizeof(uint32_t)); 
@@ -214,14 +218,12 @@ DLLEXPORT int read_evt2(const char* fpath, event_t* arr, evt2_cargo_t* cargo, si
 	FILE* fp = fopen(fpath, "rb"); 
 	CHECK_FILE(fp, fpath); 
 
-	if (cargo->events_info.bytes_read == 0){
-		// Jumping over the headers.
-		CHECK_JUMP_HEADER((cargo->events_info.bytes_read=jump_header(fp, NULL, 0U))); 	
-		// Coming back to previous byte.
-		CHECK_FSEEK(fseek(fp, -1, SEEK_CUR)); 
-		cargo->events_info.bytes_read--; 
+	if (cargo->events_info.bytes_done == 0){
+		CHECK_JUMP_HEADER((cargo->events_info.bytes_done=jump_header(fp, NULL, 0U))); 	
+		cargo->time_high = 0; 
+		cargo->last_t = 0; 
 	} else
-		CHECK_FSEEK(fseek(fp, (long)cargo->events_info.bytes_read, SEEK_SET)); 
+		CHECK_FSEEK(fseek(fp, (long)cargo->events_info.bytes_done, SEEK_SET)); 
 
 	// Buffer to read the file.
 	uint32_t* buff = (uint32_t*) malloc(buff_size * sizeof(uint32_t)); 
@@ -237,7 +239,7 @@ DLLEXPORT int read_evt2(const char* fpath, event_t* arr, evt2_cargo_t* cargo, si
 	uint64_t time_low=0;
 	timestamp_t timestamp=0; 
 	// Reading the file.
-	while (i < cargo->events_info.dim && (values_read = fread(buff, sizeof(buff[0]), buff_size, fp)) > 0){
+	while (i < cargo->events_info.dim && (values_read = fread(buff, sizeof(*buff), buff_size, fp)) > 0){
 		for (j=0; i < cargo->events_info.dim && j<values_read; j++){
 			// Getting the event type. 
 			event_type = (uint8_t) (buff[j] >> 28); 
@@ -271,7 +273,7 @@ DLLEXPORT int read_evt2(const char* fpath, event_t* arr, evt2_cargo_t* cargo, si
 					EVENT_TYPE_NOT_RECOGNISED(event_type); 
 			}
 		}
-		cargo->events_info.bytes_read += j*sizeof(*buff); 
+		cargo->events_info.bytes_done += j*sizeof(*buff); 
 	}
 	fclose(fp); 
 	free(buff); 
@@ -281,6 +283,64 @@ DLLEXPORT int read_evt2(const char* fpath, event_t* arr, evt2_cargo_t* cargo, si
 	return 0; 
 }
 
+DLLEXPORT int save_evt2(const char* fpath, event_t* arr, evt2_cargo_t* cargo, size_t buff_size){
+	char header[150]; 
+	sprintf(header, "%c This EVT2 file has been generated through expelliarmus (https://github.com/fabhertz95/expelliarmus.git) %c%c evt 2.0 %c", (char)HEADER_START, (char)HEADER_END, (char)HEADER_START, (char)HEADER_END); 
+	const size_t header_len = strlen(header); 
+	FILE* fp; 
+	if (cargo->events_info.bytes_done == 0){
+		fp = fopen(fpath, "wb");	
+		CHECK_FILE(fp, fpath); 
+		CHECK_FWRITE((cargo->events_info.bytes_done=fwrite(header, sizeof(char), header_len, fp)), header_len); 
+	} else {
+		fp = fopen(fpath, "ab"); 
+		CHECK_FILE(fp, fpath); 
+	}
+
+	// Buffer to read the file.
+	uint32_t* buff = (uint32_t*) malloc(buff_size * sizeof(uint32_t)); 
+	CHECK_BUFF_ALLOCATION(buff); 
+
+	// Indices to access the input file.
+	size_t i=0, j=0; 
+	// Masks to extract bits.
+	const uint32_t mask_6b=0x3FU, mask_11b=0x7FFU, mask_28b=0xFFFFFFFU;
+	// Values to handle overflows.
+	uint32_t time_high=0; 
+	// Reading the file.
+	while (i < cargo->events_info.dim){
+		for (j=0; i < cargo->events_info.dim && j < buff_size; j++){
+			buff[j] = 0; 
+			// Extracting 28 MSBs of the time stamp.
+			time_high = (((uint32_t)arr[i].t>>6) & mask_28b); 
+			// If it is different from before, we add a EVT2_TIME_HIGH to the stream.
+			if (cargo->time_high != time_high || cargo->events_info.bytes_done == header_len){
+				buff[j] |= ((uint32_t)EVT3_TIME_HIGH) << 28; 
+				buff[j] |= time_high; 
+				cargo->time_high = time_high; 
+			} else {
+				// Event type. 
+				buff[j] |= ((uint32_t)(arr[i].p ? EVT2_CD_ON : EVT2_CD_OFF)) << 28; 
+				// Time low.
+				buff[j] |= (((uint32_t) arr[i].t) & mask_6b) << 22; 
+				// X address.
+				buff[j] |= (((uint32_t) arr[i].x) & mask_11b) << 11; 
+				// Y address.
+				buff[j] |= ((uint32_t)arr[i++].y) & mask_11b; 
+			}
+		}
+		CHECK_FWRITE(fwrite(buff, sizeof(*buff), j, fp), j); 
+		cargo->events_info.bytes_done += j*sizeof(*buff); 
+	}
+	fclose(fp); 
+	free(buff); 
+	return 0; 
+}
+
+/********************
+ * EVT3
+ ********************/
+
 DLLEXPORT size_t measure_evt3(const char* fpath, size_t buff_size){
 	FILE* fp = fopen(fpath, "rb"); 
 	CHECK_FILE(fp, fpath); 
@@ -288,9 +348,6 @@ DLLEXPORT size_t measure_evt3(const char* fpath, size_t buff_size){
 	// Jumping over the headers.
 	CHECK_JUMP_HEADER(jump_header(fp, NULL, 0U)); 
 	
-	// Coming back to previous byte.
-	CHECK_FSEEK(fseek(fp, -1, SEEK_CUR)); 
-
 	// Buffer used to read the binary file.
 	uint16_t* buff = (uint16_t*) malloc(buff_size * sizeof(uint16_t)); 
 	CHECK_BUFF_ALLOCATION(buff); 
@@ -301,7 +358,7 @@ DLLEXPORT size_t measure_evt3(const char* fpath, size_t buff_size){
 	uint8_t event_type; 
 
 	// Counters used to keep track of number of events_info encoded in vectors and of the base x address of these.
-	uint16_t k=0, num_vect_events_info=0; 
+	uint16_t k=0, num_vect_events=0; 
 	// Masks to extract bits.
 	const uint16_t mask_11b=0x7FFU, mask_12b=0xFFFU, mask_8b=0xFFU; 
 	// Temporary values to handle overflows.
@@ -323,20 +380,20 @@ DLLEXPORT size_t measure_evt3(const char* fpath, size_t buff_size){
 					break; 
 
 				case EVT3_VECT_12:
-					num_vect_events_info = 12; 
+					num_vect_events = 12; 
 					buff_tmp = (uint16_t)(buff[j] & mask_12b);
 
 				case EVT3_VECT_8:
-					if (num_vect_events_info == 0){
-						num_vect_events_info = 8; 
+					if (num_vect_events == 0){
+						num_vect_events = 8; 
 						buff_tmp = (uint64_t)(buff[j] & mask_8b);
 					}
-					for (k=0; k<num_vect_events_info; k++){
+					for (k=0; k<num_vect_events; k++){
 						if (buff_tmp & (1U<<k)){
 							dim++; 
 						}
 					}
-					num_vect_events_info = 0; 
+					num_vect_events = 0; 
 					break; 
 
 				case EVT3_TIME_LOW:
@@ -362,14 +419,11 @@ DLLEXPORT int read_evt3(const char* fpath, event_t* arr, evt3_cargo_t* cargo, si
 	FILE* fp = fopen(fpath, "rb"); 
 	CHECK_FILE(fp, fpath); 
 
-	if (cargo->events_info.bytes_read == 0){
-		// Jumping over the headers.
-		CHECK_JUMP_HEADER((cargo->events_info.bytes_read=jump_header(fp, NULL, 0U))); 
-		// Coming back to previous byte.
-		CHECK_FSEEK(fseek(fp, -1, SEEK_CUR)); 
-		cargo->events_info.bytes_read--; 
-	} else 
-		CHECK_FSEEK(fseek(fp, (long)cargo->events_info.bytes_read, SEEK_SET)); 
+	if (cargo->events_info.bytes_done == 0){
+		CHECK_JUMP_HEADER((cargo->events_info.bytes_done = jump_header(fp, NULL, 0U))); 
+	 } else { 
+		CHECK_FSEEK(fseek(fp, (long)cargo->events_info.bytes_done, SEEK_SET)); 
+	 }
 
 	// Buffer used to read the binary file.
 	uint16_t* buff = (uint16_t*) malloc(buff_size * sizeof(uint16_t)); 
@@ -381,7 +435,7 @@ DLLEXPORT int read_evt3(const char* fpath, event_t* arr, evt3_cargo_t* cargo, si
 	uint8_t event_type; 
 
 	// Counters used to keep track of number of events_info encoded in vectors and of the base x address of these.
-	uint16_t k=0, num_vect_events_info=0; 
+	uint16_t k=0, num_vect_events=0; 
 	// Masks to extract bits.
 	const uint16_t mask_11b=0x7FFU, mask_12b=0xFFFU, mask_8b=0xFFU; 
 	// Temporary values to handle overflows.
@@ -417,15 +471,15 @@ DLLEXPORT int read_evt3(const char* fpath, event_t* arr, evt3_cargo_t* cargo, si
 					break; 
 
 				case EVT3_VECT_12:
-					num_vect_events_info = 12; 
+					num_vect_events = 12; 
 					buff_tmp = (uint16_t)(buff[j] & mask_12b);
 
 				case EVT3_VECT_8:
-					if (num_vect_events_info == 0){
-						num_vect_events_info = 8; 
+					if (num_vect_events == 0){
+						num_vect_events = 8; 
 						buff_tmp = (uint64_t)(buff[j] & mask_8b);
 					}
-					for (k=0; k<num_vect_events_info; k++){
+					for (k=0; k<num_vect_events; k++){
 						if (buff_tmp & (1U<<k)){
 							// y
 							arr[i].y = cargo->last_event.y;
@@ -437,8 +491,8 @@ DLLEXPORT int read_evt3(const char* fpath, event_t* arr, evt3_cargo_t* cargo, si
 							arr[i++].x = (address_t)(cargo->base_x + k); 
 						}
 					}
-					cargo->base_x += num_vect_events_info; 
-					num_vect_events_info = 0; 
+					cargo->base_x += num_vect_events; 
+					num_vect_events = 0; 
 					break; 
 
 				case EVT3_TIME_LOW:
@@ -472,7 +526,7 @@ DLLEXPORT int read_evt3(const char* fpath, event_t* arr, evt3_cargo_t* cargo, si
 					EVENT_TYPE_NOT_RECOGNISED(event_type); 
 			}
 		}
-		cargo->events_info.bytes_read += j*sizeof(*buff); 
+		cargo->events_info.bytes_done += j*sizeof(*buff); 
 	}
 	fclose(fp); 
 	free(buff); 
@@ -481,6 +535,162 @@ DLLEXPORT int read_evt3(const char* fpath, event_t* arr, evt3_cargo_t* cargo, si
 		return -1; 
 	return 0; 
 }
+
+DLLEXPORT int save_evt3(const char* fpath, event_t* arr, evt3_cargo_t* cargo, size_t buff_size){
+	char header[150]; 
+	sprintf(header, "%c This EVT3 file has been generated through expelliarmus (https://github.com/fabhertz95/expelliarmus.git) %c%c evt 3.0 %c", (char)HEADER_START, (char)HEADER_END, (char)HEADER_START, (char)HEADER_END); 
+	const size_t header_len = strlen(header); 
+	FILE* fp; 
+	if (cargo->events_info.bytes_done == 0){
+		fp = fopen(fpath, "wb");	
+		CHECK_FILE(fp, fpath); 
+		CHECK_FWRITE((cargo->events_info.bytes_done=fwrite(header, sizeof(char), header_len, fp)), header_len); 
+	} else {
+		fp = fopen(fpath, "ab"); 
+		CHECK_FILE(fp, fpath); 
+	}
+
+	// Buffer used to read the binary file.
+	uint16_t* buff = (uint16_t*) malloc(buff_size * sizeof(uint16_t)); 
+	CHECK_BUFF_ALLOCATION(buff); 
+	
+	// Indices to read the file.
+	size_t j=0, i=0, k=0, i_start=0; 
+	// Byte that identifies the event type.
+	uint8_t event_type; 
+
+	// Counters used to keep track of number of events_info encoded in vectors and of the base x address of these.
+	uint16_t k=0, num_vect_events=0; 
+	// Masks to extract bits.
+	const uint16_t mask_11b=0x7FFU, mask_12b=0xFFFU, mask_8b=0xFFU; 
+	// Temporary values to handle overflows.
+	uint64_t buff_tmp=0;
+   	timestamp_t timestamp=0; 
+	// Reading the file.
+	while (i < cargo->events_info.dim){
+		// First event.
+		if (cargo->events_info.bytes_done == header_len && i==0){
+			// Y address.
+			buff[0] = ((uint16_t) EVT3_EVT_ADDR_Y) << 12; 
+			buff[0] |= ((uint16_t) arr[i].y) & mask_11b; 
+			cargo->last_event.y = arr[i].y;
+			// Time low.
+			buff[1] = ((uint16_t) EVT3_TIME_HIGH) << 12; 
+			buff[1] |= (uint16_t) ((arr[i].t >> 12) & mask_12b); 
+			// Time high.
+			buff[2] = ((uint16_t) EVT3_TIME_LOW) << 12; 
+			buff[2] |= (uint16_t) (arr[i].t & mask_12b); 
+			cargo->last_event.t = arr[i++].t;
+			// Assigning negative value to X so that we denote this as first event.
+			cargo->last_event.x = -1;
+			CHECK_FWRITE(fwrite(buff, sizeof(*buff), 3, fp), 3); 
+			cargo->events_info.bytes_done += 3 * sizeof(*buff); 
+		}
+		for (j=0; i < cargo->events_info.dim && j < buff_size; j++){
+			// Check for vectorized event.
+			if (cargo->last_event.x == arr[i].x){
+				i_start = i; 
+				while (cargo->last_event.x == arr[i++].x && i-i_start < 12); 
+				if (i-i_start == 12){
+				} else if (i-i_start >= 8){
+					buff[j] = 
+					for (k=i_start; k < i_start + 8; k++){
+					}	
+				} else {
+				}
+			}
+			// Getting the event type. 
+			event_type = (uint8_t)(buff[j] >> 12); 
+			switch (event_type){
+				case EVT3_EVT_ADDR_Y:
+					arr[i].y = (address_t)(buff[j] & mask_11b);
+					cargo->last_event.y = arr[i].y; 
+					break; 
+
+				case EVT3_EVT_ADDR_X:
+					// p
+					arr[i].p = (polarity_t) ((buff[j] >> 11)%2); 
+					cargo->last_event.p = arr[i].p; 
+					// y
+					arr[i].y = cargo->last_event.y;
+					// t
+					arr[i].t = cargo->last_event.t;
+					// x
+					arr[i++].x = (address_t)(buff[j] & mask_11b);
+					break; 
+
+				case EVT3_VECT_BASE_X:
+					arr[i].p = (polarity_t) ((buff[j] >> 11)%2); 
+					cargo->last_event.p = arr[i].p; 
+					cargo->base_x = (uint16_t)(buff[j] & mask_11b);
+					break; 
+
+				case EVT3_VECT_12:
+					num_vect_events = 12; 
+					buff_tmp = (uint16_t)(buff[j] & mask_12b);
+
+				case EVT3_VECT_8:
+					if (num_vect_events == 0){
+						num_vect_events = 8; 
+						buff_tmp = (uint64_t)(buff[j] & mask_8b);
+					}
+					for (k=0; k<num_vect_events; k++){
+						if (buff_tmp & (1U<<k)){
+							// y
+							arr[i].y = cargo->last_event.y;
+							// p
+							arr[i].p = cargo->last_event.p;
+							// t
+							arr[i].t = cargo->last_event.t;
+							// x
+							arr[i++].x = (address_t)(cargo->base_x + k); 
+						}
+					}
+					cargo->base_x += num_vect_events; 
+					num_vect_events = 0; 
+					break; 
+
+				case EVT3_TIME_LOW:
+					buff_tmp = (uint64_t)(buff[j] & mask_12b);
+					if (buff_tmp < cargo->time_low) // Overflow.
+						cargo->time_low_ovfs++; 
+					cargo->time_low = buff_tmp; 
+					timestamp = (timestamp_t)((cargo->time_high_ovfs<<24) + ((cargo->time_high+cargo->time_low_ovfs)<<12) + cargo->time_low);
+					CHECK_TIMESTAMP_MONOTONICITY(timestamp, cargo->last_event.t);
+					arr[i].t = timestamp; 
+					cargo->last_event.t = timestamp; 
+					break; 
+
+				case EVT3_TIME_HIGH:
+					buff_tmp = (uint64_t)(buff[j] & mask_12b);
+					if (buff_tmp < cargo->time_high) // Overflow.
+						cargo->time_high_ovfs++; 
+					cargo->time_high = buff_tmp; 
+					timestamp = (timestamp_t)((cargo->time_high_ovfs<<24) + ((cargo->time_high+cargo->time_low_ovfs)<<12) + cargo->time_low);
+					CHECK_TIMESTAMP_MONOTONICITY(timestamp, cargo->last_event.t);
+					arr[i].t = timestamp; 
+					cargo->last_event.t = timestamp; 
+					break; 
+
+				case EVT3_EXT_TRIGGER:
+				case EVT3_OTHERS:
+				case EVT3_CONTINUED_12:
+					break; 
+
+				default:
+					EVENT_TYPE_NOT_RECOGNISED(event_type); 
+			}
+		}
+		cargo->events_info.bytes_done += j*sizeof(*buff); 
+	}
+	fclose(fp); 
+	free(buff); 
+	cargo->events_info.dim = i; 
+	if (i==0)
+		return -1; 
+	return 0; 
+}
+
 
 /*
  * Functions for cutting DAT and RAW files to a certain number of events_info.
@@ -493,11 +703,10 @@ DLLEXPORT size_t cut_dat(const char* fpath_in, const char* fpath_out, size_t new
 	CUT_CHECK_FILE(fp_out, fpath_out); 
 
 	// Jumping over the headers.
-	uint8_t c; 
+	uint8_t c[2]; 
 	CUT_CHECK_JUMP_HEADER(jump_header(fp_in, fp_out, 1U)); 
-	CHECK_FWRITE(fwrite(&c, 1, 1, fp_out), 1);  
-	fread(&c, 1, 1, fp_in); 
-	CHECK_FWRITE(fwrite(&c, 1, 1, fp_out), 1);  
+	fread(c, 1, 2, fp_in); 
+	CHECK_FWRITE(fwrite(c, 1, 2, fp_out), 2);  
 	
 	// Buffer to read binary data.
 	uint32_t* buff = (uint32_t*) malloc(buff_size * sizeof(uint32_t));
@@ -534,8 +743,6 @@ DLLEXPORT size_t cut_evt2(const char* fpath_in, const char* fpath_out, size_t ne
 
 	// Jumping over the headers.
 	CUT_CHECK_JUMP_HEADER(jump_header(fp_in, fp_out, 1U)); 	
-	// Coming back to previous byte.
-	CUT_CHECK_FSEEK(fseek(fp_in, -1, SEEK_CUR)); 
 
 	// Buffer to read the binary file.
 	uint32_t* buff = (uint32_t*) malloc(buff_size * sizeof(uint32_t)); 
@@ -596,8 +803,6 @@ DLLEXPORT size_t cut_evt3(const char* fpath_in, const char* fpath_out, size_t ne
 
 	// Jumping over the headers.
 	CUT_CHECK_JUMP_HEADER(jump_header(fp_in, fp_out, 1U)); 	
-	// Coming back to previous byte.
-	CUT_CHECK_FSEEK(fseek(fp_in, -1, SEEK_CUR)); 
 
 	// Buffer to read the binary file.
 	uint16_t* buff = (uint16_t*) malloc(buff_size * sizeof(uint16_t)); 
@@ -607,7 +812,7 @@ DLLEXPORT size_t cut_evt3(const char* fpath_in, const char* fpath_out, size_t ne
 	size_t values_read=0, j=0, i=0; 
 
 	// Temporary values to keep track of vectorized events_info.
-	uint64_t buff_tmp=0, k=0, num_vect_events_info=0; 
+	uint64_t buff_tmp=0, k=0, num_vect_events=0; 
 	// Masks to extract bits.
 	const uint16_t mask_8b = 0xFFU, mask_12b = 0xFFFU; 
 	// Flags to recognise event type and end of file.
@@ -635,20 +840,20 @@ DLLEXPORT size_t cut_evt3(const char* fpath_in, const char* fpath_out, size_t ne
 					break; 
 
 				case EVT3_VECT_12:
-					num_vect_events_info = 12; 
+					num_vect_events = 12; 
 					buff_tmp = (uint64_t)(buff[j] & mask_12b);
 
 				case EVT3_VECT_8:
-					if (num_vect_events_info == 0){
-						num_vect_events_info = 8; 
+					if (num_vect_events == 0){
+						num_vect_events = 8; 
 						buff_tmp = (uint64_t)(buff[j] & mask_8b);
 					}
-					for (k=0; k<num_vect_events_info; k++){
+					for (k=0; k<num_vect_events; k++){
 						if (buff_tmp%2)
 							i++; 
 						buff_tmp = buff_tmp >> 1; 
 					}
-					num_vect_events_info = 0; 
+					num_vect_events = 0; 
 					if (recording_finished)
 						last_events_info_acquired = 1; 
 					break; 

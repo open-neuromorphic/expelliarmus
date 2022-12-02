@@ -1,7 +1,7 @@
 from pathlib import Path
 from ctypes import c_char_p, c_size_t, byref
 from typing import Optional, Union
-from numpy import empty
+from numpy import empty, ndarray
 from expelliarmus.utils import _SUPPORTED_ENCODINGS
 from expelliarmus.wizard.clib import (
     event_t,
@@ -18,6 +18,7 @@ from expelliarmus.wizard.clib import (
     c_cut_dat,
     c_cut_evt2,
     c_cut_evt3,
+    c_save_evt2,
 )
 
 
@@ -62,6 +63,50 @@ def c_read_wrapper(encoding: str, fpath: Union[str, Path], buff_size: int):
         elif encoding == "EVT3":
             status = c_read_evt3(c_fpath, arr, byref(cargo), c_buff_size)
     return (arr, status) if dim > 0 and status == 0 else (None, status)
+
+
+def c_save_wrapper(
+    encoding: str, fpath: Union[str, Path], arr: ndarray, buff_size: int
+):
+    # Error handling.
+    if not isinstance(encoding, str):
+        raise TypeError(
+            "ERROR: The encoding must be a string among 'DAT', 'EVT2' and 'EVT3'."
+        )
+    if encoding not in _SUPPORTED_ENCODINGS:
+        raise ValueError("ERROR: The encoding provided is not valid.")
+    if not (isinstance(fpath, str) or isinstance(fpath, Path)):
+        raise TypeError(
+            "ERROR: The file path must be a string or a pathlib.Path object."
+        )
+    if not (isinstance(arr, ndarray)):
+        raise TypeError("ERROR: A NumPy array must be provided.")
+    if not isinstance(buff_size, int):
+        raise TypeError("ERROR: The buffer size must be an integer larger than 0.")
+    if buff_size <= 0:
+        raise ValueError("ERROR: The buffer size must be larger than 0.")
+
+    c_fpath = c_char_p(bytes(str(fpath), "utf-8"))
+    c_buff_size = c_size_t(buff_size)
+    dim = len(arr)
+    events_info = events_cargo_t(dim, 0, 0)
+    if arr.dtype != event_t:
+        loc_arr = empty((len(arr),), dtype=event_t)
+        for k in ("t", "y", "x", "p"):
+            loc_arr[k] = arr[k].astype(loc_arr[k].dtype)
+    else:
+        loc_arr = arr
+    if encoding == "DAT":
+        raise NotImplementedError("ERROR: The DAT save method is not implemented.")
+        cargo = dat_cargo_t(events_info, 0, 0)
+    elif encoding == "EVT2":
+        cargo = evt2_cargo_t(events_info, 0, 0)
+        status = c_save_evt2(c_fpath, loc_arr, byref(cargo), c_buff_size)
+    elif encoding == "EVT3":
+        raise NotImplementedError("ERROR: The DAT save method is not implemented.")
+        last_event = event_t(0, 0, 0, 0)
+        cargo = evt3_cargo_t(events_info, 0, 0, 0, 0, 0, last_event)
+    return status
 
 
 def c_read_chunk_wrapper(
