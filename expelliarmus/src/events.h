@@ -4,14 +4,6 @@
 #include <stdlib.h>
 #include <stdint.h>
 
-// Thank you http://wolfprojects.altervista.org/articles/dll-in-c-for-python/ :)
-// Thanks to this lines, also Windows DLL works.
-#ifdef _WIN32
-#define DLLEXPORT __declspec(dllexport)
-#else 
-#define DLLEXPORT
-#endif
-
 typedef int64_t timestamp_t;  
 typedef int16_t address_t; 
 typedef uint8_t polarity_t; 
@@ -26,6 +18,7 @@ typedef struct event_s {
 typedef struct {
 	size_t dim; 
 	uint8_t is_chunk; 
+	uint8_t is_time_window; 
 	size_t bytes_done; 
 } event_cargo_t; 
 

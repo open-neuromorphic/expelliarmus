@@ -46,6 +46,9 @@ setup(
             "expelliarmus",
             [
                 str(pathlib.Path("expelliarmus", "src", "wizard.c")),
+                str(pathlib.Path("expelliarmus", "src", "dat.c")),
+                str(pathlib.Path("expelliarmus", "src", "evt2.c")),
+                str(pathlib.Path("expelliarmus", "src", "evt3.c")),
             ],
         ),
     ],

@@ -43,47 +43,82 @@
 #define DLLEXPORT
 #endif
 
-typedef struct {
-	event_cargo_t events_info; 
-	timestamp_t last_t; 
-	uint64_t time_ovfs; 
-} dat_cargo_t; 
-
-typedef struct {
-	event_cargo_t events_info; 
-	timestamp_t last_t; 
-	uint64_t time_high; 
-} evt2_cargo_t;
-
-typedef struct {
-	event_cargo_t events_info; 
-	uint64_t time_high; 
-	uint64_t time_low; 
-	uint64_t time_high_ovfs; 
-	uint64_t time_low_ovfs; 
-	uint16_t base_x; 
-	event_t last_event; 
-} evt3_cargo_t;
-
 /********************
- * DAT
+ * Macros.
  ********************/
-DLLEXPORT size_t measure_dat(const char*, size_t); 
-DLLEXPORT int read_dat(const char*, event_t*, dat_cargo_t*, size_t); 
-DLLEXPORT size_t cut_dat(const char*, const char*, size_t, size_t);
-/********************
- * EVT2
- ********************/
-DLLEXPORT size_t measure_evt2(const char*, size_t);
-DLLEXPORT int read_evt2(const char*, event_t*, evt2_cargo_t*, size_t);
-DLLEXPORT int save_evt2(const char*, event_t*, evt2_cargo_t*, size_t);
-DLLEXPORT size_t cut_evt2(const char*, const char*, size_t, size_t);
-/********************
- * EVT3
- ********************/
-DLLEXPORT size_t measure_evt3(const char*, size_t);
-DLLEXPORT int read_evt3(const char*, event_t*, evt3_cargo_t*, size_t);
-DLLEXPORT size_t cut_evt3(const char*, const char*, size_t, size_t);
+#define CHECK_FILE(fp, fpath){\
+	if (fp==NULL){\
+		fprintf(stderr, "ERROR: the input file \"%s\" could not be opened.\n", fpath); \
+		return -1;\
+	}\
+}
+
+#define CHECK_JUMP_HEADER(fn){\
+	if (fn == 0){\
+		fprintf(stderr, "ERROR: jump_header failed.\n");\
+		return -1;\
+	}\
+}
+
+#define CHECK_FSEEK(fn){\
+	if (fn != 0){\
+		fprintf(stderr, "ERROR: fseek failed.\n");\
+		return -1;\
+	}\
+}
+
+#define CHECK_BUFF_ALLOCATION(buff){\
+	if (buff==NULL){\
+		fprintf(stderr, "ERROR: the buffer used to read the input file could not be allocated.\n"); \
+		return -1;\
+	}\
+}
+
+#define EVENT_TYPE_NOT_RECOGNISED(event_type){\
+	fprintf(stderr, "ERROR: event type not recognised: 0x%x.\n", event_type);\
+	return -1;\
+}\
+
+#define CHECK_FWRITE(fn, expected){\
+	if (expected != fn){\
+		fprintf(stderr, "ERROR: fwrite failed.\n");\
+		return -1;\
+	}\
+}
+
+#define CUT_CHECK_FILE(fp, fpath){\
+	if (fp==NULL){\
+		fprintf(stderr, "ERROR: the input file \"%s\" could not be opened.\n", fpath);\
+		return 0;\
+	}\
+}
+
+#define CUT_CHECK_JUMP_HEADER(fn){\
+	if (fn == 0){\
+		fprintf(stderr, "ERROR: jump_header failed.\n");\
+		return 0;\
+	}\
+}
+
+#define CUT_CHECK_FSEEK(fn){\
+	if (fn != 0){\
+		fprintf(stderr, "ERROR: fseek failed.\n");\
+		return 0;\
+	}\
+}
+
+#define CUT_CHECK_BUFF_ALLOCATION(buff){\
+	if (buff==NULL){\
+		fprintf(stderr, "ERROR: the buffer used to read the input file could not be allocated.\n");\
+		return 0;\
+	}\
+}
+
+#define CUT_EVENT_TYPE_NOT_RECOGNISED(event_type){\
+	fprintf(stderr, "ERROR: event type not recognised: 0x%x.\n", event_type);\
+	return 0;\
+}
+
 /********************
  * Utilities.
  ********************/
