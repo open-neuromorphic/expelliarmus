@@ -96,14 +96,15 @@ def c_save_wrapper(encoding: str, fpath: Union[str, Path], arr: ndarray, buff_si
     else:
         loc_arr = arr
     if encoding == "DAT":
-        raise NotImplementedError("ERROR: The DAT saveion is not implemented.")
+        raise NotImplementedError("ERROR: The DAT save method is not implemented.")
+        cargo = dat_cargo_t(events_info, 0, 0)
     elif encoding == "EVT2":
         cargo = evt2_cargo_t(events_info, 0, 0)
         status = c_save_evt2(c_fpath, loc_arr, byref(cargo), c_buff_size)
     elif encoding == "EVT3":
+        raise NotImplementedError("ERROR: The DAT save method is not implemented.")
         last_event = event_t(0, 0, 0, 0)
         cargo = evt3_cargo_t(events_info, 0, 0, 0, 0, 0, last_event)
-        status = c_save_evt3(c_fpath, loc_arr, byref(cargo), c_buff_size)
     return status
 
 def c_read_chunk_wrapper(

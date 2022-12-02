@@ -284,8 +284,8 @@ DLLEXPORT int read_evt2(const char* fpath, event_t* arr, evt2_cargo_t* cargo, si
 }
 
 DLLEXPORT int save_evt2(const char* fpath, event_t* arr, evt2_cargo_t* cargo, size_t buff_size){
-	char header[100]; 
-	sprintf(header, "%c This EVT2 file has been generated through expelliarmus (https://github.com/fabhertz95/expelliarmus.git) %c", (char)HEADER_START, (char)HEADER_END); 
+	char header[150]; 
+	sprintf(header, "%c This EVT2 file has been generated through expelliarmus (https://github.com/fabhertz95/expelliarmus.git) %c%c evt 2.0 %c", (char)HEADER_START, (char)HEADER_END, (char)HEADER_START, (char)HEADER_END); 
 	const size_t header_len = strlen(header); 
 	FILE* fp; 
 	if (cargo->events_info.bytes_done == 0){
@@ -537,21 +537,25 @@ DLLEXPORT int read_evt3(const char* fpath, event_t* arr, evt3_cargo_t* cargo, si
 }
 
 DLLEXPORT int save_evt3(const char* fpath, event_t* arr, evt3_cargo_t* cargo, size_t buff_size){
-	FILE* fp = fopen(fpath, "rb"); 
-	CHECK_FILE(fp, fpath); 
-
+	char header[150]; 
+	sprintf(header, "%c This EVT3 file has been generated through expelliarmus (https://github.com/fabhertz95/expelliarmus.git) %c%c evt 3.0 %c", (char)HEADER_START, (char)HEADER_END, (char)HEADER_START, (char)HEADER_END); 
+	const size_t header_len = strlen(header); 
+	FILE* fp; 
 	if (cargo->events_info.bytes_done == 0){
-		CHECK_JUMP_HEADER((cargo->events_info.bytes_done = jump_header(fp, NULL, 0U))); 
-	 } else { 
-		CHECK_FSEEK(fseek(fp, (long)cargo->events_info.bytes_done, SEEK_SET)); 
-	 }
+		fp = fopen(fpath, "wb");	
+		CHECK_FILE(fp, fpath); 
+		CHECK_FWRITE((cargo->events_info.bytes_done=fwrite(header, sizeof(char), header_len, fp)), header_len); 
+	} else {
+		fp = fopen(fpath, "ab"); 
+		CHECK_FILE(fp, fpath); 
+	}
 
 	// Buffer used to read the binary file.
 	uint16_t* buff = (uint16_t*) malloc(buff_size * sizeof(uint16_t)); 
 	CHECK_BUFF_ALLOCATION(buff); 
 	
 	// Indices to read the file.
-	size_t j=0, i=0; 
+	size_t j=0, i=0, k=0, i_start=0; 
 	// Byte that identifies the event type.
 	uint8_t event_type; 
 
@@ -564,8 +568,37 @@ DLLEXPORT int save_evt3(const char* fpath, event_t* arr, evt3_cargo_t* cargo, si
    	timestamp_t timestamp=0; 
 	// Reading the file.
 	while (i < cargo->events_info.dim){
+		// First event.
+		if (cargo->events_info.bytes_done == header_len && i==0){
+			// Y address.
+			buff[0] = ((uint16_t) EVT3_EVT_ADDR_Y) << 12; 
+			buff[0] |= ((uint16_t) arr[i].y) & mask_11b; 
+			cargo->last_event.y = arr[i].y;
+			// Time low.
+			buff[1] = ((uint16_t) EVT3_TIME_HIGH) << 12; 
+			buff[1] |= (uint16_t) ((arr[i].t >> 12) & mask_12b); 
+			// Time high.
+			buff[2] = ((uint16_t) EVT3_TIME_LOW) << 12; 
+			buff[2] |= (uint16_t) (arr[i].t & mask_12b); 
+			cargo->last_event.t = arr[i++].t;
+			// Assigning negative value to X so that we denote this as first event.
+			cargo->last_event.x = -1;
+			CHECK_FWRITE(fwrite(buff, sizeof(*buff), 3, fp), 3); 
+			cargo->events_info.bytes_done += 3 * sizeof(*buff); 
+		}
 		for (j=0; i < cargo->events_info.dim && j < buff_size; j++){
-
+			// Check for vectorized event.
+			if (cargo->last_event.x == arr[i].x){
+				i_start = i; 
+				while (cargo->last_event.x == arr[i++].x && i-i_start < 12); 
+				if (i-i_start == 12){
+				} else if (i-i_start >= 8){
+					buff[j] = 
+					for (k=i_start; k < i_start + 8; k++){
+					}	
+				} else {
+				}
+			}
 			// Getting the event type. 
 			event_type = (uint8_t)(buff[j] >> 12); 
 			switch (event_type){

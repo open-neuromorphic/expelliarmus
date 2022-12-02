@@ -226,11 +226,17 @@ class Wizard:
         Compresses the provided to the chosen encoding format.
 
         :param fpath: path to output file.
-        :param arr: the NumPy array to be saveed.
+        :param arr: the NumPy array to be saved.
 
         :returns: the number of events encoded in the output file.
         """
         fpath= check_output_file(fpath=fpath, encoding=self.encoding)
+        if not isinstance(arr, ndarray):
+            raise TypeError("ERROR: A NumPy array must be provided.")
+        if set(arr.dtype.names) != set(("t", "x", "y", "p")):
+            raise TypeError("ERROR: The structured NumPy array provided has not a ('t', 'x', 'y', 'p') structure.")
+        if arr.size == 0: 
+            raise ValueError("ERROR: The NumPy array provided is empty.")
         status = c_save_wrapper(
             encoding=self.encoding,
             fpath=fpath,
