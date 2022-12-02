@@ -203,14 +203,19 @@ def test_save(
                     fpath=fpath_out,
                     arr=np.zeros(
                         (20,),
-                        dtype=np.dtype([("a", int), ("b", int), ("c", int), ("d", int)]),
+                        dtype=np.dtype(
+                            [("a", int), ("b", int), ("c", int), ("d", int)]
+                        ),
                     ),
                 )
             with raises(ValueError):
                 wizard.save(
                     fpath=fpath_out,
                     arr=np.array(
-                        [], dtype=np.dtype([("t", int), ("x", int), ("y", int), ("p", int)])
+                        [],
+                        dtype=np.dtype(
+                            [("t", int), ("x", int), ("y", int), ("p", int)]
+                        ),
                     ),
                 )
 
@@ -225,7 +230,9 @@ def test_save(
             uncmp_arr = wizard.read(fpath_out)
             _test_fields(np_arr, uncmp_arr, sensor_size)
         except NotImplementedError:
-            print(f"WARNING: The save method is not implemented for {encoding} encoding.")
+            print(
+                f"WARNING: The save method is not implemented for {encoding} encoding."
+            )
         # Cleaning up.
         shutil.rmtree(fpath_out.parent)
         return
