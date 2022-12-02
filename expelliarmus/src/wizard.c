@@ -536,6 +536,7 @@ DLLEXPORT int read_evt3(const char* fpath, event_t* arr, evt3_cargo_t* cargo, si
 	return 0; 
 }
 
+/*
 DLLEXPORT int save_evt3(const char* fpath, event_t* arr, evt3_cargo_t* cargo, size_t buff_size){
 	char header[150]; 
 	sprintf(header, "%c This EVT3 file has been generated through expelliarmus (https://github.com/fabhertz95/expelliarmus.git) %c%c evt 3.0 %c", (char)HEADER_START, (char)HEADER_END, (char)HEADER_START, (char)HEADER_END); 
@@ -690,6 +691,7 @@ DLLEXPORT int save_evt3(const char* fpath, event_t* arr, evt3_cargo_t* cargo, si
 		return -1; 
 	return 0; 
 }
+*/
 
 
 /*
