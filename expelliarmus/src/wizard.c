@@ -454,7 +454,7 @@ DLLEXPORT int read_evt3(const char* fpath, event_t* arr, evt3_cargo_t* cargo, si
 
 				case EVT3_EVT_ADDR_X:
 					// p
-					arr[i].p = (polarity_t) ((buff[j] >> 11)%2); 
+					arr[i].p = (polarity_t) ((buff[j] >> 11) & 0x1U); 
 					cargo->last_event.p = arr[i].p; 
 					// y
 					arr[i].y = cargo->last_event.y;
@@ -465,7 +465,7 @@ DLLEXPORT int read_evt3(const char* fpath, event_t* arr, evt3_cargo_t* cargo, si
 					break; 
 
 				case EVT3_VECT_BASE_X:
-					arr[i].p = (polarity_t) ((buff[j] >> 11)%2); 
+					arr[i].p = (polarity_t) ((buff[j] >> 11) & 0x1U); 
 					cargo->last_event.p = arr[i].p; 
 					cargo->base_x = (uint16_t)(buff[j] & mask_11b);
 					break; 
