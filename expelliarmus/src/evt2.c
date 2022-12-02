@@ -1,12 +1,24 @@
 #include "evt2.h"
 #include <stdio.h> 
+#include <stdint.h>
+#include <stdlib.h>
+#include <string.h>
 
-DLLEXPORT size_t measure_evt2(const char* fpath, size_t buff_size){
+DLLEXPORT size_t measure_evt2(const char* fpath, evt2_cargo_t* cargo, size_t buff_size){
 	FILE* fp = fopen(fpath, "rb"); 
 	CHECK_FILE(fp, fpath); 
 
 	// Jumping over the headers.
-	CHECK_JUMP_HEADER(jump_header(fp, NULL, 0U)); 	
+	if (cargo->events_info.start_byte == 0){
+		CHECK_JUMP_HEADER((cargo->events_info.start_byte = jump_header(fp, NULL, 0U))); 	
+		cargo->events_info.end_byte = cargo->events_info.start_byte; 
+		// EVT2 cargo information.
+		cargo->last_t = 0; 
+		cargo->time_high = 0; 
+	} else {
+		cargo->events_info.start_byte = cargo->events_info.end_byte; 
+		CHECK_FSEEK(fseek(fp, cargo->events_info.start_byte, SEEK_SET)); 
+	}
 
 	// Buffer to read the file.
 	uint32_t* buff = (uint32_t*) malloc(buff_size * sizeof(uint32_t)); 
@@ -16,18 +28,25 @@ DLLEXPORT size_t measure_evt2(const char* fpath, size_t buff_size){
 	uint8_t event_type; 
 	// Indices to access the input file.
 	size_t j=0, values_read=0, dim=0; 
+	// Timestamp handling.
+	uint64_t cargo_last_t = (uint64_t) cargo->last_t, last_t = (uint64_t) cargo->last_t, time_high = cargo->time_high; 	
+	const uint32_t mask_6b=0x3FU, mask_28b=0xFFFFFFFU; 
+	uint8_t loop_condition = 1; 
+
 	// Reading the file.
-	while ((values_read = fread(buff, sizeof(buff[0]), buff_size, fp)) > 0){
-		for (j=0; j<values_read; j++){
+	while (loop_condition && (values_read = fread(buff, sizeof(buff[0]), buff_size, fp)) > 0){
+		for (j=0; loop_condition && j < values_read; j++){
 			// Getting the event type. 
 			event_type = (uint8_t) (buff[j] >> 28); 
 			switch (event_type){
 				case EVT2_CD_ON:
 				case EVT2_CD_OFF:
+					last_t = (time_high << 6) | ((uint64_t)(buff[j] & mask_6b)); 
 					dim++; 
 					break; 
 
 				case EVT2_TIME_HIGH:
+					time_high = (uint64_t) (buff[j] & mask_28b); 
 				case EVT2_EXT_TRIGGER:
 				case EVT2_OTHERS:
 				case EVT2_CONTINUED:
@@ -36,7 +55,11 @@ DLLEXPORT size_t measure_evt2(const char* fpath, size_t buff_size){
 				default:
 					EVENT_TYPE_NOT_RECOGNISED(event_type); 
 			}
+
+			if (cargo->events_info.is_time_window)
+				loop_condition = cargo->events_info.time_window > (last_t - cargo_last_t);  
 		}
+		cargo->events_info.end_byte += j*sizeof(*buff); 
 	}
 	fclose(fp); 
 	free(buff); 
@@ -47,12 +70,8 @@ DLLEXPORT int read_evt2(const char* fpath, event_t* arr, evt2_cargo_t* cargo, si
 	FILE* fp = fopen(fpath, "rb"); 
 	CHECK_FILE(fp, fpath); 
 
-	if (cargo->events_info.bytes_done == 0){
-		CHECK_JUMP_HEADER((cargo->events_info.bytes_done=jump_header(fp, NULL, 0U))); 	
-		cargo->time_high = 0; 
-		cargo->last_t = 0; 
-	} else
-		CHECK_FSEEK(fseek(fp, (long)cargo->events_info.bytes_done, SEEK_SET)); 
+	size_t byte_pt = cargo->events_info.start_byte; 
+	CHECK_FSEEK(fseek(fp, (long)cargo->events_info.start_byte, SEEK_SET)); 
 
 	// Buffer to read the file.
 	uint32_t* buff = (uint32_t*) malloc(buff_size * sizeof(uint32_t)); 
@@ -67,9 +86,11 @@ DLLEXPORT int read_evt2(const char* fpath, event_t* arr, evt2_cargo_t* cargo, si
 	// Values to handle overflows.
 	uint64_t time_low=0;
 	timestamp_t timestamp=0; 
+
+	uint8_t loop_condition = 1; 
 	// Reading the file.
-	while (i < cargo->events_info.dim && (values_read = fread(buff, sizeof(*buff), buff_size, fp)) > 0){
-		for (j=0; i < cargo->events_info.dim && j<values_read; j++){
+	while (loop_condition && (values_read = fread(buff, sizeof(*buff), buff_size, fp)) > 0){
+		for (j=0; loop_condition && j < values_read; j++){
 			// Getting the event type. 
 			event_type = (uint8_t) (buff[j] >> 28); 
 			switch (event_type){
@@ -101,8 +122,13 @@ DLLEXPORT int read_evt2(const char* fpath, event_t* arr, evt2_cargo_t* cargo, si
 				default:
 					EVENT_TYPE_NOT_RECOGNISED(event_type); 
 			}
+
+			if (cargo->events_info.is_time_window)
+				loop_condition = byte_pt < cargo->events_info.end_byte; 
+			else
+				loop_condition = i < cargo->events_info.dim; 
 		}
-		cargo->events_info.bytes_done += j*sizeof(*buff); 
+		byte_pt += j*sizeof(*buff); 
 	}
 	fclose(fp); 
 	free(buff); 
@@ -117,10 +143,10 @@ DLLEXPORT int save_evt2(const char* fpath, event_t* arr, evt2_cargo_t* cargo, si
 	sprintf(header, "%c This EVT2 file has been generated through expelliarmus (https://github.com/fabhertz95/expelliarmus.git) %c%c evt 2.0 %c", (char)HEADER_START, (char)HEADER_END, (char)HEADER_START, (char)HEADER_END); 
 	const size_t header_len = strlen(header); 
 	FILE* fp; 
-	if (cargo->events_info.bytes_done == 0){
+	if (cargo->events_info.start_byte == 0){
 		fp = fopen(fpath, "wb");	
 		CHECK_FILE(fp, fpath); 
-		CHECK_FWRITE((cargo->events_info.bytes_done=fwrite(header, sizeof(char), header_len, fp)), header_len); 
+		CHECK_FWRITE((cargo->events_info.start_byte = fwrite(header, sizeof(char), header_len, fp)), header_len); 
 	} else {
 		fp = fopen(fpath, "ab"); 
 		CHECK_FILE(fp, fpath); 
@@ -143,7 +169,7 @@ DLLEXPORT int save_evt2(const char* fpath, event_t* arr, evt2_cargo_t* cargo, si
 			// Extracting 28 MSBs of the time stamp.
 			time_high = (((uint32_t)arr[i].t>>6) & mask_28b); 
 			// If it is different from before, we add a EVT2_TIME_HIGH to the stream.
-			if (cargo->time_high != time_high || cargo->events_info.bytes_done == header_len){
+			if (cargo->time_high != time_high || cargo->events_info.start_byte == header_len){
 				buff[j] |= ((uint32_t)EVT3_TIME_HIGH) << 28; 
 				buff[j] |= time_high; 
 				cargo->time_high = time_high; 
@@ -159,7 +185,6 @@ DLLEXPORT int save_evt2(const char* fpath, event_t* arr, evt2_cargo_t* cargo, si
 			}
 		}
 		CHECK_FWRITE(fwrite(buff, sizeof(*buff), j, fp), j); 
-		cargo->events_info.bytes_done += j*sizeof(*buff); 
 	}
 	fclose(fp); 
 	free(buff); 

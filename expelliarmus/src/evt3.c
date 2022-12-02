@@ -1,13 +1,22 @@
 #include "evt3.h"
 #include <stdio.h>
+#include <stdlib.h>
+#include <stdint.h>
+#include <string.h>
 
-DLLEXPORT size_t measure_evt3(const char* fpath, size_t buff_size){
+DLLEXPORT size_t measure_evt3(const char* fpath, evt3_cargo_t* cargo, size_t buff_size){
 	FILE* fp = fopen(fpath, "rb"); 
 	CHECK_FILE(fp, fpath); 
-
-	// Jumping over the headers.
-	CHECK_JUMP_HEADER(jump_header(fp, NULL, 0U)); 
 	
+	// Jumping over the headers.
+	if (cargo->events_info.start_byte == 0){
+		CHECK_JUMP_HEADER((cargo->events_info.start_byte = jump_header(fp, NULL, 0U))); 	
+		cargo->events_info.end_byte = cargo->events_info.start_byte; 
+	} else {
+		cargo->events_info.start_byte = cargo->events_info.end_byte; 
+		CHECK_FSEEK(fseek(fp, cargo->events_info.start_byte, SEEK_SET)); 
+	}
+
 	// Buffer used to read the binary file.
 	uint16_t* buff = (uint16_t*) malloc(buff_size * sizeof(uint16_t)); 
 	CHECK_BUFF_ALLOCATION(buff); 
@@ -23,9 +32,14 @@ DLLEXPORT size_t measure_evt3(const char* fpath, size_t buff_size){
 	const uint16_t mask_11b=0x7FFU, mask_12b=0xFFFU, mask_8b=0xFFU; 
 	// Temporary values to handle overflows.
 	uint64_t buff_tmp=0;
+	uint8_t loop_condition = 1; 
+
+	uint64_t last_t = (uint64_t) cargo->last_event.t, cargo_last_t = last_t; 
+	uint64_t time_high=cargo->time_high, time_low=cargo->time_low, time_high_ovfs=cargo->time_high_ovfs, time_low_ovfs=cargo->time_low_ovfs; 
+
 	// Reading the file.
-	while ((values_read = fread(buff, sizeof(*buff), buff_size, fp)) > 0){
-		for (j=0; j<values_read; j++){
+	while (loop_condition && (values_read = fread(buff, sizeof(*buff), buff_size, fp)) > 0){
+		for (j=0; loop_condition && j<values_read; j++){
 			// Getting the event type. 
 			event_type = (uint8_t)(buff[j] >> 12); 
 			switch (event_type){
@@ -57,7 +71,19 @@ DLLEXPORT size_t measure_evt3(const char* fpath, size_t buff_size){
 					break; 
 
 				case EVT3_TIME_LOW:
+					buff_tmp = (uint64_t) buff[j] & mask_12b; 
+					if (buff_tmp < time_low)
+						time_low_ovfs++; 
+					time_low = buff_tmp; 
+					last_t = (time_high_ovfs << 24) | ((time_high + time_low_ovfs) << 12) | time_low; 
+					break; 
+
 				case EVT3_TIME_HIGH:
+					buff_tmp = (uint64_t) buff[j] & mask_12b; 
+					if (buff_tmp < time_high)
+						time_high_ovfs++; 
+					time_high = buff_tmp; 
+					last_t = (time_high_ovfs << 24) | ((time_high + time_low_ovfs) << 12) | time_low; 
 					break; 
 
 				case EVT3_EXT_TRIGGER:
@@ -68,7 +94,10 @@ DLLEXPORT size_t measure_evt3(const char* fpath, size_t buff_size){
 				default:
 					EVENT_TYPE_NOT_RECOGNISED(event_type); 
 			}
+			if (cargo->events_info.is_time_window)
+				loop_condition = cargo->events_info.time_window > (last_t - cargo_last_t); 
 		}
+		cargo->events_info.end_byte += j*sizeof(*buff); 
 	}
 	fclose(fp); 
 	free(buff); 
@@ -79,11 +108,8 @@ DLLEXPORT int read_evt3(const char* fpath, event_t* arr, evt3_cargo_t* cargo, si
 	FILE* fp = fopen(fpath, "rb"); 
 	CHECK_FILE(fp, fpath); 
 
-	if (cargo->events_info.bytes_done == 0){
-		CHECK_JUMP_HEADER((cargo->events_info.bytes_done = jump_header(fp, NULL, 0U))); 
-	 } else { 
-		CHECK_FSEEK(fseek(fp, (long)cargo->events_info.bytes_done, SEEK_SET)); 
-	 }
+	size_t byte_pt = cargo->events_info.start_byte; 
+	CHECK_FSEEK(fseek(fp, (long)cargo->events_info.start_byte, SEEK_SET)); 
 
 	// Buffer used to read the binary file.
 	uint16_t* buff = (uint16_t*) malloc(buff_size * sizeof(uint16_t)); 
@@ -101,9 +127,12 @@ DLLEXPORT int read_evt3(const char* fpath, event_t* arr, evt3_cargo_t* cargo, si
 	// Temporary values to handle overflows.
 	uint64_t buff_tmp=0;
    	timestamp_t timestamp=0; 
+
+	uint8_t loop_condition; 
 	// Reading the file.
-	while (i < cargo->events_info.dim && (values_read = fread(buff, sizeof(*buff), buff_size, fp)) > 0){
-		for (j=0; i < cargo->events_info.dim && j < values_read; j++){
+	while (loop_condition && (values_read = fread(buff, sizeof(*buff), buff_size, fp)) > 0){
+
+		for (j=0; loop_condition && j < values_read; j++){
 			// Getting the event type. 
 			event_type = (uint8_t)(buff[j] >> 12); 
 			switch (event_type){
@@ -160,7 +189,7 @@ DLLEXPORT int read_evt3(const char* fpath, event_t* arr, evt3_cargo_t* cargo, si
 					if (buff_tmp < cargo->time_low) // Overflow.
 						cargo->time_low_ovfs++; 
 					cargo->time_low = buff_tmp; 
-					timestamp = (timestamp_t)((cargo->time_high_ovfs<<24) + ((cargo->time_high+cargo->time_low_ovfs)<<12) + cargo->time_low);
+					timestamp = (timestamp_t)((cargo->time_high_ovfs<<24) | ((cargo->time_high+cargo->time_low_ovfs)<<12) | cargo->time_low);
 					CHECK_TIMESTAMP_MONOTONICITY(timestamp, cargo->last_event.t);
 					arr[i].t = timestamp; 
 					cargo->last_event.t = timestamp; 
@@ -171,7 +200,7 @@ DLLEXPORT int read_evt3(const char* fpath, event_t* arr, evt3_cargo_t* cargo, si
 					if (buff_tmp < cargo->time_high) // Overflow.
 						cargo->time_high_ovfs++; 
 					cargo->time_high = buff_tmp; 
-					timestamp = (timestamp_t)((cargo->time_high_ovfs<<24) + ((cargo->time_high+cargo->time_low_ovfs)<<12) + cargo->time_low);
+					timestamp = (timestamp_t)((cargo->time_high_ovfs<<24) | ((cargo->time_high+cargo->time_low_ovfs)<<12) | cargo->time_low);
 					CHECK_TIMESTAMP_MONOTONICITY(timestamp, cargo->last_event.t);
 					arr[i].t = timestamp; 
 					cargo->last_event.t = timestamp; 
@@ -185,8 +214,13 @@ DLLEXPORT int read_evt3(const char* fpath, event_t* arr, evt3_cargo_t* cargo, si
 				default:
 					EVENT_TYPE_NOT_RECOGNISED(event_type); 
 			}
+
+			if (cargo->events_info.is_time_window)
+				loop_condition = byte_pt < cargo->events_info.end_byte; 
+			else
+				loop_condition = i < cargo->events_info.dim; 
 		}
-		cargo->events_info.bytes_done += j*sizeof(*buff); 
+		byte_pt += j*sizeof(*buff); 
 	}
 	fclose(fp); 
 	free(buff); 

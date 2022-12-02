@@ -17,9 +17,10 @@ typedef struct event_s {
 
 typedef struct {
 	size_t dim; 
+	size_t time_window; 
 	uint8_t is_chunk; 
 	uint8_t is_time_window; 
-	size_t bytes_done; 
+	size_t start_byte, end_byte; 
 } event_cargo_t; 
 
 #define CHECK_TIMESTAMP_MONOTONICITY(timestamp, prev_timestamp){\

@@ -1,23 +1,48 @@
 #include "dat.h"
 #include <stdio.h>
+#include <stdlib.h>
+#include <stdint.h>
+#include <string.h>
 
-DLLEXPORT size_t measure_dat(const char* fpath, size_t buff_size){
+DLLEXPORT size_t measure_dat(const char* fpath, dat_cargo_t* cargo, size_t buff_size){
 	FILE* fp = fopen(fpath, "rb"); 
 	CHECK_FILE(fp, fpath); 
-
+	
 	// Jumping over the headers.
-	CHECK_JUMP_HEADER(jump_header(fp, NULL, 0U)); 
-	// Jumping a byte.
-	CHECK_FSEEK(fseek(fp, 2, SEEK_CUR)); 
+	if (cargo->events_info.start_byte == 0){
+		CHECK_JUMP_HEADER((cargo->events_info.start_byte = jump_header(fp, NULL, 0U))); 	
+		// Jumping two bytes.
+		CHECK_FSEEK(fseek(fp, 2, SEEK_CUR)); 
+		cargo->events_info.start_byte += 2; 
+		cargo->events_info.end_byte = cargo->events_info.start_byte; 
+	} else {
+		cargo->events_info.start_byte = cargo->events_info.end_byte; 
+		CHECK_FSEEK(fseek(fp, cargo->events_info.start_byte, SEEK_SET)); 
+	}
 
 	// Buffer to read binary data.
-	uint64_t* buff = (uint64_t*) malloc(buff_size * sizeof(uint64_t));
+	buff_size *= 2; 
+	uint32_t* buff = (uint32_t*) malloc(buff_size * sizeof(uint32_t));
 	CHECK_BUFF_ALLOCATION(buff); 
 	
-	size_t dim=0, values_read=0; 
+	size_t dim=0, values_read=0, j=0; 
+	uint64_t cargo_last_t = (uint64_t) cargo->last_t, last_t = last_t, time_ovfs = cargo->time_ovfs; 	
+	uint64_t buff_tmp; 
+	uint8_t loop_condition=1; 
 	// Reading the file.
-	while ((values_read = fread(buff, sizeof(*buff), buff_size, fp)) > 0)
-		dim += values_read; 
+	while (loop_condition && (values_read = fread(buff, sizeof(*buff), buff_size, fp)) > 0){
+		for (j=0; loop_condition && j < values_read; j++){
+			buff_tmp = (uint64_t) buff[j]; 
+			if (buff_tmp < last_t)
+				time_ovfs++; 
+			last_t = (time_ovfs << 32) | buff_tmp; 
+
+			if (cargo->events_info.is_time_window)
+				loop_condition = cargo->events_info.time_window > (last_t - cargo_last_t);
+		}
+		dim += j; 
+		cargo->events_info.end_byte += j*sizeof(*buff); 
+	}
 	free(buff); 
 	fclose(fp); 
 	return dim;
@@ -27,30 +52,31 @@ DLLEXPORT int read_dat(const char* fpath, event_t* arr, dat_cargo_t* cargo, size
 	FILE* fp = fopen(fpath, "rb"); 
 	CHECK_FILE(fp, fpath); 
 
-	if (cargo->events_info.bytes_done == 0){
-		// Jumping over the headers.
-		CHECK_JUMP_HEADER((cargo->events_info.bytes_done=jump_header(fp, NULL, 0U))); 
-		CHECK_FSEEK(fseek(fp, 2, SEEK_CUR)); 
-		cargo->events_info.bytes_done += 2; 
-	} else
-		CHECK_FSEEK(fseek(fp, (long)cargo->events_info.bytes_done, SEEK_SET)); 
+	size_t byte_pt = cargo->events_info.start_byte; 
+	CHECK_FSEEK(fseek(fp, (long)cargo->events_info.start_byte, SEEK_SET)); 
 
 	// Buffer to read binary data.
+	buff_size *= 2; 
 	uint32_t* buff = (uint32_t*) malloc(buff_size * sizeof(uint32_t));
 	CHECK_BUFF_ALLOCATION(buff); 
 
 	// Indices to keep track of how many items are read from the file.
 	size_t values_read=0, j=0, i=0; 
 	timestamp_t timestamp=0; 
+	uint64_t buff_tmp; 
 	// Masks to extract bits.
 	const uint32_t mask_4b=0xFU, mask_14b=0x3FFFU;
+	
+	uint8_t loop_condition = 1; 
+
 	// Reading the file.
-	while (i < cargo->events_info.dim && (values_read = fread(buff, sizeof(*buff), buff_size, fp)) > 0){
-		for (j=0; i < cargo->events_info.dim && j<values_read; j+=2, i++){
+	while (loop_condition && (values_read = fread(buff, sizeof(*buff), buff_size, fp)) > 0){
+		for (j=0; loop_condition && j < values_read; j+=2, i++){
+			buff_tmp = (uint64_t) buff[j]; 
 			// Event timestamp.
-			if (((uint64_t)buff[j]) < ((uint64_t)cargo->last_t)) // Overflow.
+			if (buff_tmp < ((uint64_t)cargo->last_t)) // Overflow.
 				cargo->time_ovfs++; 
-			timestamp = (timestamp_t)((cargo->time_ovfs<<32) | ((uint64_t)buff[j])); 
+			timestamp = (timestamp_t)((cargo->time_ovfs<<32) | buff_tmp); 
 			CHECK_TIMESTAMP_MONOTONICITY(timestamp, cargo->last_t);
 
 			arr[i].t = timestamp; 
@@ -61,8 +87,13 @@ DLLEXPORT int read_dat(const char* fpath, event_t* arr, dat_cargo_t* cargo, size
 			arr[i].y = (address_t) ((buff[j+1] >> 14) & mask_14b); 
 			// Event polarity.
 			arr[i].p = (polarity_t) ((buff[j+1] >> 28) & mask_4b); 
+
+			if (cargo->events_info.is_time_window)
+				loop_condition = byte_pt < cargo->events_info.end_byte; 
+			else 
+				loop_condition = i < cargo->events_info.dim; 
 		}
-		cargo->events_info.bytes_done += j*sizeof(*buff); 
+		byte_pt += j*sizeof(*buff); 
 	}
 	free(buff); 
 	fclose(fp); 
