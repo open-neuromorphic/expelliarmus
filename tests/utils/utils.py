@@ -177,58 +177,58 @@ def test_read(
 def test_save(
     encoding: str,
     fname_out: Union[str, pathlib.Path],
-    fname_in: Union[str, pathlib.Path] = "dat_sample.npy",
     sensor_size: tuple = (640, 480),
 ):
-    assert isinstance(fname_in, str) or isinstance(fname_in, pathlib.Path)
-    assert str(fname_in).endswith(".npy")
-    assert isinstance(fname_out, str) or isinstance(fname_out, pathlib.Path)
-    fpath_in = pathlib.Path("tests", "sample-files", fname_in).resolve()
-    fpath_out = TMPDIR.joinpath("test_save" + encoding)
-    fpath_out.mkdir(exist_ok=True)
-    assert fpath_out.is_dir()
-    fpath_out = fpath_out.joinpath(fname_out)
-    fpath_out.touch()
-    assert fpath_out.is_file()
+    for fname_in in ("dat_sample.npy", "evt2_sample.npy", "evt3_sample.npy"):
+        assert isinstance(fname_in, str) or isinstance(fname_in, pathlib.Path)
+        assert str(fname_in).endswith(".npy")
+        assert isinstance(fname_out, str) or isinstance(fname_out, pathlib.Path)
+        fpath_in = pathlib.Path("tests", "sample-files", fname_in).resolve()
+        fpath_out = TMPDIR.joinpath("test_save" + encoding)
+        fpath_out.mkdir(exist_ok=True)
+        assert fpath_out.is_dir()
+        fpath_out = fpath_out.joinpath(fname_out)
+        fpath_out.touch()
+        assert fpath_out.is_file()
 
-    wizard = Wizard(encoding=encoding)
-    np_arr = np.load(fpath_in)
+        wizard = Wizard(encoding=encoding)
+        np_arr = np.load(fpath_in)
 
-    try:
-        # Error checking on input array.
-        with raises(TypeError):
-            wizard.save(fpath=fpath_out, arr=np.zeros((20,)))
-        with raises(TypeError):
-            wizard.save(
-                fpath=fpath_out,
-                arr=np.zeros(
-                    (20,),
-                    dtype=np.dtype([("a", int), ("b", int), ("c", int), ("d", int)]),
-                ),
-            )
-        with raises(ValueError):
-            wizard.save(
-                fpath=fpath_out,
-                arr=np.array(
-                    [], dtype=np.dtype([("t", int), ("x", int), ("y", int), ("p", int)])
-                ),
-            )
+        try:
+            # Error checking on input array.
+            with raises(TypeError):
+                wizard.save(fpath=fpath_out, arr=np.zeros((20,)))
+            with raises(TypeError):
+                wizard.save(
+                    fpath=fpath_out,
+                    arr=np.zeros(
+                        (20,),
+                        dtype=np.dtype([("a", int), ("b", int), ("c", int), ("d", int)]),
+                    ),
+                )
+            with raises(ValueError):
+                wizard.save(
+                    fpath=fpath_out,
+                    arr=np.array(
+                        [], dtype=np.dtype([("t", int), ("x", int), ("y", int), ("p", int)])
+                    ),
+                )
 
-        # Error checking on fpath_out.
-        with raises(TypeError):
-            wizard.save(fpath=12, arr=np_arr)
-        with raises(ValueError):
-            wizard.save(fpath="peppapig", arr=np_arr)
+            # Error checking on fpath_out.
+            with raises(TypeError):
+                wizard.save(fpath=12, arr=np_arr)
+            with raises(ValueError):
+                wizard.save(fpath="peppapig", arr=np_arr)
 
-        # Checking that compressed file is consistent.
-        wizard.save(fpath=fpath_out, arr=np_arr)
-        uncmp_arr = wizard.read(fpath_out)
-        _test_fields(np_arr, uncmp_arr, sensor_size)
-    except NotImplementedError:
-        print(f"WARNING: The save method is not implemented for {encoding} encoding.")
-    # Cleaning up.
-    shutil.rmtree(fpath_out.parent)
-    return
+            # Checking that compressed file is consistent.
+            wizard.save(fpath=fpath_out, arr=np_arr)
+            uncmp_arr = wizard.read(fpath_out)
+            _test_fields(np_arr, uncmp_arr, sensor_size)
+        except NotImplementedError:
+            print(f"WARNING: The save method is not implemented for {encoding} encoding.")
+        # Cleaning up.
+        shutil.rmtree(fpath_out.parent)
+        return
 
 
 def test_chunk_read(
