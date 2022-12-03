@@ -41,28 +41,28 @@ def c_read_wrapper(encoding: str, fpath: Union[str, Path], buff_size: int):
 
     c_fpath = c_char_p(bytes(str(fpath), "utf-8"))
     c_buff_size = c_size_t(buff_size)
+
+    events_info = events_cargo_t(0, 0, 0, 0, 0, 0)
     if encoding == "DAT":
-        dim = c_measure_dat(c_fpath, c_buff_size)
-        events_info = events_cargo_t(dim, 0, 0)
         cargo = dat_cargo_t(events_info, 0, 0)
+        c_measure_dat(c_fpath, byref(cargo), c_buff_size)
+        print("I AM ALIVE.")
     elif encoding == "EVT2":
-        dim = c_measure_evt2(c_fpath, c_buff_size)
-        events_info = events_cargo_t(dim, 0, 0)
         cargo = evt2_cargo_t(events_info, 0, 0)
+        dim = c_measure_evt2(c_fpath, byref(cargo), c_buff_size)
     elif encoding == "EVT3":
-        dim = c_measure_evt3(c_fpath, c_buff_size)
-        events_info = events_cargo_t(dim, 0, 0)
         last_event = event_t(0, 0, 0, 0)
         cargo = evt3_cargo_t(events_info, 0, 0, 0, 0, 0, last_event)
-    if dim > 0:
-        arr = empty((dim,), dtype=event_t)
+        c_measure_evt3(c_fpath, byref(cargo), c_buff_size)
+    if cargo.events_info.dim > 0:
+        arr = empty((cargo.events_info.dim,), dtype=event_t)
         if encoding == "DAT":
             status = c_read_dat(c_fpath, arr, byref(cargo), c_buff_size)
         elif encoding == "EVT2":
             status = c_read_evt2(c_fpath, arr, byref(cargo), c_buff_size)
         elif encoding == "EVT3":
             status = c_read_evt3(c_fpath, arr, byref(cargo), c_buff_size)
-    return (arr, status) if dim > 0 and status == 0 else (None, status)
+    return (arr, status) if cargo.events_info.dim > 0 and status == 0 else (None, status)
 
 
 def c_save_wrapper(
@@ -89,21 +89,24 @@ def c_save_wrapper(
     c_fpath = c_char_p(bytes(str(fpath), "utf-8"))
     c_buff_size = c_size_t(buff_size)
     dim = len(arr)
-    events_info = events_cargo_t(dim, 0, 0)
     if arr.dtype != event_t:
-        loc_arr = empty((len(arr),), dtype=event_t)
+        loc_arr = empty((dim,), dtype=event_t)
         for k in ("t", "y", "x", "p"):
             loc_arr[k] = arr[k].astype(loc_arr[k].dtype)
     else:
         loc_arr = arr
+
+    events_info = events_cargo_t()
+    events_info.dim = dim
+    events_info.start_byte = 0
     if encoding == "DAT":
-        raise NotImplementedError("ERROR: The DAT save method is not implemented.")
+        raise NotImplementedError("ERROR: The save method is not implemented for DAT encoding.")
         cargo = dat_cargo_t(events_info, 0, 0)
     elif encoding == "EVT2":
         cargo = evt2_cargo_t(events_info, 0, 0)
         status = c_save_evt2(c_fpath, loc_arr, byref(cargo), c_buff_size)
     elif encoding == "EVT3":
-        raise NotImplementedError("ERROR: The DAT save method is not implemented.")
+        raise NotImplementedError("ERROR: The save method is not implemented for EVT3 encoding.")
         last_event = event_t(0, 0, 0, 0)
         cargo = evt3_cargo_t(events_info, 0, 0, 0, 0, 0, last_event)
     return status

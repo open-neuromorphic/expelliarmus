@@ -184,7 +184,7 @@ def test_save(
         assert str(fname_in).endswith(".npy")
         assert isinstance(fname_out, str) or isinstance(fname_out, pathlib.Path)
         fpath_in = pathlib.Path("tests", "sample-files", fname_in).resolve()
-        fpath_out = TMPDIR.joinpath("test_save" + encoding)
+        fpath_out = TMPDIR.joinpath("test_save_" + encoding)
         fpath_out.mkdir(exist_ok=True)
         assert fpath_out.is_dir()
         fpath_out = fpath_out.joinpath(fname_out)

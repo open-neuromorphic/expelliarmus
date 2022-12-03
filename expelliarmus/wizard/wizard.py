@@ -112,7 +112,10 @@ class Wizard:
     def _get_cargo(self) -> Union[dat_cargo_t, evt2_cargo_t, evt3_cargo_t]:
         events_info = events_cargo_t(
             c_size_t(self.chunk_size),
-            1,
+            0,
+            0,
+            0,
+            0, 
             0,
         )
         if self.encoding == "DAT":
@@ -257,6 +260,7 @@ class Wizard:
         """
         if self.fpath is None:
             raise ValueError("ERROR: An input file must be set.")
+        self.cargo.events_info.is_chunk = 1
         while self.cargo.events_info.dim > 0:
             arr, self.cargo, status = c_read_chunk_wrapper(
                 encoding=self.encoding,
