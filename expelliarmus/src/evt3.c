@@ -4,6 +4,8 @@
 #include <stdint.h>
 #include <string.h>
 
+#define LOOP_CONDITION(is_window, window, last_t, first_t) (!is_time_window || (is_time_window && time_window > (last_t - first_t)))
+
 DLLEXPORT void measure_evt3(const char* fpath, evt3_cargo_t* cargo, size_t buff_size){
 	FILE* fp = fopen(fpath, "rb"); 
 	MEAS_CHECK_FILE(fp, fpath, cargo); 
@@ -11,9 +13,7 @@ DLLEXPORT void measure_evt3(const char* fpath, evt3_cargo_t* cargo, size_t buff_
 	// Jumping over the headers.
 	if (cargo->events_info.start_byte == 0){
 		MEAS_CHECK_JUMP_HEADER((cargo->events_info.start_byte = jump_header(fp, NULL, 0U)), cargo);
-		cargo->events_info.end_byte = cargo->events_info.start_byte; 
 	} else {
-		cargo->events_info.start_byte = cargo->events_info.end_byte; 
 		MEAS_CHECK_FSEEK(fseek(fp, cargo->events_info.start_byte, SEEK_SET), cargo); 
 	}
 
@@ -32,14 +32,15 @@ DLLEXPORT void measure_evt3(const char* fpath, evt3_cargo_t* cargo, size_t buff_
 	const uint16_t mask_11b=0x7FFU, mask_12b=0xFFFU, mask_8b=0xFFU; 
 	// Temporary values to handle overflows.
 	uint64_t buff_tmp=0;
-	uint8_t loop_condition = 1; 
 
-	uint64_t last_t = (uint64_t) cargo->last_event.t, cargo_last_t = last_t; 
+	uint64_t last_t = (uint64_t) cargo->last_event.t, first_t = last_t; 
 	uint64_t time_high=cargo->time_high, time_low=cargo->time_low, time_high_ovfs=cargo->time_high_ovfs, time_low_ovfs=cargo->time_low_ovfs; 
+	uint8_t first_run=1, is_time_window=cargo->events_info.is_time_window; 
+	uint64_t time_window = cargo->events_info.time_window; 
 
 	// Reading the file.
-	while (loop_condition && (values_read = fread(buff, sizeof(*buff), buff_size, fp)) > 0){
-		for (j=0; loop_condition && j<values_read; j++){
+	while (LOOP_CONDITION(is_time_window, time_window, last_t, first_t) && (values_read = fread(buff, sizeof(*buff), buff_size, fp)) > 0){
+		for (j=0; LOOP_CONDITION(is_time_window, time_window, last_t, first_t) && j<values_read; j++){
 			// Getting the event type. 
 			event_type = (uint8_t)(buff[j] >> 12); 
 			switch (event_type){
@@ -76,6 +77,10 @@ DLLEXPORT void measure_evt3(const char* fpath, evt3_cargo_t* cargo, size_t buff_
 						time_low_ovfs++; 
 					time_low = buff_tmp; 
 					last_t = (time_high_ovfs << 24) + ((time_high + time_low_ovfs) << 12) + time_low; 
+					if (first_run){
+						first_t = last_t; 
+						first_run = 0; 
+					}
 					break; 
 
 				case EVT3_TIME_HIGH:
@@ -84,6 +89,10 @@ DLLEXPORT void measure_evt3(const char* fpath, evt3_cargo_t* cargo, size_t buff_
 						time_high_ovfs++; 
 					time_high = buff_tmp; 
 					last_t = (time_high_ovfs << 24) + ((time_high + time_low_ovfs) << 12) + time_low; 
+					if (first_run){
+						first_t = last_t; 
+						first_run = 0; 
+					}
 					break; 
 
 				case EVT3_EXT_TRIGGER:
@@ -94,10 +103,7 @@ DLLEXPORT void measure_evt3(const char* fpath, evt3_cargo_t* cargo, size_t buff_
 				default:
 					MEAS_EVENT_TYPE_NOT_RECOGNISED(event_type, cargo); 
 			}
-			if (cargo->events_info.is_time_window)
-				loop_condition = cargo->events_info.time_window > (last_t - cargo_last_t); 
 		}
-		cargo->events_info.end_byte += j*sizeof(*buff); 
 	}
 	fclose(fp); 
 	free(buff); 
@@ -133,10 +139,9 @@ DLLEXPORT int read_evt3(const char* fpath, event_t* arr, evt3_cargo_t* cargo, si
 	uint64_t buff_tmp=0;
    	timestamp_t timestamp=0; 
 
-	uint8_t loop_condition = 1; 
 	// Reading the file.
-	while (loop_condition && (values_read = fread(buff, sizeof(*buff), buff_size, fp)) > 0){
-		for (j=0; loop_condition && j < values_read; j++){
+	while (i < cargo->events_info.dim && (values_read = fread(buff, sizeof(*buff), buff_size, fp)) > 0){
+		for (j=0; i < cargo->events_info.dim && j < values_read; j++){
 			// Getting the event type. 
 			event_type = (uint8_t)(buff[j] >> 12); 
 			switch (event_type){
@@ -218,21 +223,16 @@ DLLEXPORT int read_evt3(const char* fpath, event_t* arr, evt3_cargo_t* cargo, si
 				default:
 					EVENT_TYPE_NOT_RECOGNISED(event_type); 
 			}
-
-			if (cargo->events_info.is_time_window)
-				loop_condition = byte_pt < cargo->events_info.end_byte; 
-			else
-				loop_condition = i < cargo->events_info.dim; 
 		}
 		byte_pt += j*sizeof(*buff); 
 	}
 	fclose(fp); 
 	free(buff); 
-	cargo->events_info.dim = i; 
-	if (cargo->events_info.is_chunk)
-		cargo->events_info.start_byte = byte_pt; 
-	if (i==0)
-		return -1; 
+	cargo->events_info.start_byte = byte_pt; 
+
+	if (values_read < buff_size)
+		cargo->events_info.finished = 1; 
+
 	return 0; 
 }
 

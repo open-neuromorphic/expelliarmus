@@ -45,14 +45,14 @@ class events_cargo_t(Structure):
         ("time_window", c_size_t),
         ("is_time_window", c_uint8),
         ("start_byte", c_size_t),
-        ("end_byte", c_size_t),
+        ("finished", c_uint8),
     ]
 
 
 class dat_cargo_t(Structure):
     _fields_ = [
         ("events_info", events_cargo_t),
-        ("last_t", c_int64),
+        ("last_t", c_uint64),
         ("time_ovfs", c_uint64),
     ]
 
@@ -83,8 +83,15 @@ c_read_dat = clib.read_dat
 c_read_evt2 = clib.read_evt2
 c_read_evt3 = clib.read_evt3
 
-for fn, cargo_t in zip((c_read_dat, c_read_evt2, c_read_evt3), (dat_cargo_t, evt2_cargo_t, evt3_cargo_t)):
-    fn.argtypes = [c_char_p, ndpointer(dtype=event_t, ndim=1), POINTER(cargo_t), c_size_t]
+for fn, cargo_t in zip(
+    (c_read_dat, c_read_evt2, c_read_evt3), (dat_cargo_t, evt2_cargo_t, evt3_cargo_t)
+):
+    fn.argtypes = [
+        c_char_p,
+        ndpointer(dtype=event_t, ndim=1),
+        POINTER(cargo_t),
+        c_size_t,
+    ]
     fn.restype = c_int
 
 # Compression functions.
@@ -130,6 +137,9 @@ for c_cut_fn in (c_cut_dat, c_cut_evt2, c_cut_evt3):
 c_measure_dat = clib.measure_dat
 c_measure_evt2 = clib.measure_evt2
 c_measure_evt3 = clib.measure_evt3
-for fn, cargo_t in zip((c_measure_dat, c_measure_evt2, c_measure_evt3), (dat_cargo_t, evt2_cargo_t, evt3_cargo_t)):
+for fn, cargo_t in zip(
+    (c_measure_dat, c_measure_evt2, c_measure_evt3),
+    (dat_cargo_t, evt2_cargo_t, evt3_cargo_t),
+):
     fn.argtypes = [c_char_p, POINTER(cargo_t), c_size_t]
     fn.restype = None

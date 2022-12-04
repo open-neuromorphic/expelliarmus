@@ -105,3 +105,11 @@ def check_external_file(
         return self_fpath
     else:
         return check_input_file(fpath=fpath, encoding=encoding)
+
+
+def check_time_window(time_window: int) -> int:
+    if not isinstance(time_window, int):
+        raise TypeError("ERROR: The time window must be an integer value.")
+    if time_window <= 0:
+        raise ValueError("ERROR: The time window must be a positive value.")
+    return time_window

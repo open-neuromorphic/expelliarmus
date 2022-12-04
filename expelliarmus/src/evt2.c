@@ -4,6 +4,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define LOOP_CONDITION(is_window, window, end_t, start_t) (!is_window || (is_window && window > (end_t-start_t)))
+
 DLLEXPORT void measure_evt2(const char* fpath, evt2_cargo_t* cargo, size_t buff_size){
 	FILE* fp = fopen(fpath, "rb"); 
 	MEAS_CHECK_FILE(fp, fpath, cargo); 
@@ -11,13 +13,8 @@ DLLEXPORT void measure_evt2(const char* fpath, evt2_cargo_t* cargo, size_t buff_
 	// Jumping over the headers.
 	if (cargo->events_info.start_byte == 0){
 		MEAS_CHECK_JUMP_HEADER((cargo->events_info.start_byte = jump_header(fp, NULL, 0U)), cargo); 	
-		cargo->events_info.end_byte = cargo->events_info.start_byte; 
-		// EVT2 cargo information.
-		cargo->last_t = 0; 
-		cargo->time_high = 0; 
 	} else {
-		cargo->events_info.start_byte = cargo->events_info.end_byte; 
-		MEAS_CHECK_FSEEK(fseek(fp, cargo->events_info.start_byte, SEEK_SET), cargo); 
+		MEAS_CHECK_FSEEK(fseek(fp, (long)cargo->events_info.start_byte, SEEK_SET), cargo); 
 	}
 
 	// Buffer to read the file.
@@ -29,24 +26,34 @@ DLLEXPORT void measure_evt2(const char* fpath, evt2_cargo_t* cargo, size_t buff_
 	// Indices to access the input file.
 	size_t j=0, values_read=0, dim=0; 
 	// Timestamp handling.
-	uint64_t cargo_last_t = (uint64_t) cargo->last_t, last_t = (uint64_t) cargo->last_t, time_high = cargo->time_high; 	
+	uint64_t last_t=0, first_t=0;
+	uint64_t time_window = (uint64_t)cargo->events_info.time_window;
+   	uint64_t time_high = cargo->time_high; 	
 	const uint32_t mask_6b=0x3FU, mask_28b=0xFFFFFFFU; 
-	uint8_t loop_condition = 1; 
+	uint8_t first_run=1, is_time_window=cargo->events_info.is_time_window; 
 
 	// Reading the file.
-	while (loop_condition && (values_read = fread(buff, sizeof(buff[0]), buff_size, fp)) > 0){
-		for (j=0; loop_condition && j < values_read; j++){
+	while (LOOP_CONDITION(is_time_window, time_window, last_t, first_t) && (values_read = fread(buff, sizeof(buff[0]), buff_size, fp)) > 0){
+		for (j=0; LOOP_CONDITION(is_time_window, time_window, last_t, first_t) && j < values_read; j++){
 			// Getting the event type. 
 			event_type = (uint8_t) (buff[j] >> 28); 
 			switch (event_type){
 				case EVT2_CD_ON:
 				case EVT2_CD_OFF:
 					last_t = (time_high << 6) | ((uint64_t)(buff[j] & mask_6b)); 
+					if (first_run){
+						first_t = last_t;
+						first_run = 0; 
+					}
 					dim++; 
 					break; 
 
 				case EVT2_TIME_HIGH:
 					time_high = (uint64_t) (buff[j] & mask_28b); 
+					last_t &= mask_6b; 
+					last_t |= time_high << 6; 
+					break; 
+
 				case EVT2_EXT_TRIGGER:
 				case EVT2_OTHERS:
 				case EVT2_CONTINUED:
@@ -55,11 +62,7 @@ DLLEXPORT void measure_evt2(const char* fpath, evt2_cargo_t* cargo, size_t buff_
 				default:
 					MEAS_EVENT_TYPE_NOT_RECOGNISED(event_type, cargo); 
 			}
-
-			if (cargo->events_info.is_time_window)
-				loop_condition = cargo->events_info.time_window > (last_t - cargo_last_t);  
 		}
-		cargo->events_info.end_byte += j*sizeof(*buff); 
 	}
 	fclose(fp); 
 	free(buff); 
@@ -85,17 +88,16 @@ DLLEXPORT int read_evt2(const char* fpath, event_t* arr, evt2_cargo_t* cargo, si
 	// The byte that identifies the event type.
 	uint8_t event_type; 
 	// Indices to access the input file.
-	size_t i=0, j=0, values_read=0; 
+	size_t i=0, j=0, values_read=0, dim=cargo->events_info.dim; 
 	// Masks to extract bits.
 	const uint32_t mask_6b=0x3FU, mask_11b=0x7FFU, mask_28b=0xFFFFFFFU;
 	// Values to handle overflows.
 	uint64_t time_low=0;
 	timestamp_t timestamp=0; 
 
-	uint8_t loop_condition = 1; 
 	// Reading the file.
-	while (loop_condition && (values_read = fread(buff, sizeof(*buff), buff_size, fp)) > 0){
-		for (j=0; loop_condition && j < values_read; j++){
+	while (i < dim && (values_read = fread(buff, sizeof(*buff), buff_size, fp)) > 0){
+		for (j=0; i < dim && j < values_read; j++){
 			// Getting the event type. 
 			event_type = (uint8_t) (buff[j] >> 28); 
 			switch (event_type){
@@ -127,20 +129,16 @@ DLLEXPORT int read_evt2(const char* fpath, event_t* arr, evt2_cargo_t* cargo, si
 				default:
 					EVENT_TYPE_NOT_RECOGNISED(event_type); 
 			}
-			if (cargo->events_info.is_time_window)
-				loop_condition = byte_pt < cargo->events_info.end_byte; 
-			else
-				loop_condition = i < cargo->events_info.dim; 
 		}
 		byte_pt += j*sizeof(*buff); 
 	}
 	fclose(fp); 
 	free(buff); 
-	cargo->events_info.dim = i;
-	if (cargo->events_info.is_chunk)
-		cargo->events_info.start_byte = byte_pt; 
-	if (i==0)
-		return -1; 
+	cargo->events_info.start_byte = byte_pt; 
+
+	if (values_read < buff_size)
+		cargo->events_info.finished = 1; 
+
 	return 0; 
 }
 

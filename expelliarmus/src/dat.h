@@ -6,7 +6,7 @@
 
 typedef struct {
 	event_cargo_t events_info; 
-	timestamp_t last_t; 
+	uint64_t last_t; 
 	uint64_t time_ovfs; 
 } dat_cargo_t; 
 

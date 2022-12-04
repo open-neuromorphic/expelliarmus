@@ -21,7 +21,7 @@ typedef struct {
 	size_t time_window; 
 	uint8_t is_time_window; 
 	size_t start_byte;
-	size_t end_byte; 
+	uint8_t finished; 
 } event_cargo_t; 
 
 #define CHECK_TIMESTAMP_MONOTONICITY(timestamp, prev_timestamp){\

@@ -15,6 +15,7 @@ from expelliarmus.wizard.wizard_wrapper import (
     c_read_wrapper,
     c_cut_wrapper,
     c_read_chunk_wrapper,
+    c_read_time_window_wrapper,
     c_save_wrapper,
 )
 from expelliarmus.utils import (
@@ -26,6 +27,7 @@ from expelliarmus.utils import (
     check_buff_size,
     check_external_file,
     check_new_duration,
+    check_time_window,
     _DEFAULT_BUFF_SIZE,
 )
 
@@ -38,6 +40,7 @@ class Wizard:
     :param fpath: the file to be read, either in chunks or fully.
     :param buff_size: the size of the buffer used to read the binary file.
     :param chunk_size: the chunk lenght when reading files in chunks.
+    :param time_window: the time window lenght in millisecond when reading files in chunks of milliseconds.
     """
 
     def __init__(
@@ -45,6 +48,7 @@ class Wizard:
         encoding: str,
         fpath: Optional[Union[str, pathlib.Path]] = None,
         chunk_size: Optional[int] = 8192,
+        time_window: Optional[int] = 10,
         buff_size: Optional[int] = _DEFAULT_BUFF_SIZE,
     ) -> None:
         self._buff_size = check_buff_size(buff_size)
@@ -54,6 +58,7 @@ class Wizard:
         else:
             self._fpath = check_input_file(fpath=fpath, encoding=self._encoding)
         self._chunk_size = check_chunk_size(chunk_size, encoding)
+        self._time_window = check_time_window(time_window)
         self.cargo = self._get_cargo()
         return
 
@@ -93,6 +98,15 @@ class Wizard:
         """
         return self._chunk_size
 
+    @property
+    def time_window(self) -> int:
+        """
+        The time window lenght, expressed in milliseconds.
+
+        :returns: the time window length.
+        """
+        return self._time_window
+
     @encoding.setter
     def encoding(self, value):
         raise AttributeError("ERROR: Denied setting of private attribute _encoding.")
@@ -109,13 +123,17 @@ class Wizard:
     def chunk_size(self, value):
         raise AttributeError("ERROR: Denied setting of private attribute _chunk_size.")
 
+    @time_window.setter
+    def time_window(self, value):
+        raise AttributeError("ERROR: Denied setting of private attribute _time_window.")
+
     def _get_cargo(self) -> Union[dat_cargo_t, evt2_cargo_t, evt3_cargo_t]:
         events_info = events_cargo_t(
-            c_size_t(self.chunk_size),
             0,
             0,
             0,
-            0, 
+            0,
+            0,
             0,
         )
         if self.encoding == "DAT":
@@ -164,6 +182,16 @@ class Wizard:
         :param buff_size: the buffer size specified.
         """
         self._buff_size = check_buff_size(buff_size)
+        return
+
+    def set_time_window(self, time_window: int) -> None:
+        """
+        Sets the time window lenght.
+
+        :param buff_size: the time window specified.
+        """
+        self._time_window = check_time_window(time_window)
+        self.cargo = self._get_cargo()
         return
 
     def reset(self) -> None:
@@ -261,8 +289,33 @@ class Wizard:
         if self.fpath is None:
             raise ValueError("ERROR: An input file must be set.")
         self.cargo.events_info.is_chunk = 1
-        while self.cargo.events_info.dim > 0:
+        self.cargo.events_info.is_time_window = 0
+        while self.cargo.events_info.finished == 0:
+            self.cargo.events_info.dim = self._chunk_size
             arr, self.cargo, status = c_read_chunk_wrapper(
+                encoding=self.encoding,
+                fpath=self.fpath,
+                cargo=self.cargo,
+                buff_size=self.buff_size,
+            )
+            if arr is None or status != 0:
+                break
+            yield arr
+
+    def read_time_window(self) -> ndarray:
+        """
+        Generator used to read the file in time windows.
+
+        :returns: structured NumPy array of events.
+        """
+        if self.fpath is None:
+            raise ValueError("ERROR: An input file must be set.")
+        self.cargo.events_info.dim = 100
+        self.cargo.events_info.is_chunk = 0
+        self.cargo.events_info.is_time_window = 1
+        self.cargo.events_info.time_window = self._time_window * 1000
+        while self.cargo.events_info.finished == 0:
+            arr, self.cargo, status = c_read_time_window_wrapper(
                 encoding=self.encoding,
                 fpath=self.fpath,
                 cargo=self.cargo,

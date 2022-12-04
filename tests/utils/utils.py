@@ -174,6 +174,33 @@ def test_read(
     return
 
 
+def test_time_window(
+    encoding: str,
+    fname: Union[str, pathlib.Path],
+    time_window: int,
+    sensor_size: tuple,
+):
+    assert isinstance(fname, str) or isinstance(fname, pathlib.Path)
+    fpath = pathlib.Path("tests", "sample-files", fname).resolve()
+    assert fpath.is_file()
+    fpath_ref = pathlib.Path("tests", "sample-files", fname.split(".")[0] + ".npy")
+    ref_arr = np.load(fpath_ref)
+
+    wizard = Wizard(encoding=encoding, fpath=fpath)
+    wizard.set_time_window(time_window)
+    window_offset = 0
+    for window in wizard.read_time_window():
+        if wizard.cargo.events_info.finished == 0: # The last sample duration doesn't count.
+            assert (
+                (window["t"][-1] - window["t"][0]) >= time_window * 1000
+            ), f"ERROR: The time window length is not the one expected: arr_len -> {len(window)}, duration -> {window['t'][-1]-window['t'][0]}, expected -> {time_window*1000}, finished -> {wizard.cargo.events_info.finished}."
+        _test_fields(
+            ref_arr[window_offset : window_offset + len(window)], window, sensor_size
+        )
+        window_offset += len(window)
+    return
+
+
 def test_save(
     encoding: str,
     fname_out: Union[str, pathlib.Path],
