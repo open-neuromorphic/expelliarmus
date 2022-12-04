@@ -67,6 +67,8 @@ DLLEXPORT void measure_evt2(const char* fpath, evt2_cargo_t* cargo, size_t buff_
 	fclose(fp); 
 	free(buff); 
 	cargo->events_info.dim = dim; 
+	if (values_read==0)
+		cargo->events_info.finished = 1;
 	return; 
 }
 
@@ -134,11 +136,11 @@ DLLEXPORT int read_evt2(const char* fpath, event_t* arr, evt2_cargo_t* cargo, si
 	}
 	fclose(fp); 
 	free(buff); 
-	cargo->events_info.start_byte = byte_pt; 
 
-	if (values_read < buff_size && j==values_read)
-		cargo->events_info.finished = 1; 
+	cargo->events_info.start_byte = byte_pt; 
 	cargo->events_info.dim = i; 
+	if (values_read==0)
+		cargo->events_info.finished = 1; 
 	return 0; 
 }
 

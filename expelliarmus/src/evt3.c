@@ -113,6 +113,12 @@ DLLEXPORT void measure_evt3(const char* fpath, evt3_cargo_t* cargo, size_t buff_
 	fclose(fp); 
 	free(buff); 
 	cargo->events_info.dim = dim; 
+	if (is_time_window && time_window > (last_t-first_t)){
+		fprintf(stderr, "WARNING: (loop_condition=%u) time window not long enough: %lu > %lu.\n", loop_condition_flag, time_window, last_t-first_t);
+		fprintf(stderr, "j=%lu, values_read=%lu.\n", j, values_read); 
+	}
+	if (values_read==0)
+		cargo->events_info.finished = 1;
 	return; 
 }
 
@@ -233,11 +239,11 @@ DLLEXPORT int read_evt3(const char* fpath, event_t* arr, evt3_cargo_t* cargo, si
 	}
 	fclose(fp); 
 	free(buff); 
+
 	cargo->events_info.start_byte = byte_pt; 
 	cargo->events_info.dim = i; 
-	if (values_read < buff_size && j==values_read)
+	if (values_read==0)
 		cargo->events_info.finished = 1; 
-
 	return 0; 
 }
 

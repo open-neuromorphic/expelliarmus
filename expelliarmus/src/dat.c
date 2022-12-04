@@ -48,6 +48,8 @@ DLLEXPORT void measure_dat(const char* fpath, dat_cargo_t* cargo, size_t buff_si
 	free(buff); 
 	fclose(fp); 
 	cargo->events_info.dim = dim; 
+	if (values_read==0)
+		cargo->events_info.finished = 1;
 	return;
 }
 
@@ -98,11 +100,11 @@ DLLEXPORT int read_dat(const char* fpath, event_t* arr, dat_cargo_t* cargo, size
 	}
 	free(buff); 
 	fclose(fp); 
+
 	cargo->events_info.start_byte = byte_pt; 
 	cargo->events_info.dim = i; 
-
-	if (values_read < buff_size && j==values_read)
-		cargo->events_info.finished = 1; 
+	if (values_read==0)
+		cargo->events_info.finished = 1;
 	return 0; 
 }	
 
