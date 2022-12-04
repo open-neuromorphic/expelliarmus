@@ -247,16 +247,17 @@ DLLEXPORT int read_evt3(const char* fpath, event_t* arr, evt3_cargo_t* cargo, si
 	return 0; 
 }
 
-/*
 DLLEXPORT int save_evt3(const char* fpath, event_t* arr, evt3_cargo_t* cargo, size_t buff_size){
 	char header[150]; 
 	sprintf(header, "%c This EVT3 file has been generated through expelliarmus (https://github.com/fabhertz95/expelliarmus.git) %c%c evt 3.0 %c", (char)HEADER_START, (char)HEADER_END, (char)HEADER_START, (char)HEADER_END); 
 	const size_t header_len = strlen(header); 
 	FILE* fp; 
+	uint8_t first_event = 0; 
 	if (cargo->events_info.bytes_done == 0){
 		fp = fopen(fpath, "wb");	
 		CHECK_FILE(fp, fpath); 
-		CHECK_FWRITE((cargo->events_info.bytes_done=fwrite(header, sizeof(char), header_len, fp)), header_len); 
+		CHECK_FWRITE((cargo->events_info.start_byte = fwrite(header, sizeof(char), header_len, fp)), header_len); 
+		first_event = 1; 
 	} else {
 		fp = fopen(fpath, "ab"); 
 		CHECK_FILE(fp, fpath); 
@@ -267,7 +268,7 @@ DLLEXPORT int save_evt3(const char* fpath, event_t* arr, evt3_cargo_t* cargo, si
 	CHECK_BUFF_ALLOCATION(buff); 
 	
 	// Indices to read the file.
-	size_t j=0, i=0, k=0, i_start=0; 
+	size_t j=0, i=0, k=0, dim=cargo->events_info.dim; 
 	// Byte that identifies the event type.
 	uint8_t event_type; 
 
@@ -278,122 +279,47 @@ DLLEXPORT int save_evt3(const char* fpath, event_t* arr, evt3_cargo_t* cargo, si
 	// Temporary values to handle overflows.
 	uint64_t buff_tmp=0;
    	timestamp_t timestamp=0; 
+	
+	uint8_t could_be_vect=1, nevents=0, candidates = 0; 
+	uint16_t candidate_mask = 0; 
+
 	// Reading the file.
-	while (i < cargo->events_info.dim){
+	while (i < dim){
 		// First event.
-		if (cargo->events_info.bytes_done == header_len && i==0){
+		if (first_event){
 			// Y address.
 			buff[0] = ((uint16_t) EVT3_EVT_ADDR_Y) << 12; 
-			buff[0] |= ((uint16_t) arr[i].y) & mask_11b; 
-			cargo->last_event.y = arr[i].y;
+			buff[0] |= ((uint16_t) arr[0].y) & mask_11b; 
+			cargo->last_event.y = arr[0].y;
 			// Time low.
 			buff[1] = ((uint16_t) EVT3_TIME_HIGH) << 12; 
-			buff[1] |= (uint16_t) ((arr[i].t >> 12) & mask_12b); 
+			buff[1] |= (uint16_t) ((arr[0].t >> 12) & mask_12b); 
 			// Time high.
 			buff[2] = ((uint16_t) EVT3_TIME_LOW) << 12; 
-			buff[2] |= (uint16_t) (arr[i].t & mask_12b); 
-			cargo->last_event.t = arr[i++].t;
+			buff[2] |= (uint16_t) (arr[0].t & mask_12b); 
+			cargo->last_event.t = arr[0].t;
 			// Assigning negative value to X so that we denote this as first event.
-			cargo->last_event.x = -1;
 			CHECK_FWRITE(fwrite(buff, sizeof(*buff), 3, fp), 3); 
-			cargo->events_info.bytes_done += 3 * sizeof(*buff); 
+			cargo->events_info.start_byte += 3 * sizeof(*buff); 
+			could_be_vect = 1; 
 		}
-		for (j=0; i < cargo->events_info.dim && j < buff_size; j++){
-			// Check for vectorized event.
-			if (cargo->last_event.x == arr[i].x){
-				i_start = i; 
-				while (cargo->last_event.x == arr[i++].x && i-i_start < 12); 
-				if (i-i_start == 12){
-				} else if (i-i_start >= 8){
-					buff[j] = 
-					for (k=i_start; k < i_start + 8; k++){
-					}	
-				} else {
+		for (j=0; i < dim && j < buff_size;){
+			// Examining a batch of 12 events. 
+			nevents = 12; 
+			candidates = 0; 
+			candidate_mask = 0; 
+			for (k=1; k+i < dim && k < nevents; k++){
+				if (CHECK_CANDIDATE(arr[i], arr[i+k], 12)){
+					candidates += 1; 
+					candidate_mask |= 1U<<k; 
+				}
+				if (candidates > nevents/2){ // Random threshold. 
+					// Creating the vectorized event.
 				}
 			}
-			// Getting the event type. 
-			event_type = (uint8_t)(buff[j] >> 12); 
-			switch (event_type){
-				case EVT3_EVT_ADDR_Y:
-					arr[i].y = (address_t)(buff[j] & mask_11b);
-					cargo->last_event.y = arr[i].y; 
-					break; 
-
-				case EVT3_EVT_ADDR_X:
-					// p
-					arr[i].p = (polarity_t) ((buff[j] >> 11)%2); 
-					cargo->last_event.p = arr[i].p; 
-					// y
-					arr[i].y = cargo->last_event.y;
-					// t
-					arr[i].t = cargo->last_event.t;
-					// x
-					arr[i++].x = (address_t)(buff[j] & mask_11b);
-					break; 
-
-				case EVT3_VECT_BASE_X:
-					arr[i].p = (polarity_t) ((buff[j] >> 11)%2); 
-					cargo->last_event.p = arr[i].p; 
-					cargo->base_x = (uint16_t)(buff[j] & mask_11b);
-					break; 
-
-				case EVT3_VECT_12:
-					num_vect_events = 12; 
-					buff_tmp = (uint16_t)(buff[j] & mask_12b);
-
-				case EVT3_VECT_8:
-					if (num_vect_events == 0){
-						num_vect_events = 8; 
-						buff_tmp = (uint64_t)(buff[j] & mask_8b);
-					}
-					for (k=0; k<num_vect_events; k++){
-						if (buff_tmp & (1U<<k)){
-							// y
-							arr[i].y = cargo->last_event.y;
-							// p
-							arr[i].p = cargo->last_event.p;
-							// t
-							arr[i].t = cargo->last_event.t;
-							// x
-							arr[i++].x = (address_t)(cargo->base_x + k); 
-						}
-					}
-					cargo->base_x += num_vect_events; 
-					num_vect_events = 0; 
-					break; 
-
-				case EVT3_TIME_LOW:
-					buff_tmp = (uint64_t)(buff[j] & mask_12b);
-					if (buff_tmp < cargo->time_low) // Overflow.
-						cargo->time_low_ovfs++; 
-					cargo->time_low = buff_tmp; 
-					timestamp = (timestamp_t)((cargo->time_high_ovfs<<24) + ((cargo->time_high+cargo->time_low_ovfs)<<12) + cargo->time_low);
-					CHECK_TIMESTAMP_MONOTONICITY(timestamp, cargo->last_event.t);
-					arr[i].t = timestamp; 
-					cargo->last_event.t = timestamp; 
-					break; 
-
-				case EVT3_TIME_HIGH:
-					buff_tmp = (uint64_t)(buff[j] & mask_12b);
-					if (buff_tmp < cargo->time_high) // Overflow.
-						cargo->time_high_ovfs++; 
-					cargo->time_high = buff_tmp; 
-					timestamp = (timestamp_t)((cargo->time_high_ovfs<<24) + ((cargo->time_high+cargo->time_low_ovfs)<<12) + cargo->time_low);
-					CHECK_TIMESTAMP_MONOTONICITY(timestamp, cargo->last_event.t);
-					arr[i].t = timestamp; 
-					cargo->last_event.t = timestamp; 
-					break; 
-
-				case EVT3_EXT_TRIGGER:
-				case EVT3_OTHERS:
-				case EVT3_CONTINUED_12:
-					break; 
-
-				default:
-					EVENT_TYPE_NOT_RECOGNISED(event_type); 
-			}
 		}
-		cargo->events_info.bytes_done += j*sizeof(*buff); 
+		// Writing buffer to file.
+		CHECK_FWRITE(fwrite(buff, sizeof(*buff), j, fp), j); 
 	}
 	fclose(fp); 
 	free(buff); 
@@ -402,7 +328,6 @@ DLLEXPORT int save_evt3(const char* fpath, event_t* arr, evt3_cargo_t* cargo, si
 		return -1; 
 	return 0; 
 }
-*/
 
 DLLEXPORT size_t cut_evt3(const char* fpath_in, const char* fpath_out, size_t new_duration, size_t buff_size){
 	FILE* fp_in = fopen(fpath_in, "rb"); 
