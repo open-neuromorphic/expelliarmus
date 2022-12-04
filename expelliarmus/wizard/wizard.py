@@ -129,7 +129,7 @@ class Wizard:
 
     def _get_cargo(self) -> Union[dat_cargo_t, evt2_cargo_t, evt3_cargo_t]:
         events_info = events_cargo_t()
-        events_info.start_byte, events_info.dim = 0, 0 
+        events_info.start_byte, events_info.dim = 0, 0
         if self.encoding == "DAT":
             cargo = dat_cargo_t(events_info, 0, 0)
         elif self.encoding == "EVT2":

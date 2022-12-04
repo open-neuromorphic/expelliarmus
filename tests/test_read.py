@@ -1,5 +1,6 @@
 from .utils import utils
 
+
 def test_dat_decoding():
     utils.test_read(
         encoding="dat",
