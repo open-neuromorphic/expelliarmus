@@ -19,7 +19,7 @@ CHUNK_SIZES = tuple([2**i for i in range(7, 16 + 1)])
 
 def _test_fields(ref_arr: np.ndarray, arr: np.ndarray, sensor_size: tuple):
     assert (
-        arr["p"].min() >= 0 and arr["p"].max() <= 1
+        arr["p"].min() == 0 and arr["p"].max() == 1
     ), f"Error: p_min={arr['p'].min()}, max_p={arr['p'].max()}."
     assert (
         arr["x"].min() >= 0 and arr["x"].max() < sensor_size[0]
@@ -304,15 +304,15 @@ def test_chunk_read(
     for chunk_size in CHUNK_SIZES:
         wizard.set_chunk_size(chunk_size)
         for repetition in range(2):
-            chunk_offset = 0
+            bias = 0
             for chunk_arr in wizard.read_chunk():
                 nevents = len(chunk_arr)
                 _test_fields(
-                    ref_arr[chunk_offset : min(chunk_offset + nevents, tot_nevents)],
+                    ref_arr[bias : min(bias + nevents, tot_nevents)],
                     chunk_arr,
                     sensor_size,
                 )
-                chunk_offset += nevents
+                bias += nevents
             wizard.reset()
             _test_fields(
                 ref_arr,

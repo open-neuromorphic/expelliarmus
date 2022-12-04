@@ -99,14 +99,10 @@ DLLEXPORT int read_dat(const char* fpath, event_t* arr, dat_cargo_t* cargo, size
 	free(buff); 
 	fclose(fp); 
 	cargo->events_info.start_byte = byte_pt; 
+	cargo->events_info.dim = i; 
 
 	if (values_read < buff_size && j==values_read)
 		cargo->events_info.finished = 1; 
-
-	if (cargo->events_info.is_time_window && cargo->events_info.time_window > (arr[i-1].t - arr[0].t)){
-		fprintf(stderr, "WARNING: duration=%lu < window=%lu.\n", arr[i-1].t - arr[0].t, cargo->events_info.time_window); 
-		fprintf(stderr, "Additional information: values_read=%lu, j=%lu, finished=%u.\n", values_read, j, cargo->events_info.finished); 
-	}
 	return 0; 
 }	
 

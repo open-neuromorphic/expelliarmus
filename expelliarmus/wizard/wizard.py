@@ -128,14 +128,8 @@ class Wizard:
         raise AttributeError("ERROR: Denied setting of private attribute _time_window.")
 
     def _get_cargo(self) -> Union[dat_cargo_t, evt2_cargo_t, evt3_cargo_t]:
-        events_info = events_cargo_t(
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-        )
+        events_info = events_cargo_t()
+        events_info.start_byte, events_info.dim = 0, 0 
         if self.encoding == "DAT":
             cargo = dat_cargo_t(events_info, 0, 0)
         elif self.encoding == "EVT2":
@@ -198,7 +192,7 @@ class Wizard:
         """
         Function used to reset the generator, so that the file can be read from the beginning.
         """
-        if not (self.cargo is None):
+        if self.cargo:
             del self.cargo
         self.cargo = self._get_cargo()
         return
@@ -290,8 +284,8 @@ class Wizard:
             raise ValueError("ERROR: An input file must be set.")
         self.cargo.events_info.is_chunk = 1
         self.cargo.events_info.is_time_window = 0
-        self.cargo.events_info.dim = self._chunk_size
         while self.cargo.events_info.finished == 0:
+            self.cargo.events_info.dim = self._chunk_size
             arr, self.cargo, status = c_read_chunk_wrapper(
                 encoding=self.encoding,
                 fpath=self.fpath,
@@ -310,7 +304,6 @@ class Wizard:
         """
         if self.fpath is None:
             raise ValueError("ERROR: An input file must be set.")
-        self.cargo.events_info.dim = 100
         self.cargo.events_info.is_chunk = 0
         self.cargo.events_info.is_time_window = 1
         self.cargo.events_info.time_window = self._time_window * 1000
