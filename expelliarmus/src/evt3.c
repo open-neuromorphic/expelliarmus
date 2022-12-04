@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include <string.h>
 
-#define LOOP_CONDITION(is_window, window, last_t, first_t) (!is_time_window || (is_time_window && time_window > (last_t - first_t)))
+#define LOOP_CONDITION(is_window, window, last_t, first_t) (!is_window || (is_window && window > (last_t - first_t)))
 
 DLLEXPORT void measure_evt3(const char* fpath, evt3_cargo_t* cargo, size_t buff_size){
 	FILE* fp = fopen(fpath, "rb"); 
@@ -33,14 +33,15 @@ DLLEXPORT void measure_evt3(const char* fpath, evt3_cargo_t* cargo, size_t buff_
 	// Temporary values to handle overflows.
 	uint64_t buff_tmp=0;
 
-	uint64_t last_t = (uint64_t) cargo->last_event.t, first_t = last_t; 
+	uint64_t last_t = 0, first_t = 0; 
 	uint64_t time_high=cargo->time_high, time_low=cargo->time_low, time_high_ovfs=cargo->time_high_ovfs, time_low_ovfs=cargo->time_low_ovfs; 
 	uint8_t first_run=1, is_time_window=cargo->events_info.is_time_window; 
 	uint64_t time_window = cargo->events_info.time_window; 
+	uint8_t loop_condition_flag=1; 
 
 	// Reading the file.
-	while (LOOP_CONDITION(is_time_window, time_window, last_t, first_t) && (values_read = fread(buff, sizeof(*buff), buff_size, fp)) > 0){
-		for (j=0; LOOP_CONDITION(is_time_window, time_window, last_t, first_t) && j<values_read; j++){
+	while (loop_condition_flag && (values_read = fread(buff, sizeof(*buff), buff_size, fp)) > 0){
+		for (j=0; loop_condition_flag && j<values_read; j++){
 			// Getting the event type. 
 			event_type = (uint8_t)(buff[j] >> 12); 
 			switch (event_type){
@@ -49,6 +50,8 @@ DLLEXPORT void measure_evt3(const char* fpath, evt3_cargo_t* cargo, size_t buff_
 
 				case EVT3_EVT_ADDR_X:
 					dim++; 
+					if (!LOOP_CONDITION(is_time_window, time_window, last_t, first_t))
+						loop_condition_flag=0;
 					break; 
 
 				case EVT3_VECT_BASE_X:
@@ -69,6 +72,8 @@ DLLEXPORT void measure_evt3(const char* fpath, evt3_cargo_t* cargo, size_t buff_
 						}
 					}
 					num_vect_events = 0; 
+					if (!LOOP_CONDITION(is_time_window, time_window, last_t, first_t))
+						loop_condition_flag=0;
 					break; 
 
 				case EVT3_TIME_LOW:
@@ -108,6 +113,10 @@ DLLEXPORT void measure_evt3(const char* fpath, evt3_cargo_t* cargo, size_t buff_
 	fclose(fp); 
 	free(buff); 
 	cargo->events_info.dim = dim; 
+	if (is_time_window && time_window > (last_t-first_t)){
+		fprintf(stderr, "WARNING: window=%lu < duration=%lu.\n", time_window, last_t-first_t); 
+		fprintf(stderr, "Information: values_read=%lu, j=%lu.\n", values_read, j); 
+	}
 	return; 
 }
 
@@ -127,7 +136,7 @@ DLLEXPORT int read_evt3(const char* fpath, event_t* arr, evt3_cargo_t* cargo, si
 	CHECK_BUFF_ALLOCATION(buff); 
 	
 	// Indices to read the file.
-	size_t values_read=0, j=0, i=0; 
+	size_t values_read=0, j=0, i=0, dim=cargo->events_info.dim; 
 	// Byte that identifies the event type.
 	uint8_t event_type; 
 
@@ -140,8 +149,8 @@ DLLEXPORT int read_evt3(const char* fpath, event_t* arr, evt3_cargo_t* cargo, si
    	timestamp_t timestamp=0; 
 
 	// Reading the file.
-	while (i < cargo->events_info.dim && (values_read = fread(buff, sizeof(*buff), buff_size, fp)) > 0){
-		for (j=0; i < cargo->events_info.dim && j < values_read; j++){
+	while (i < dim && (values_read = fread(buff, sizeof(*buff), buff_size, fp)) > 0){
+		for (j=0; i < dim && j < values_read; j++){
 			// Getting the event type. 
 			event_type = (uint8_t)(buff[j] >> 12); 
 			switch (event_type){
@@ -230,7 +239,7 @@ DLLEXPORT int read_evt3(const char* fpath, event_t* arr, evt3_cargo_t* cargo, si
 	free(buff); 
 	cargo->events_info.start_byte = byte_pt; 
 
-	if (values_read < buff_size)
+	if (values_read < buff_size && j==values_read)
 		cargo->events_info.finished = 1; 
 
 	return 0; 

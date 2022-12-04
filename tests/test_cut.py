@@ -10,7 +10,7 @@ def test_dat_cutting():
         fname_in="dat_sample.dat",
         fname_out="out_dat.dat",
         new_duration=NEW_DURATION,
-        sensor_size=(120, 100),
+        sensor_size=(640, 480),
     )
     return
 

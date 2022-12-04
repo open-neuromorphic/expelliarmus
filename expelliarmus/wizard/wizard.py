@@ -290,8 +290,8 @@ class Wizard:
             raise ValueError("ERROR: An input file must be set.")
         self.cargo.events_info.is_chunk = 1
         self.cargo.events_info.is_time_window = 0
+        self.cargo.events_info.dim = self._chunk_size
         while self.cargo.events_info.finished == 0:
-            self.cargo.events_info.dim = self._chunk_size
             arr, self.cargo, status = c_read_chunk_wrapper(
                 encoding=self.encoding,
                 fpath=self.fpath,

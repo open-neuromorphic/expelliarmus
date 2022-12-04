@@ -69,15 +69,15 @@ DLLEXPORT int read_dat(const char* fpath, event_t* arr, dat_cargo_t* cargo, size
 	CHECK_BUFF_ALLOCATION(buff); 
 
 	// Indices to keep track of how many items are read from the file.
-	size_t values_read=0, j=0, i=0; 
+	size_t values_read=0, j=0, i=0, dim=cargo->events_info.dim; 
 	timestamp_t timestamp=0; 
 	uint64_t buff_tmp; 
 	// Masks to extract bits.
 	const uint32_t mask_4b=0xFU, mask_14b=0x3FFFU;
 	
 	// Reading the file.
-	while (i < cargo->events_info.dim && (values_read = fread(buff, sizeof(*buff), buff_size, fp)) > 0){
-		for (j=0; i < cargo->events_info.dim && j < values_read; j+=2){
+	while (i < dim && (values_read = fread(buff, sizeof(*buff), buff_size, fp)) > 0){
+		for (j=0; i < dim && j < values_read; j+=2){
 			// Event timestamp.
 			buff_tmp = (uint64_t) buff[j];
 			if (buff_tmp < cargo->last_t) // Overflow.
@@ -100,7 +100,7 @@ DLLEXPORT int read_dat(const char* fpath, event_t* arr, dat_cargo_t* cargo, size
 	fclose(fp); 
 	cargo->events_info.start_byte = byte_pt; 
 
-	if (values_read < buff_size)
+	if (values_read < buff_size && j==values_read)
 		cargo->events_info.finished = 1; 
 
 	if (cargo->events_info.is_time_window && cargo->events_info.time_window > (arr[i-1].t - arr[0].t)){

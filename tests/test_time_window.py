@@ -7,7 +7,7 @@ def test_dat_time_window():
     utils.test_time_window(
         encoding="dat",
         fname="dat_sample.dat",
-        sensor_size=(120, 100),
+        sensor_size=(640, 480),
         time_window=TIME_WINDOW,
     )
     return

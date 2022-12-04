@@ -5,7 +5,7 @@ def test_dat_decoding():
         encoding="dat",
         fname="dat_sample.dat",
         expected_nevents=539481,
-        sensor_size=(120, 100),
+        sensor_size=(640, 480),
     )
     return
 

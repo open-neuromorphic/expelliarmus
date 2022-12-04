@@ -29,19 +29,19 @@ def _test_fields(ref_arr: np.ndarray, arr: np.ndarray, sensor_size: tuple):
     ), f"Error: {arr['y'].min()} <= y < {arr['y'].max()} (max {sensor_size[1]})."
     assert arr["t"].min() >= 0, f"Error: min_t={arr['t'].min()}."
     assert (
-        np.sort(arr["t"]) == arr["t"]
+        np.equal(np.sort(arr["t"]), arr["t"])
     ).all(), "Error: the timestamps are not monotonic."
     assert (
-        ref_arr["t"] == arr["t"]
+        np.equal(ref_arr["t"], arr["t"])
     ).all(), "Error: the timestamps do not coincide with the reference."
     assert (
-        ref_arr["x"] == arr["x"]
+        np.equal(ref_arr["x"], arr["x"])
     ).all(), "Error: the x addresses do not coincide with the reference."
     assert (
-        ref_arr["y"] == arr["y"]
+        np.equal(ref_arr["y"], arr["y"])
     ).all(), "Error: the y addresses do not coincide with the reference."
     assert (
-        ref_arr["p"] == arr["p"]
+        np.equal(ref_arr["p"], arr["p"])
     ).all(), "Error: the polarities do not coincide with the reference."
     return
 

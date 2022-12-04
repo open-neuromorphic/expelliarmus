@@ -136,7 +136,7 @@ DLLEXPORT int read_evt2(const char* fpath, event_t* arr, evt2_cargo_t* cargo, si
 	free(buff); 
 	cargo->events_info.start_byte = byte_pt; 
 
-	if (values_read < buff_size)
+	if (values_read < buff_size && j==values_read)
 		cargo->events_info.finished = 1; 
 
 	return 0; 
