@@ -14,7 +14,7 @@ from expelliarmus.wizard.clib import (
     c_read_evt3,
     c_get_time_window_dat,
     c_get_time_window_evt2,
-    c_get_time_window_dat,
+    c_get_time_window_evt3,
     c_measure_dat,
     c_measure_evt2,
     c_measure_evt3,
