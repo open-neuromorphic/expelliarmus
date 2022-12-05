@@ -280,9 +280,6 @@ DLLEXPORT int save_evt3(const char* fpath, event_t* arr, evt3_cargo_t* cargo, si
 	uint64_t buff_tmp=0;
    	timestamp_t timestamp=0; 
 	
-	uint8_t could_be_vect=1, nevents=0, candidates = 0; 
-	uint16_t candidate_mask = 0; 
-
 	// Reading the file.
 	while (i < dim){
 		// First event.
@@ -298,24 +295,20 @@ DLLEXPORT int save_evt3(const char* fpath, event_t* arr, evt3_cargo_t* cargo, si
 			buff[2] = ((uint16_t) EVT3_TIME_LOW) << 12; 
 			buff[2] |= (uint16_t) (arr[0].t & mask_12b); 
 			cargo->last_event.t = arr[0].t;
-			// Assigning negative value to X so that we denote this as first event.
-			CHECK_FWRITE(fwrite(buff, sizeof(*buff), 3, fp), 3); 
-			cargo->events_info.start_byte += 3 * sizeof(*buff); 
-			could_be_vect = 1; 
+			// X address and polarity.
+			buff[3] = ((uint16_t) EVT3_EVT_ADDR_X) << 12; 
+			buff[3] |= ((uint16_t) arr[0].p) << 11; 
+			buff[3] |= ((uint16_t) arr[0].x) & mask_11b; 
+			i = 1; 
+			CHECK_FWRITE(fwrite(buff, sizeof(*buff), 4, fp), 4); 
+			cargo->events_info.start_byte += 4 * sizeof(*buff); 
+			first_event = 0; 
 		}
 		for (j=0; i < dim && j < buff_size;){
-			// Examining a batch of 12 events. 
-			nevents = 12; 
-			candidates = 0; 
-			candidate_mask = 0; 
-			for (k=1; k+i < dim && k < nevents; k++){
-				if (CHECK_CANDIDATE(arr[i], arr[i+k], 12)){
-					candidates += 1; 
-					candidate_mask |= 1U<<k; 
-				}
-				if (candidates > nevents/2){ // Random threshold. 
-					// Creating the vectorized event.
-				}
+			if (arr[i].t != arr[i-1].t){
+				
+			} 
+			if (arr[i].y != arr[i-1].y){
 			}
 		}
 		// Writing buffer to file.
