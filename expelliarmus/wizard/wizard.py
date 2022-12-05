@@ -146,6 +146,7 @@ class Wizard:
         :param fpath: the path to the file.
         """
         self._fpath = check_input_file(fpath, encoding=self.encoding)
+        self.reset()
         return
 
     def set_chunk_size(self, chunk_size: int) -> None:
@@ -157,7 +158,7 @@ class Wizard:
         :param chunk_size: size of the chunks ot be read.
         """
         self._chunk_size = check_chunk_size(chunk_size, self.encoding)
-        self.cargo = self._get_cargo()
+        self.reset()
         return
 
     def set_encoding(self, encoding: Union[str, pathlib.Path]) -> None:
@@ -167,6 +168,7 @@ class Wizard:
         :param encoding: the encoding of the file.
         """
         self._encoding = check_encoding(encoding)
+        self.reset()
         return
 
     def set_buff_size(self, buff_size: int) -> None:
@@ -176,6 +178,7 @@ class Wizard:
         :param buff_size: the buffer size specified.
         """
         self._buff_size = check_buff_size(buff_size)
+        self.reset()
         return
 
     def set_time_window(self, time_window: int) -> None:
@@ -185,7 +188,7 @@ class Wizard:
         :param buff_size: the time window specified.
         """
         self._time_window = check_time_window(time_window)
-        self.cargo = self._get_cargo()
+        self.reset()
         return
 
     def reset(self) -> None:

@@ -4,8 +4,6 @@
 #include <stdint.h>
 #include <string.h>
 
-#define LOOP_CONDITION(is_window, window, last_t, first_t) (!is_window || (is_window && window > (last_t - first_t)))
-
 DLLEXPORT void measure_evt3(const char* fpath, evt3_cargo_t* cargo, size_t buff_size){
 	FILE* fp = fopen(fpath, "rb"); 
 	MEAS_CHECK_FILE(fp, fpath, cargo); 
@@ -116,9 +114,8 @@ DLLEXPORT void get_time_window_evt3(const char* fpath, evt3_cargo_t* cargo, size
 
 	uint64_t last_t = 0, first_t = 0; 
 	uint64_t time_high=cargo->time_high, time_low=cargo->time_low, time_high_ovfs=cargo->time_high_ovfs, time_low_ovfs=cargo->time_low_ovfs; 
-	uint8_t first_run=1, is_time_window=cargo->events_info.is_time_window; 
 	uint64_t time_window = cargo->events_info.time_window; 
-	uint8_t loop_condition_flag=1; 
+	uint8_t first_run=1, loop_condition_flag=1; 
 
 	// Reading the file.
 	while (loop_condition_flag && (values_read = fread(buff, sizeof(*buff), buff_size, fp)) > 0){
@@ -131,8 +128,7 @@ DLLEXPORT void get_time_window_evt3(const char* fpath, evt3_cargo_t* cargo, size
 
 				case EVT3_EVT_ADDR_X:
 					dim++; 
-					if (!LOOP_CONDITION(is_time_window, time_window, last_t, first_t))
-						loop_condition_flag=0;
+					loop_condition_flag = (time_window > last_t - first_t);
 					break; 
 
 				case EVT3_VECT_BASE_X:
@@ -153,8 +149,7 @@ DLLEXPORT void get_time_window_evt3(const char* fpath, evt3_cargo_t* cargo, size
 						}
 					}
 					num_vect_events = 0; 
-					if (!LOOP_CONDITION(is_time_window, time_window, last_t, first_t))
-						loop_condition_flag=0;
+					loop_condition_flag = (time_window > last_t - first_t);
 					break; 
 
 				case EVT3_TIME_LOW:

@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include <string.h>
 
-#define LOOP_CONDITION(is_window, window, last_t, ovfs, first_t) (!is_window || (is_window && window > (((ovfs << 32) | last_t) - first_t)))
+#define LOOP_CONDITION(window, last_t, ovfs, first_t) (window > (((ovfs << 32) | last_t) - first_t))
 
 DLLEXPORT void measure_dat(const char* fpath, dat_cargo_t* cargo, size_t buff_size){
 	FILE* fp = fopen(fpath, "rb"); 
@@ -64,8 +64,8 @@ DLLEXPORT void get_time_window_dat(const char* fpath, dat_cargo_t* cargo, size_t
 	uint8_t first_run=1, is_time_window = cargo->events_info.is_time_window; 
 	
 	// Reading the file.
-	while (LOOP_CONDITION(is_time_window, time_window, last_t, time_ovfs, first_t) && (values_read = fread(buff, sizeof(*buff), buff_size, fp)) > 0){
-		for (j=0; LOOP_CONDITION(is_time_window, time_window, last_t, time_ovfs, first_t) && j < values_read; j+=2){
+	while (LOOP_CONDITION(time_window, last_t, time_ovfs, first_t) && (values_read = fread(buff, sizeof(*buff), buff_size, fp)) > 0){
+		for (j=0; LOOP_CONDITION(time_window, last_t, time_ovfs, first_t) && j < values_read; j+=2){
 			buff_tmp = (uint64_t) buff[j]; 
 			if (buff_tmp < last_t)
 				time_ovfs++; 

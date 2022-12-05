@@ -4,8 +4,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define LOOP_CONDITION(is_window, window, end_t, start_t) (!is_window || (is_window && window > (end_t-start_t)))
-
 DLLEXPORT void measure_evt2(const char* fpath, evt2_cargo_t* cargo, size_t buff_size){
 	FILE* fp = fopen(fpath, "rb"); 
 	MEAS_CHECK_FILE(fp, fpath, cargo); 
@@ -27,7 +25,7 @@ DLLEXPORT void measure_evt2(const char* fpath, evt2_cargo_t* cargo, size_t buff_
 	size_t j=0, values_read=0, dim=0; 
 
 	// Reading the file.
-	while ((values_read = fread(buff, sizeof(buff[0]), buff_size, fp)) > 0){
+	while ((values_read = fread(buff, sizeof(*buff), buff_size, fp)) > 0){
 		for (j=0; j < values_read; j++){
 			// Getting the event type. 
 			event_type = (uint8_t) (buff[j] >> 28); 
@@ -80,28 +78,27 @@ DLLEXPORT void get_time_window_evt2(const char* fpath, evt2_cargo_t* cargo, size
 	uint64_t time_window = (uint64_t)cargo->events_info.time_window;
    	uint64_t time_high = cargo->time_high; 	
 	const uint32_t mask_6b=0x3FU, mask_28b=0xFFFFFFFU; 
-	uint8_t first_run=1, is_time_window=cargo->events_info.is_time_window; 
+	uint8_t first_run=1, loop_condition_flag=1; 
 
 	// Reading the file.
-	while (LOOP_CONDITION(is_time_window, time_window, last_t, first_t) && (values_read = fread(buff, sizeof(buff[0]), buff_size, fp)) > 0){
-		for (j=0; LOOP_CONDITION(is_time_window, time_window, last_t, first_t) && j < values_read; j++){
+	while (loop_condition_flag && (values_read = fread(buff, sizeof(*buff), buff_size, fp)) > 0){
+		for (j=0; loop_condition_flag && j < values_read; j++){
 			// Getting the event type. 
 			event_type = (uint8_t) (buff[j] >> 28); 
 			switch (event_type){
 				case EVT2_CD_ON:
 				case EVT2_CD_OFF:
-					last_t = (time_high << 6) | ((uint64_t)(buff[j] & mask_6b)); 
+					last_t = (time_high << 6) | ((uint64_t)((buff[j] >> 22) & mask_6b)); 
+					dim++; 
 					if (first_run){
 						first_t = last_t;
 						first_run = 0; 
 					}
-					dim++; 
+					loop_condition_flag = (time_window > last_t - first_t); 
 					break; 
 
 				case EVT2_TIME_HIGH:
 					time_high = (uint64_t) (buff[j] & mask_28b); 
-					last_t &= mask_6b; 
-					last_t |= time_high << 6; 
 					break; 
 
 				case EVT2_EXT_TRIGGER:
@@ -119,6 +116,9 @@ DLLEXPORT void get_time_window_evt2(const char* fpath, evt2_cargo_t* cargo, size
 	cargo->events_info.dim = dim; 
 	if (values_read==0)
 		cargo->events_info.finished = 1;
+	if (time_window < last_t - first_t){
+		fprintf(stderr, "WARNING: window=%lu < duration=(%lu - %lu)=%lu.\n", time_window, last_t, first_t, last_t-first_t); 
+	}
 	return; 
 }
 
