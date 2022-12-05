@@ -11,6 +11,7 @@ typedef struct {
 } dat_cargo_t; 
 
 DLLEXPORT void measure_dat(const char*, dat_cargo_t*, size_t); 
+DLLEXPORT void get_time_window_dat(const char*, dat_cargo_t*, size_t); 
 DLLEXPORT int read_dat(const char*, event_t*, dat_cargo_t*, size_t); 
 DLLEXPORT size_t cut_dat(const char*, const char*, size_t, size_t);
 

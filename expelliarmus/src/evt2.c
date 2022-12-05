@@ -25,6 +25,56 @@ DLLEXPORT void measure_evt2(const char* fpath, evt2_cargo_t* cargo, size_t buff_
 	uint8_t event_type; 
 	// Indices to access the input file.
 	size_t j=0, values_read=0, dim=0; 
+
+	// Reading the file.
+	while ((values_read = fread(buff, sizeof(buff[0]), buff_size, fp)) > 0){
+		for (j=0; j < values_read; j++){
+			// Getting the event type. 
+			event_type = (uint8_t) (buff[j] >> 28); 
+			switch (event_type){
+				case EVT2_CD_ON:
+				case EVT2_CD_OFF:
+					dim++; 
+					break; 
+
+				case EVT2_TIME_HIGH:
+				case EVT2_EXT_TRIGGER:
+				case EVT2_OTHERS:
+				case EVT2_CONTINUED:
+					break; 
+
+				default:
+					MEAS_EVENT_TYPE_NOT_RECOGNISED(event_type, cargo); 
+			}
+		}
+	}
+	fclose(fp); 
+	free(buff); 
+	cargo->events_info.dim = dim; 
+	if (values_read==0)
+		cargo->events_info.finished = 1;
+	return; 
+}
+
+DLLEXPORT void get_time_window_evt2(const char* fpath, evt2_cargo_t* cargo, size_t buff_size){
+	FILE* fp = fopen(fpath, "rb"); 
+	MEAS_CHECK_FILE(fp, fpath, cargo); 
+
+	// Jumping over the headers.
+	if (cargo->events_info.start_byte == 0){
+		MEAS_CHECK_JUMP_HEADER((cargo->events_info.start_byte = jump_header(fp, NULL, 0U)), cargo); 	
+	} else {
+		MEAS_CHECK_FSEEK(fseek(fp, (long)cargo->events_info.start_byte, SEEK_SET), cargo); 
+	}
+
+	// Buffer to read the file.
+	uint32_t* buff = (uint32_t*) malloc(buff_size * sizeof(uint32_t)); 
+	MEAS_CHECK_BUFF_ALLOCATION(buff, cargo); 
+
+	// The byte that identifies the event type.
+	uint8_t event_type; 
+	// Indices to access the input file.
+	size_t j=0, values_read=0, dim=0; 
 	// Timestamp handling.
 	uint64_t last_t=0, first_t=0;
 	uint64_t time_window = (uint64_t)cargo->events_info.time_window;

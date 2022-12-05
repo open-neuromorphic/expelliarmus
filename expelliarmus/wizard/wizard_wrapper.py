@@ -12,6 +12,9 @@ from expelliarmus.wizard.clib import (
     c_read_dat,
     c_read_evt2,
     c_read_evt3,
+    c_get_time_window_dat,
+    c_get_time_window_evt2,
+    c_get_time_window_dat,
     c_measure_dat,
     c_measure_evt2,
     c_measure_evt3,
@@ -150,11 +153,11 @@ def c_read_time_window_wrapper(
     c_buff_size = c_size_t(buff_size)
 
     if encoding == "DAT":
-        c_measure_dat(c_fpath, byref(cargo), c_buff_size)
+        c_get_time_window_dat(c_fpath, byref(cargo), c_buff_size)
     elif encoding == "EVT2":
-        c_measure_evt2(c_fpath, byref(cargo), c_buff_size)
+        c_get_time_window_evt2(c_fpath, byref(cargo), c_buff_size)
     elif encoding == "EVT3":
-        c_measure_evt3(c_fpath, byref(cargo), c_buff_size)
+        c_get_time_window_evt3(c_fpath, byref(cargo), c_buff_size)
     status = 0
     if cargo.events_info.dim > 0:
         arr = empty((cargo.events_info.dim,), dtype=event_t)

@@ -15,6 +15,7 @@ typedef struct {
 } evt3_cargo_t;
 
 DLLEXPORT void measure_evt3(const char*, evt3_cargo_t*, size_t);
+DLLEXPORT void get_time_window_evt3(const char*, evt3_cargo_t*, size_t);
 DLLEXPORT int read_evt3(const char*, event_t*, evt3_cargo_t*, size_t);
 DLLEXPORT size_t cut_evt3(const char*, const char*, size_t, size_t);
 

@@ -21,6 +21,38 @@ DLLEXPORT void measure_dat(const char* fpath, dat_cargo_t* cargo, size_t buff_si
 	}
 
 	// Buffer to read binary data.
+	uint64_t* buff = (uint64_t*) malloc(buff_size * sizeof(uint64_t));
+	MEAS_CHECK_BUFF_ALLOCATION(buff, cargo); 
+	
+	size_t dim=0, values_read=0, j=0; 
+	
+	// Reading the file.
+	while ((values_read = fread(buff, sizeof(*buff), buff_size, fp)) > 0)
+		dim += values_read; 
+
+	free(buff); 
+	fclose(fp); 
+	cargo->events_info.dim = dim; 
+	if (values_read==0)
+		cargo->events_info.finished = 1;
+	return;
+}
+
+DLLEXPORT void get_time_window_dat(const char* fpath, dat_cargo_t* cargo, size_t buff_size){
+	FILE* fp = fopen(fpath, "rb"); 
+	MEAS_CHECK_FILE(fp, fpath, cargo); 
+	
+	// Jumping over the headers.
+	if (cargo->events_info.start_byte == 0){
+		MEAS_CHECK_JUMP_HEADER((cargo->events_info.start_byte = jump_header(fp, NULL, 0U)), cargo);
+		// Jumping two bytes.
+		MEAS_CHECK_FSEEK(fseek(fp, 2, SEEK_CUR), cargo); 
+		cargo->events_info.start_byte += 2; 
+	} else {
+		MEAS_CHECK_FSEEK(fseek(fp, (long)cargo->events_info.start_byte, SEEK_SET), cargo); 
+	}
+
+	// Buffer to read binary data.
 	uint32_t* buff = (uint32_t*) malloc(buff_size * sizeof(uint32_t));
 	MEAS_CHECK_BUFF_ALLOCATION(buff, cargo); 
 	

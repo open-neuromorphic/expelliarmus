@@ -143,3 +143,14 @@ for fn, cargo_t in zip(
 ):
     fn.argtypes = [c_char_p, POINTER(cargo_t), c_size_t]
     fn.restype = None
+
+# Time window functions.
+c_get_time_window_dat = clib.get_time_window_dat
+c_get_time_window_evt2 = clib.get_time_window_evt2
+c_get_time_window_evt3 = clib.get_time_window_evt3
+for fn, cargo_t in zip(
+    (c_get_time_window_dat, c_get_time_window_evt2, c_get_time_window_evt3),
+    (dat_cargo_t, evt2_cargo_t, evt3_cargo_t),
+):
+    fn.argtypes = [c_char_p, POINTER(cargo_t), c_size_t]
+    fn.restype = None 
