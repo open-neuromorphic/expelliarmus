@@ -153,4 +153,4 @@ for fn, cargo_t in zip(
     (dat_cargo_t, evt2_cargo_t, evt3_cargo_t),
 ):
     fn.argtypes = [c_char_p, POINTER(cargo_t), c_size_t]
-    fn.restype = None 
+    fn.restype = None
