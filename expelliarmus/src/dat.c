@@ -53,29 +53,29 @@ DLLEXPORT void get_time_window_dat(const char* fpath, dat_cargo_t* cargo, size_t
 	}
 
 	// Buffer to read binary data.
-	uint32_t* buff = (uint32_t*) malloc(buff_size * sizeof(uint32_t));
+	uint64_t* buff = (uint64_t*) malloc(buff_size * sizeof(uint64_t));
 	MEAS_CHECK_BUFF_ALLOCATION(buff, cargo); 
 	
 	size_t dim=0, values_read=0, j=0; 
 	uint64_t last_t = 0, time_ovfs = cargo->time_ovfs; 	
 	uint64_t first_t = 0;
-	uint64_t time_window = (uint64_t) cargo->events_info.time_window; 
-	uint64_t buff_tmp; 
+	uint64_t time_window = (uint64_t) cargo->events_info.time_window, t=0; 
 	uint8_t first_run=1, is_time_window = cargo->events_info.is_time_window; 
+	const uint64_t mask_32b=0xFFFFFFFFU;
 	
 	// Reading the file.
 	while (LOOP_CONDITION(time_window, last_t, time_ovfs, first_t) && (values_read = fread(buff, sizeof(*buff), buff_size, fp)) > 0){
-		for (j=0; LOOP_CONDITION(time_window, last_t, time_ovfs, first_t) && j < values_read; j+=2){
-			buff_tmp = (uint64_t) buff[j]; 
-			if (buff_tmp < last_t)
+		for (j=0; LOOP_CONDITION(time_window, last_t, time_ovfs, first_t) && j < values_read; j++){
+			t = buff[j] & mask_32b; 
+			if (t < last_t)
 				time_ovfs++; 
-			last_t = buff_tmp; 
+			last_t = t; 
 			if (first_run){
 				first_t = (time_ovfs << 32) | last_t; 
 				first_run = 0; 
 			}
 		}
-		dim += j/2; 
+		dim += j; 
 	}
 	free(buff); 
 	fclose(fp); 
@@ -99,34 +99,35 @@ DLLEXPORT int read_dat(const char* fpath, event_t* arr, dat_cargo_t* cargo, size
 	size_t byte_pt = cargo->events_info.start_byte; 
 
 	// Buffer to read binary data.
-	uint32_t* buff = (uint32_t*) malloc(buff_size * sizeof(uint32_t));
+	uint64_t* buff = (uint64_t*) malloc(buff_size * sizeof(uint64_t));
 	CHECK_BUFF_ALLOCATION(buff); 
 
 	// Indices to keep track of how many items are read from the file.
 	size_t values_read=0, j=0, i=0, dim=cargo->events_info.dim; 
 	timestamp_t timestamp=0; 
-	uint64_t buff_tmp; 
 	// Masks to extract bits.
-	const uint32_t mask_4b=0xFU, mask_14b=0x3FFFU;
+	const uint64_t mask_4b=0xFU, mask_14b=0x3FFFU, mask_32b=0xFFFFFFFFU;
+	uint64_t lower=0, upper=0; 
 	
 	// Reading the file.
 	while (i < dim && (values_read = fread(buff, sizeof(*buff), buff_size, fp)) > 0){
-		for (j=0; i < dim && j < values_read; j+=2){
+		for (j=0; i < dim && j < values_read; j++){
 			// Event timestamp.
-			buff_tmp = (uint64_t) buff[j];
-			if (buff_tmp < cargo->last_t) // Overflow.
+			lower = buff[j] & mask_32b; 
+			upper = buff[j] >> 32; 
+			if (lower < cargo->last_t) // Overflow.
 				cargo->time_ovfs++; 
-			timestamp = (timestamp_t)((cargo->time_ovfs<<32) | buff_tmp); 
+			timestamp = (timestamp_t)((cargo->time_ovfs<<32) | lower); 
 			CHECK_TIMESTAMP_MONOTONICITY(timestamp, ((cargo->time_ovfs << 32) | cargo->last_t));
 
 			arr[i].t = timestamp; 
-			cargo->last_t = buff_tmp; 
+			cargo->last_t = lower; 
 			// Event x address. 
-			arr[i].x = (address_t) (buff[j+1] & mask_14b); 
+			arr[i].x = (address_t) (upper & mask_14b); 
 			// Event y address.
-			arr[i].y = (address_t) ((buff[j+1] >> 14) & mask_14b); 
+			arr[i].y = (address_t) ((upper >> 14) & mask_14b); 
 			// Event polarity.
-			arr[i++].p = (polarity_t) ((buff[j+1] >> 28) & mask_4b); 
+			arr[i++].p = (polarity_t) ((upper >> 28) & mask_4b); 
 		}
 		byte_pt += j*sizeof(*buff); 
 	}
