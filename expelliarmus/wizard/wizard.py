@@ -274,7 +274,7 @@ class Wizard:
             buff_size=self.buff_size,
         )
         if status != 0:
-            raise RuntimeError("ERROR: Something went wrong while saveing the array.")
+            raise RuntimeError("ERROR: Something went wrong while saving the array.")
         return
 
     def read_chunk(self) -> ndarray:

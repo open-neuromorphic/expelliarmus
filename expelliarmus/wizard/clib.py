@@ -113,14 +113,14 @@ c_save_evt2.argtypes = [
 ]
 c_save_evt2.restype = c_int
 
-# c_save_evt3 = clib.save_evt3
-# c_save_evt3.argtypes = [
-#     c_char_p,
-#     ndpointer(dtype=event_t, ndim=1),
-#     POINTER(evt3_cargo_t),
-#     c_size_t,
-# ]
-# c_save_evt3.restype = c_int
+c_save_evt3 = clib.save_evt3
+c_save_evt3.argtypes = [
+    c_char_p,
+    ndpointer(dtype=event_t, ndim=1),
+    POINTER(evt3_cargo_t),
+    c_size_t,
+]
+c_save_evt3.restype = c_int
 
 # Cut functions.
 ARGTYPES_CUT = [c_char_p, c_char_p, c_size_t, c_size_t]
