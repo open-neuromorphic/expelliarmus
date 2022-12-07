@@ -19,6 +19,7 @@ from expelliarmus.wizard.clib import (
     c_cut_evt2,
     c_cut_evt3,
     c_save_evt2,
+    c_save_evt3,
 )
 
 
@@ -110,11 +111,12 @@ def c_save_wrapper(
         cargo = evt2_cargo_t(events_info, 0, 0)
         status = c_save_evt2(c_fpath, loc_arr, byref(cargo), c_buff_size)
     elif encoding == "EVT3":
-        raise NotImplementedError(
-            "ERROR: The save method is not implemented for EVT3 encoding."
-        )
+        # raise NotImplementedError(
+        #     "ERROR: The save method is not implemented for EVT3 encoding."
+        # )
         last_event = event_t(0, 0, 0, 0)
         cargo = evt3_cargo_t(events_info, 0, 0, 0, 0, 0, last_event)
+        status = c_save_evt3(c_fpath, loc_arr, byref(cargo), c_buff_size)
     return status
 
 

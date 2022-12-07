@@ -252,12 +252,10 @@ DLLEXPORT int save_evt3(const char* fpath, event_t* arr, evt3_cargo_t* cargo, si
 	sprintf(header, "%c This EVT3 file has been generated through expelliarmus (https://github.com/fabhertz95/expelliarmus.git) %c%c evt 3.0 %c", (char)HEADER_START, (char)HEADER_END, (char)HEADER_START, (char)HEADER_END); 
 	const size_t header_len = strlen(header); 
 	FILE* fp; 
-	uint8_t first_event = 0; 
-	if (cargo->events_info.bytes_done == 0){
+	if (cargo->events_info.start_byte == 0){
 		fp = fopen(fpath, "wb");	
 		CHECK_FILE(fp, fpath); 
 		CHECK_FWRITE((cargo->events_info.start_byte = fwrite(header, sizeof(char), header_len, fp)), header_len); 
-		first_event = 1; 
 	} else {
 		fp = fopen(fpath, "ab"); 
 		CHECK_FILE(fp, fpath); 
@@ -268,17 +266,13 @@ DLLEXPORT int save_evt3(const char* fpath, event_t* arr, evt3_cargo_t* cargo, si
 	CHECK_BUFF_ALLOCATION(buff); 
 	
 	// Indices to read the file.
-	size_t j=0, i=0, k=0, dim=cargo->events_info.dim; 
-	// Byte that identifies the event type.
-	uint8_t event_type; 
+	size_t j=0, i=0, dim=cargo->events_info.dim; 
 
-	// Counters used to keep track of number of events_info encoded in vectors and of the base x address of these.
-	uint16_t k=0, num_vect_events=0; 
 	// Masks to extract bits.
-	const uint16_t mask_11b=0x7FFU, mask_12b=0xFFFU, mask_8b=0xFFU; 
+	const uint16_t mask_11b=0x7FFU, mask_12b=0xFFFU; 
 	// Temporary values to handle overflows.
-	uint64_t buff_tmp=0;
-   	timestamp_t timestamp=0; 
+	uint8_t evt_high=0, evt_low=0, evt_y=0, write_event=0, first_event=1; 
+	uint16_t time_high=0, time_low=0, time_high_prev=0, time_low_prev=0; 
 	
 	// Reading the file.
 	while (i < dim){
@@ -287,28 +281,49 @@ DLLEXPORT int save_evt3(const char* fpath, event_t* arr, evt3_cargo_t* cargo, si
 			// Y address.
 			buff[0] = ((uint16_t) EVT3_EVT_ADDR_Y) << 12; 
 			buff[0] |= ((uint16_t) arr[0].y) & mask_11b; 
-			cargo->last_event.y = arr[0].y;
 			// Time low.
 			buff[1] = ((uint16_t) EVT3_TIME_HIGH) << 12; 
 			buff[1] |= (uint16_t) ((arr[0].t >> 12) & mask_12b); 
 			// Time high.
 			buff[2] = ((uint16_t) EVT3_TIME_LOW) << 12; 
 			buff[2] |= (uint16_t) (arr[0].t & mask_12b); 
-			cargo->last_event.t = arr[0].t;
 			// X address and polarity.
 			buff[3] = ((uint16_t) EVT3_EVT_ADDR_X) << 12; 
 			buff[3] |= ((uint16_t) arr[0].p) << 11; 
 			buff[3] |= ((uint16_t) arr[0].x) & mask_11b; 
 			i = 1; 
 			CHECK_FWRITE(fwrite(buff, sizeof(*buff), 4, fp), 4); 
-			cargo->events_info.start_byte += 4 * sizeof(*buff); 
 			first_event = 0; 
 		}
-		for (j=0; i < dim && j < buff_size;){
-			if (arr[i].t != arr[i-1].t){
-				
-			} 
-			if (arr[i].y != arr[i-1].y){
+		for (j=0; i < dim && j < buff_size; j++){
+			if (write_event){
+				write_event = 0; 
+				buff[j] = ((uint16_t) EVT3_EVT_ADDR_X) << 12; 
+				buff[j] |= ((uint16_t) arr[i].p & 1U) << 11; 
+				buff[j] |= (uint16_t) arr[i++].x & mask_11b; 
+			} else if (!evt_y && arr[i].y != arr[i-1].y){
+				evt_y = 1; 
+				buff[j] = ((uint16_t) EVT3_EVT_ADDR_Y) << 12; 
+				buff[j] |= (uint16_t) arr[i].y & mask_11b; 
+			} else {
+				time_high = ((uint16_t) (arr[i].t >> 32)) & mask_12b; 
+				time_high_prev = ((uint16_t) (arr[i-1].t >> 32)) & mask_12b; 
+				time_low = (uint16_t) (arr[i].t & mask_12b); 
+				time_low_prev = (uint16_t) (arr[i-1].t & mask_12b); 
+				if (!evt_high && time_high != time_high_prev){
+					evt_high = 1; 
+					// Writing the event to file.
+					buff[j] = ((uint16_t) EVT3_TIME_HIGH) << 12; 
+					buff[j] |= time_high; 
+				} else if (!evt_low && time_low != time_low_prev){
+					evt_low = 1; 
+					buff[j] = ((uint16_t) EVT3_TIME_LOW) << 12; 
+					buff[j] |= time_low; 
+				} else {
+					evt_y = evt_high = evt_low = 0; 
+					j--; 
+					write_event = 1; 
+				}
 			}
 		}
 		// Writing buffer to file.
@@ -316,9 +331,6 @@ DLLEXPORT int save_evt3(const char* fpath, event_t* arr, evt3_cargo_t* cargo, si
 	}
 	fclose(fp); 
 	free(buff); 
-	cargo->events_info.dim = i; 
-	if (i==0)
-		return -1; 
 	return 0; 
 }
 
