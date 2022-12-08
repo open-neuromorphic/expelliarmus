@@ -1,11 +1,13 @@
-import pathlib
 import os
+import pathlib
 import platform
 import shutil
+from typing import Callable, Optional, Union
+
 import numpy as np
-from typing import Callable, Union, Optional
-from expelliarmus import Wizard
 from pytest import raises
+
+from expelliarmus import Wizard
 
 if platform.system() in ("Linux", "Darwin"):  # Unix system.
     TMPDIR = pathlib.Path("/tmp")
@@ -264,6 +266,19 @@ def test_save(
         wizard.save(fpath=fpath_out, arr=np_arr)
         uncmp_arr = wizard.read(fpath_out)
         _test_fields(np_arr, uncmp_arr, sensor_size)
+        # Trying with a different data type array.
+        diff_arr = np.empty(
+            np_arr.shape,
+            dtype=np.dtype(
+                [("x", np.int32), ("y", np.int32), ("t", np.uint64), ("p", bool)]
+            ),
+        )
+        for coord in ("t", "x", "y", "p"):
+            diff_arr[coord] = np_arr[coord]
+        wizard.save(fpath=fpath_out, arr=diff_arr)
+        uncmp_arr = wizard.read(fpath_out)
+        _test_fields(diff_arr, uncmp_arr, sensor_size)
+
         # Cleaning up.
         shutil.rmtree(fpath_out.parent)
         return

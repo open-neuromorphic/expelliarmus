@@ -1,33 +1,32 @@
-from typing import Union, Optional
 import pathlib
 import shutil
+from ctypes import Structure, c_size_t
+from typing import Optional, Union
+
 from numpy import dtype as np_dtype
 from numpy import ndarray
-from ctypes import c_size_t, Structure
-from expelliarmus.wizard.clib import (
-    c_cargos_t,
-    events_cargo_t,
+
+from expelliarmus.utils import (
+    _DEFAULT_BUFF_SIZE,
+    _DTYPES,
+    check_buff_size,
+    check_chunk_size,
+    check_dtype_order,
+    check_encoding,
+    check_external_file,
+    check_file_encoding,
+    check_input_file,
+    check_new_duration,
+    check_output_file,
+    check_time_window,
 )
+from expelliarmus.wizard.clib import c_cargos_t, events_cargo_t
 from expelliarmus.wizard.wizard_wrapper import (
-    c_read_wrapper,
     c_cut_wrapper,
     c_read_chunk_wrapper,
     c_read_time_window_wrapper,
+    c_read_wrapper,
     c_save_wrapper,
-)
-from expelliarmus.utils import (
-    check_chunk_size,
-    check_file_encoding,
-    check_encoding,
-    check_input_file,
-    check_output_file,
-    check_buff_size,
-    check_external_file,
-    check_new_duration,
-    check_time_window,
-    check_dtype_order,
-    _DEFAULT_BUFF_SIZE,
-    _DTYPES,
 )
 
 
@@ -60,15 +59,6 @@ class Wizard:
         self.set_chunk_size(chunk_size)
         self.set_time_window(time_window)
         return
-
-    @property
-    def dtype_order(self) -> tuple:
-        """
-        The order of the coordinates in the structured array.
-
-        :returns: the encoding.
-        """
-        return self._dtype_order
 
     @property
     def encoding(self) -> str:
@@ -114,10 +104,6 @@ class Wizard:
         :returns: the time window length.
         """
         return self._time_window
-
-    @dtype_order.setter
-    def dtype_order(self, value):
-        raise AttributeError("ERROR: Denied setting of private attribute dtype_order.")
 
     @encoding.setter
     def encoding(self, value):
@@ -293,7 +279,7 @@ class Wizard:
         self.cargo.events_info.is_chunk = 1
         self.cargo.events_info.is_time_window = 0
         while self.cargo.events_info.finished == 0:
-            self.cargo.events_info.dim = self._chunk_size
+            self.cargo.events_info.dim = self.chunk_size
             arr, self.cargo, status = c_read_chunk_wrapper(
                 encoding=self.encoding,
                 fpath=self.fpath,
