@@ -10,9 +10,9 @@
 A Python/C library for decoding DVS binary data formats to NumPy structured arrays.
 
 ## Supported formats
-- DAT (Prophesee).
-- EVT2 (Prophesee).
-- EVT3 (Prophesee). 
+- [DAT](https://docs.prophesee.ai/stable/data/file_formats/dat.html)
+- [EVT2](https://docs.prophesee.ai/stable/data/encoding_formats/evt2.html)
+- [EVT3](https://docs.prophesee.ai/stable/data/encoding_formats/evt3.html)
 
 ## Installation 
 You can install the library through `pip`:
