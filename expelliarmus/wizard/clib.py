@@ -73,9 +73,14 @@ class evt3_cargo_t(Structure):
         ("time_high_ovfs", c_uint64),
         ("time_low_ovfs", c_uint64),
         ("base_x", c_uint16),
-        ("last_event", event_t),
+        ("last_t", c_int64),
+        ("last_x", c_int16),
+        ("last_y", c_int16),
+        ("last_p", c_uint8),
     ]
 
+
+c_cargos_t = dict(dat=dat_cargo_t, evt2=evt2_cargo_t, evt3=evt3_cargo_t)
 
 # Setting up C wrappers.
 # Read functions.
@@ -88,11 +93,13 @@ for fn, cargo_t in zip(
 ):
     fn.argtypes = [
         c_char_p,
-        ndpointer(dtype=event_t, ndim=1),
+        ndpointer(ndim=1),
         POINTER(cargo_t),
         c_size_t,
     ]
     fn.restype = c_int
+
+c_read_fns = dict(dat=c_read_dat, evt2=c_read_evt2, evt3=c_read_evt3)
 
 # Compression functions.
 c_save_dat = clib.save_dat
@@ -104,11 +111,13 @@ for fn, cargo_t in zip(
 ):
     fn.argtypes = [
         c_char_p,
-        ndpointer(dtype=event_t, ndim=1),
+        ndpointer(ndim=1),
         POINTER(cargo_t),
         c_size_t,
     ]
     fn.restype = c_int
+
+c_save_fns = dict(dat=c_save_dat, evt2=c_save_evt2, evt3=c_save_evt3)
 
 # Cut functions.
 ARGTYPES_CUT = [c_char_p, c_char_p, c_size_t, c_size_t]
@@ -121,6 +130,8 @@ for fn in (c_cut_dat, c_cut_evt2, c_cut_evt3):
     fn.restype = RESTYPE_CUT
     fn.argtypes = ARGTYPES_CUT
 
+c_cut_fns = dict(dat=c_cut_dat, evt2=c_cut_evt2, evt3=c_cut_evt3)
+
 # Measure functions.
 c_measure_dat = clib.measure_dat
 c_measure_evt2 = clib.measure_evt2
@@ -132,6 +143,8 @@ for fn, cargo_t in zip(
     fn.argtypes = [c_char_p, POINTER(cargo_t), c_size_t]
     fn.restype = None
 
+c_measure_fns = dict(dat=c_measure_dat, evt2=c_measure_evt2, evt3=c_measure_evt3)
+
 # Time window functions.
 c_get_time_window_dat = clib.get_time_window_dat
 c_get_time_window_evt2 = clib.get_time_window_evt2
@@ -142,3 +155,7 @@ for fn, cargo_t in zip(
 ):
     fn.argtypes = [c_char_p, POINTER(cargo_t), c_size_t]
     fn.restype = None
+
+c_get_time_window_fns = dict(
+    dat=c_get_time_window_dat, evt2=c_get_time_window_evt2, evt3=c_get_time_window_evt3
+)

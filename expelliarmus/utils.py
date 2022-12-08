@@ -1,25 +1,37 @@
 from pathlib import Path
 import numpy as np
 from typing import Union
+from ctypes import (
+    c_int64,
+    c_int16,
+    c_uint8,
+)
 
 _ROOT_PATH = Path(__file__).resolve().parent.parent
 
 _SUPPORTED_ENCODINGS = (
-    "DAT",
-    "EVT2",
-    "EVT3",
+    "dat",
+    "evt2",
+    "evt3",
 )
+
+_DTYPES = {
+    "t": c_int64,
+    "y": c_int16,
+    "x": c_int16,
+    "p": c_uint8,
+}
 
 _DEFAULT_BUFF_SIZE = 4096
 
 
 def check_file_encoding(fpath: Union[str, Path], encoding: str) -> None:
-    if encoding == "DAT":
+    if encoding == "dat":
         if not (str(fpath).endswith(".dat")):
             raise ValueError(
                 "ERROR: The DAT encoding needs a '.dat' file to be specified."
             )
-    elif encoding == "EVT2" or encoding == "EVT3":
+    elif encoding == "evt2" or encoding == "evt3":
         if not (str(fpath).endswith(".raw")):
             raise ValueError(
                 "ERROR: The EVT2/EVT3 encoding needs a '.raw' file to be specified."
@@ -30,7 +42,7 @@ def check_file_encoding(fpath: Union[str, Path], encoding: str) -> None:
 def check_encoding(encoding: str) -> str:
     if not (isinstance(encoding, str)):
         raise TypeError("ERROR: The encoding must be specified as a string.")
-    encoding = encoding.upper()
+    encoding = encoding.lower()
     if not (encoding in _SUPPORTED_ENCODINGS):
         raise ValueError("ERROR: The encoding provided is not supported.")
     return encoding
@@ -113,3 +125,16 @@ def check_time_window(time_window: int) -> int:
     if time_window <= 0:
         raise ValueError("ERROR: The time window must be a positive value.")
     return time_window
+
+
+def check_dtype_order(dtype_order: tuple) -> tuple:
+    if not isinstance(dtype_order, tuple):
+        raise TypeError("ERROR: The time window must be a tuple of strings.")
+    for element in dtype_order:
+        if not isinstance(element, str):
+            raise ValueError("ERROR: The tuple elements must be strings.")
+    if set(dtype_order) != set(("t", "x", "y", "p")):
+        raise ValueError(
+            "ERROR: The dtype order must be a tuple of the form ('t', 'y', 'x', 'p')."
+        )
+    return dtype_order

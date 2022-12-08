@@ -3,12 +3,9 @@ import pathlib
 import shutil
 from numpy import dtype as np_dtype
 from numpy import ndarray
-from ctypes import c_size_t
+from ctypes import c_size_t, Structure
 from expelliarmus.wizard.clib import (
-    event_t,
-    dat_cargo_t,
-    evt2_cargo_t,
-    evt3_cargo_t,
+    c_cargos_t,
     events_cargo_t,
 )
 from expelliarmus.wizard.wizard_wrapper import (
@@ -28,7 +25,9 @@ from expelliarmus.utils import (
     check_external_file,
     check_new_duration,
     check_time_window,
+    check_dtype_order,
     _DEFAULT_BUFF_SIZE,
+    _DTYPES,
 )
 
 
@@ -50,17 +49,29 @@ class Wizard:
         chunk_size: Optional[int] = 8192,
         time_window: Optional[int] = 10,
         buff_size: Optional[int] = _DEFAULT_BUFF_SIZE,
+        dtype_order: Optional[tuple] = ("t", "x", "y", "p"),
     ) -> None:
-        self._buff_size = check_buff_size(buff_size)
         self._encoding = check_encoding(encoding)
-        if fpath is None:
-            self._fpath = None
-        else:
-            self._fpath = check_input_file(fpath=fpath, encoding=self._encoding)
-        self._chunk_size = check_chunk_size(chunk_size, encoding)
-        self._time_window = check_time_window(time_window)
+        self.cargo = None
+        self.set_dtype_order(dtype_order)
         self.cargo = self._get_cargo()
+        self.set_buff_size(buff_size)
+        if fpath:
+            self.set_file(fpath)
+        else:
+            self._fpath = None
+        self.set_chunk_size(chunk_size)
+        self.set_time_window(time_window)
         return
+
+    @property
+    def dtype_order(self) -> tuple:
+        """
+        The order of the coordinates in the structured array.
+
+        :returns: the encoding.
+        """
+        return self._dtype_order
 
     @property
     def encoding(self) -> str:
@@ -107,37 +118,48 @@ class Wizard:
         """
         return self._time_window
 
+    @dtype_order.setter
+    def dtype_order(self, value):
+        raise AttributeError("ERROR: Denied setting of private attribute dtype_order.")
+
     @encoding.setter
     def encoding(self, value):
-        raise AttributeError("ERROR: Denied setting of private attribute _encoding.")
+        raise AttributeError("ERROR: Denied setting of private attribute encoding.")
 
     @fpath.setter
     def fpath(self, value):
-        raise AttributeError("ERROR: Denied setting of private attribute _fpath.")
+        raise AttributeError("ERROR: Denied setting of private attribute fpath.")
 
     @buff_size.setter
     def buff_size(self, value):
-        raise AttributeError("ERROR: Denied setting of private attribute _buff_size.")
+        raise AttributeError("ERROR: Denied setting of private attribute buff_size.")
 
     @chunk_size.setter
     def chunk_size(self, value):
-        raise AttributeError("ERROR: Denied setting of private attribute _chunk_size.")
+        raise AttributeError("ERROR: Denied setting of private attribute chunk_size.")
 
     @time_window.setter
     def time_window(self, value):
-        raise AttributeError("ERROR: Denied setting of private attribute _time_window.")
+        raise AttributeError("ERROR: Denied setting of private attribute time_window.")
 
-    def _get_cargo(self) -> Union[dat_cargo_t, evt2_cargo_t, evt3_cargo_t]:
-        events_info = events_cargo_t()
-        events_info.start_byte, events_info.dim = 0, 0
-        if self.encoding == "DAT":
-            cargo = dat_cargo_t(events_info, 0, 0)
-        elif self.encoding == "EVT2":
-            cargo = evt2_cargo_t(events_info, 0, 0)
-        elif self.encoding == "EVT3":
-            event = event_t(0, 0, 0, 0)
-            cargo = evt3_cargo_t(events_info, 0, 0, 0, 0, 0, event)
-        return cargo
+    def _get_cargo(self) -> object:
+        return c_cargos_t[self.encoding](events_info=events_cargo_t())
+
+    def set_dtype_order(self, dtype_order: tuple) -> None:
+        """
+        Function that sets the dtype order.
+
+        :param dtype_order: the dtype coordinates order.
+        """
+        self._dtype_order = check_dtype_order(dtype_order)
+
+        class event_type(Structure):
+            _fields_ = [(coord, _DTYPES[coord]) for coord in self._dtype_order]
+
+        self._event_type = event_type
+
+        self.reset()
+        return
 
     def set_file(self, fpath: Union[str, pathlib.Path]) -> None:
         """
@@ -237,7 +259,10 @@ class Wizard:
         """
         fpath = check_external_file(fpath, self.fpath, self.encoding)
         arr, status = c_read_wrapper(
-            encoding=self.encoding, fpath=fpath, buff_size=self.buff_size
+            encoding=self.encoding,
+            fpath=fpath,
+            buff_size=self.buff_size,
+            event_type=self._event_type,
         )
         if status != 0:
             raise RuntimeError(
@@ -272,6 +297,7 @@ class Wizard:
             fpath=fpath,
             arr=arr,
             buff_size=self.buff_size,
+            event_type=self._event_type,
         )
         if status != 0:
             raise RuntimeError("ERROR: Something went wrong while saving the array.")
@@ -294,6 +320,7 @@ class Wizard:
                 fpath=self.fpath,
                 cargo=self.cargo,
                 buff_size=self.buff_size,
+                event_type=self._event_type,
             )
             if arr is None or status != 0:
                 break
@@ -316,6 +343,7 @@ class Wizard:
                 fpath=self.fpath,
                 cargo=self.cargo,
                 buff_size=self.buff_size,
+                event_type=self._event_type,
             )
             if arr is None or status != 0:
                 break
