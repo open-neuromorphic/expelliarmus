@@ -1,23 +1,25 @@
+import os
+import pathlib
+import re
 from ctypes import (
     CDLL,
-    c_char_p,
     POINTER,
-    c_size_t,
-    c_int64,
-    c_int16,
-    c_uint16,
-    c_uint8,
-    c_uint,
-    c_int,
-    c_uint64,
     Structure,
+    c_char_p,
+    c_int,
+    c_int16,
+    c_int64,
+    c_size_t,
+    c_uint,
+    c_uint8,
+    c_uint16,
+    c_uint64,
 )
-import pathlib
-import os
-import re
-from expelliarmus.utils import _ROOT_PATH
-from numpy.ctypeslib import ndpointer
+
 from numpy import zeros
+from numpy.ctypeslib import ndpointer
+
+from expelliarmus.utils import _ROOT_PATH
 
 # Searching for the shared library.
 lib_re = r"^expelliarmus\..*\.(so|pyd)$"
@@ -73,10 +75,7 @@ class evt3_cargo_t(Structure):
         ("time_high_ovfs", c_uint64),
         ("time_low_ovfs", c_uint64),
         ("base_x", c_uint16),
-        ("last_t", c_int64),
-        ("last_x", c_int16),
-        ("last_y", c_int16),
-        ("last_p", c_uint8),
+        ("last_event", event_t),
     ]
 
 

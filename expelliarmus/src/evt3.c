@@ -230,24 +230,24 @@ DLLEXPORT int read_evt3(const char* fpath, event_t* arr, evt3_cargo_t* cargo, si
 			switch (event_type){
 				case EVT3_EVT_ADDR_Y:
 					arr[i].y = (address_t)(buff[j] & mask_11b);
-					cargo->last_y = arr[i].y; 
+					cargo->last_event.y = arr[i].y; 
 					break; 
 
 				case EVT3_EVT_ADDR_X:
 					// p
 					arr[i].p = (polarity_t) ((buff[j] >> 11) & 0x1U); 
-					cargo->last_p = arr[i].p; 
+					cargo->last_event.p = arr[i].p; 
 					// y
-					arr[i].y = cargo->last_y;
+					arr[i].y = cargo->last_event.y;
 					// t
-					arr[i].t = cargo->last_t;
+					arr[i].t = cargo->last_event.t;
 					// x
 					arr[i++].x = (address_t)(buff[j] & mask_11b);
 					break; 
 
 				case EVT3_VECT_BASE_X:
 					arr[i].p = (polarity_t) ((buff[j] >> 11) & 0x1U); 
-					cargo->last_p = arr[i].p; 
+					cargo->last_event.p = arr[i].p; 
 					cargo->base_x = (uint16_t)(buff[j] & mask_11b);
 					break; 
 
@@ -263,11 +263,11 @@ DLLEXPORT int read_evt3(const char* fpath, event_t* arr, evt3_cargo_t* cargo, si
 					for (k=0; k<num_vect_events; k++){
 						if (buff_tmp & (1U<<k)){
 							// y
-							arr[i].y = cargo->last_y;
+							arr[i].y = cargo->last_event.y;
 							// p
-							arr[i].p = cargo->last_p;
+							arr[i].p = cargo->last_event.p;
 							// t
-							arr[i].t = cargo->last_t;
+							arr[i].t = cargo->last_event.t;
 							// x
 							arr[i++].x = (address_t)(cargo->base_x + k); 
 						}
@@ -282,9 +282,9 @@ DLLEXPORT int read_evt3(const char* fpath, event_t* arr, evt3_cargo_t* cargo, si
 						cargo->time_low_ovfs++; 
 					cargo->time_low = buff_tmp; 
 					timestamp = (timestamp_t)((cargo->time_high_ovfs<<24) + ((cargo->time_high+cargo->time_low_ovfs)<<12) + cargo->time_low);
-					CHECK_TIMESTAMP_MONOTONICITY(timestamp, cargo->last_t);
+					CHECK_TIMESTAMP_MONOTONICITY(timestamp, cargo->last_event.t);
 					arr[i].t = timestamp; 
-					cargo->last_t = timestamp; 
+					cargo->last_event.t = timestamp; 
 					break; 
 
 				case EVT3_TIME_HIGH:
@@ -293,9 +293,9 @@ DLLEXPORT int read_evt3(const char* fpath, event_t* arr, evt3_cargo_t* cargo, si
 						cargo->time_high_ovfs++; 
 					cargo->time_high = buff_tmp; 
 					timestamp = (timestamp_t)((cargo->time_high_ovfs<<24) + ((cargo->time_high+cargo->time_low_ovfs)<<12) + cargo->time_low);
-					CHECK_TIMESTAMP_MONOTONICITY(timestamp, cargo->last_t);
+					CHECK_TIMESTAMP_MONOTONICITY(timestamp, cargo->last_event.t);
 					arr[i].t = timestamp; 
-					cargo->last_t = timestamp; 
+					cargo->last_event.t = timestamp; 
 					break; 
 
 				case EVT3_EXT_TRIGGER:

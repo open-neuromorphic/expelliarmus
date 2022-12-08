@@ -11,10 +11,7 @@ typedef struct {
 	uint64_t time_high_ovfs; 
 	uint64_t time_low_ovfs; 
 	uint16_t base_x; 
-	timestamp_t last_t; 
-	address_t last_x; 
-	address_t last_y; 
-	polarity_t last_p; 
+	event_t last_event;
 } evt3_cargo_t;
 
 DLLEXPORT void measure_evt3(const char*, evt3_cargo_t*, size_t);

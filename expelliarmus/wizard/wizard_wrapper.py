@@ -1,26 +1,26 @@
+from ctypes import byref, c_char_p, c_size_t
 from pathlib import Path
-from ctypes import c_char_p, c_size_t, byref
 from typing import Optional, Union
+
 from numpy import empty, ndarray
+
 from expelliarmus.utils import _SUPPORTED_ENCODINGS
 from expelliarmus.wizard.clib import (
-    event_t,
-    events_cargo_t,
-    dat_cargo_t,
-    evt2_cargo_t,
-    evt3_cargo_t,
     c_cargos_t,
+    c_cut_fns,
+    c_get_time_window_fns,
+    c_measure_fns,
     c_read_fns,
     c_save_fns,
-    c_measure_fns,
-    c_get_time_window_fns,
-    c_cut_fns,
+    dat_cargo_t,
+    event_t,
+    events_cargo_t,
+    evt2_cargo_t,
+    evt3_cargo_t,
 )
 
 
-def c_read_wrapper(
-    encoding: str, fpath: Union[str, Path], buff_size: int
-):
+def c_read_wrapper(encoding: str, fpath: Union[str, Path], buff_size: int):
     c_fpath = c_char_p(bytes(str(fpath), "utf-8"))
     c_buff_size = c_size_t(buff_size)
     cargo = c_cargos_t[encoding](events_info=events_cargo_t())
