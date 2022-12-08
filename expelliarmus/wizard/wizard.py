@@ -49,11 +49,8 @@ class Wizard:
         chunk_size: Optional[int] = 8192,
         time_window: Optional[int] = 10,
         buff_size: Optional[int] = _DEFAULT_BUFF_SIZE,
-        dtype_order: Optional[tuple] = ("t", "x", "y", "p"),
     ) -> None:
         self._encoding = check_encoding(encoding)
-        self.cargo = None
-        self.set_dtype_order(dtype_order)
         self.cargo = self._get_cargo()
         self.set_buff_size(buff_size)
         if fpath:
@@ -144,22 +141,6 @@ class Wizard:
 
     def _get_cargo(self) -> object:
         return c_cargos_t[self.encoding](events_info=events_cargo_t())
-
-    def set_dtype_order(self, dtype_order: tuple) -> None:
-        """
-        Function that sets the dtype order.
-
-        :param dtype_order: the dtype coordinates order.
-        """
-        self._dtype_order = check_dtype_order(dtype_order)
-
-        class event_type(Structure):
-            _fields_ = [(coord, _DTYPES[coord]) for coord in self._dtype_order]
-
-        self._event_type = event_type
-
-        self.reset()
-        return
 
     def set_file(self, fpath: Union[str, pathlib.Path]) -> None:
         """
@@ -262,7 +243,6 @@ class Wizard:
             encoding=self.encoding,
             fpath=fpath,
             buff_size=self.buff_size,
-            event_type=self._event_type,
         )
         if status != 0:
             raise RuntimeError(
@@ -297,7 +277,6 @@ class Wizard:
             fpath=fpath,
             arr=arr,
             buff_size=self.buff_size,
-            event_type=self._event_type,
         )
         if status != 0:
             raise RuntimeError("ERROR: Something went wrong while saving the array.")
@@ -320,7 +299,6 @@ class Wizard:
                 fpath=self.fpath,
                 cargo=self.cargo,
                 buff_size=self.buff_size,
-                event_type=self._event_type,
             )
             if arr is None or status != 0:
                 break
@@ -343,7 +321,6 @@ class Wizard:
                 fpath=self.fpath,
                 cargo=self.cargo,
                 buff_size=self.buff_size,
-                event_type=self._event_type,
             )
             if arr is None or status != 0:
                 break
