@@ -234,45 +234,36 @@ def test_save(
         wizard = Wizard(encoding=encoding)
         np_arr = np.load(fpath_in)
 
-        try:
-            # Error checking on input array.
-            with raises(TypeError):
-                wizard.save(fpath=fpath_out, arr=np.zeros((20,)))
-            with raises(TypeError):
-                wizard.save(
-                    fpath=fpath_out,
-                    arr=np.zeros(
-                        (20,),
-                        dtype=np.dtype(
-                            [("a", int), ("b", int), ("c", int), ("d", int)]
-                        ),
-                    ),
-                )
-            with raises(ValueError):
-                wizard.save(
-                    fpath=fpath_out,
-                    arr=np.array(
-                        [],
-                        dtype=np.dtype(
-                            [("t", int), ("x", int), ("y", int), ("p", int)]
-                        ),
-                    ),
-                )
-
-            # Error checking on fpath_out.
-            with raises(TypeError):
-                wizard.save(fpath=12, arr=np_arr)
-            with raises(ValueError):
-                wizard.save(fpath="peppapig", arr=np_arr)
-
-            # Checking that compressed file is consistent.
-            wizard.save(fpath=fpath_out, arr=np_arr)
-            uncmp_arr = wizard.read(fpath_out)
-            _test_fields(np_arr, uncmp_arr, sensor_size)
-        except NotImplementedError:
-            print(
-                f"WARNING: The save method is not implemented for {encoding} encoding."
+        # Error checking on input array.
+        with raises(TypeError):
+            wizard.save(fpath=fpath_out, arr=np.zeros((20,)))
+        with raises(TypeError):
+            wizard.save(
+                fpath=fpath_out,
+                arr=np.zeros(
+                    (20,),
+                    dtype=np.dtype([("a", int), ("b", int), ("c", int), ("d", int)]),
+                ),
             )
+        with raises(ValueError):
+            wizard.save(
+                fpath=fpath_out,
+                arr=np.array(
+                    [],
+                    dtype=np.dtype([("t", int), ("x", int), ("y", int), ("p", int)]),
+                ),
+            )
+
+        # Error checking on fpath_out.
+        with raises(TypeError):
+            wizard.save(fpath=12, arr=np_arr)
+        with raises(ValueError):
+            wizard.save(fpath="peppapig", arr=np_arr)
+
+        # Checking that compressed file is consistent.
+        wizard.save(fpath=fpath_out, arr=np_arr)
+        uncmp_arr = wizard.read(fpath_out)
+        _test_fields(np_arr, uncmp_arr, sensor_size)
         # Cleaning up.
         shutil.rmtree(fpath_out.parent)
         return

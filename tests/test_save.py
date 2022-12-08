@@ -6,7 +6,7 @@ def test_dat_save():
     utils.test_save(
         encoding="dat",
         fname_out="compressed_dat.dat",
-        sensor_size=(120, 100),
+        sensor_size=(640, 480),
     )
     return
 

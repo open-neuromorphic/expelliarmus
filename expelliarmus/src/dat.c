@@ -141,6 +141,51 @@ DLLEXPORT int read_dat(const char* fpath, event_t* arr, dat_cargo_t* cargo, size
 	return 0; 
 }	
 
+DLLEXPORT int save_dat(const char* fpath, event_t* arr, dat_cargo_t* cargo, size_t buff_size){
+	char header[200]; 
+	sprintf(header, "%c This DAT file has been generated through expelliarmus (https://github.com/fabhertz95/expelliarmus.git) %c%c Data file containing CD events %c%c Version 2 %c", (char)HEADER_START, (char)HEADER_END, (char)HEADER_START, (char)HEADER_END, (char)HEADER_START, (char)HEADER_END); 
+	const size_t header_len = strlen(header); 
+	FILE* fp; 
+	if (cargo->events_info.start_byte == 0){
+		fp = fopen(fpath, "wb");	
+		CHECK_FILE(fp, fpath); 
+		CHECK_FWRITE(fwrite(header, sizeof(char), header_len, fp), header_len); 
+		// Writing Event2D type and event size as header information.
+		const uint8_t header_info[2] = {0x0, 0x8}; 
+		CHECK_FWRITE(fwrite(header_info, sizeof(*header_info), 2, fp), 2); 
+		cargo->events_info.start_byte = header_len + 2*sizeof(*header_info); 
+	} else {
+		fp = fopen(fpath, "ab"); 
+		CHECK_FILE(fp, fpath); 
+	}
+
+	// Buffer to read the file.
+	uint64_t* buff = (uint64_t*) malloc(buff_size * sizeof(uint64_t)); 
+	CHECK_BUFF_ALLOCATION(buff); 
+
+	// Indices to access the input file.
+	size_t i=0, j=0; 
+	// Masks to extract bits.
+	const uint64_t mask_32b=0xFFFFFFFFU, mask_14b=0x3FFFU, mask_4b=0xFU;
+	// Reading the file.
+	while (i < cargo->events_info.dim){
+		for (j=0; i < cargo->events_info.dim && j < buff_size; j++, i++){
+			// Timestamp.
+			buff[j] = (uint64_t) arr[i].t & mask_32b; 
+			// X address.
+			buff[j] |= ((uint64_t) arr[i].x & mask_14b) << 32; 
+			// Y address.
+			buff[j] |= ((uint64_t) arr[i].y & mask_14b) << 46; 
+			// Polarity.
+			buff[j] |= ((uint64_t) arr[i].p & mask_4b) << 60; 
+		}
+		CHECK_FWRITE(fwrite(buff, sizeof(*buff), j, fp), j); 
+	}
+	fclose(fp); 
+	free(buff); 
+	return 0; 
+}
+
 DLLEXPORT size_t cut_dat(const char* fpath_in, const char* fpath_out, size_t new_duration, size_t buff_size){
 	FILE* fp_in = fopen(fpath_in, "rb"); 
 	CUT_CHECK_FILE(fp_in, fpath_in); 

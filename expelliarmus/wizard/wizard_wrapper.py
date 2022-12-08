@@ -21,6 +21,7 @@ from expelliarmus.wizard.clib import (
     c_cut_dat,
     c_cut_evt2,
     c_cut_evt3,
+    c_save_dat,
     c_save_evt2,
     c_save_evt3,
 )
@@ -106,21 +107,16 @@ def c_save_wrapper(
     events_info.dim = dim
     events_info.start_byte = 0
     if encoding == "DAT":
-        raise NotImplementedError(
-            "ERROR: The save method is not implemented for DAT encoding."
-        )
         cargo = dat_cargo_t(events_info, 0, 0)
+        c_fn = c_save_dat
     elif encoding == "EVT2":
         cargo = evt2_cargo_t(events_info, 0, 0)
-        status = c_save_evt2(c_fpath, loc_arr, byref(cargo), c_buff_size)
+        c_fn = c_save_evt2
     elif encoding == "EVT3":
-        # raise NotImplementedError(
-        #     "ERROR: The save method is not implemented for EVT3 encoding."
-        # )
         last_event = event_t(0, 0, 0, 0)
         cargo = evt3_cargo_t(events_info, 0, 0, 0, 0, 0, last_event)
-        status = c_save_evt3(c_fpath, loc_arr, byref(cargo), c_buff_size)
-    return status
+        c_fn = c_save_evt3
+    return c_fn(c_fpath, loc_arr, byref(cargo), c_buff_size)
 
 
 def c_read_time_window_wrapper(
