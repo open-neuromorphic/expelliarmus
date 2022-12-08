@@ -188,6 +188,11 @@ def test_time_window(
     fpath_ref = pathlib.Path("tests", "sample-files", fname.split(".")[0] + ".npy")
     ref_arr = np.load(fpath_ref)
 
+    wizard = Wizard(encoding=encoding)
+    # Checking the error checking on the input file.
+    with raises(ValueError):
+        arr = next(wizard.read_time_window())
+
     wizard = Wizard(encoding=encoding, fpath=fpath)
 
     # Testing set_window.
@@ -237,6 +242,8 @@ def test_save(
         np_arr = np.load(fpath_in)
 
         # Error checking on input array.
+        with raises(TypeError):
+            wizard.save(fpath=fpath_out, arr=[1, 2, 3])
         with raises(TypeError):
             wizard.save(fpath=fpath_out, arr=np.zeros((20,)))
         with raises(TypeError):

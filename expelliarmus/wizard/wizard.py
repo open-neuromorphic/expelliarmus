@@ -300,7 +300,7 @@ class Wizard:
             raise ValueError("ERROR: An input file must be set.")
         self.cargo.events_info.is_chunk = 0
         self.cargo.events_info.is_time_window = 1
-        self.cargo.events_info.time_window = self._time_window * 1000
+        self.cargo.events_info.time_window = self.time_window * 1000
         while self.cargo.events_info.finished == 0:
             arr, self.cargo, status = c_read_time_window_wrapper(
                 encoding=self.encoding,
