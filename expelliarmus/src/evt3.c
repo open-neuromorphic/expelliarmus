@@ -70,6 +70,7 @@ DLLEXPORT void measure_evt3(const char* fpath, evt3_cargo_t* cargo, size_t buff_
 				case EVT3_EXT_TRIGGER:
 				case EVT3_OTHERS:
 				case EVT3_CONTINUED_12:
+				case EVT3_CONTINUED_4:
 					break; 
 
 				default:
@@ -179,6 +180,7 @@ DLLEXPORT void get_time_window_evt3(const char* fpath, evt3_cargo_t* cargo, size
 				case EVT3_EXT_TRIGGER:
 				case EVT3_OTHERS:
 				case EVT3_CONTINUED_12:
+				case EVT3_CONTINUED_4:
 					break; 
 
 				default:
