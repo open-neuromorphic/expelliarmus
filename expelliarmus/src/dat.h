@@ -4,6 +4,12 @@
 #include "events.h"
 #include "wizard.h"
 
+// DAT format constants.
+#define DAT_EVENT_2D 0x0U
+#define DAT_EVENT_CD 0x0C
+#define DAT_EVENT_EXT_TRIGGER 0x0E
+
+
 typedef struct {
 	event_cargo_t events_info; 
 	uint64_t last_t; 

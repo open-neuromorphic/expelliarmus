@@ -4,6 +4,15 @@
 #include "events.h"
 #include "wizard.h"
 
+// EVT2 format constants.
+#define EVT2_CD_OFF 0x0U
+#define EVT2_CD_ON 0x1U
+#define EVT2_TIME_HIGH 0x8U
+#define EVT2_EXT_TRIGGER 0xAU
+#define EVT2_OTHERS 0xEU
+#define EVT2_CONTINUED 0xFU
+
+
 typedef struct {
 	event_cargo_t events_info; 
 	timestamp_t last_t; 
