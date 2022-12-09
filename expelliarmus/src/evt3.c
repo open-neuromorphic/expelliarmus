@@ -301,6 +301,7 @@ DLLEXPORT int read_evt3(const char* fpath, event_t* arr, evt3_cargo_t* cargo, si
 				case EVT3_EXT_TRIGGER:
 				case EVT3_OTHERS:
 				case EVT3_CONTINUED_12:
+				case EVT3_CONTINUED_4:
 					break; 
 
 				default:
