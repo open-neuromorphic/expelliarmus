@@ -116,9 +116,6 @@ DLLEXPORT void get_time_window_evt2(const char* fpath, evt2_cargo_t* cargo, size
 	cargo->events_info.dim = dim; 
 	if (values_read==0)
 		cargo->events_info.finished = 1;
-	if (time_window < last_t - first_t){
-		fprintf(stderr, "WARNING: window=%lu < duration=(%lu - %lu)=%lu.\n", time_window, last_t, first_t, last_t-first_t); 
-	}
 	return; 
 }
 
