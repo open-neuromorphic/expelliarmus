@@ -138,7 +138,7 @@ print(next(wizard.read_chunk()))
 
 ## A small benchmark
 
-Here it is a small benchmark using `expelliarmus` on the file formats supported. The data shows the file size, read time for the full file and read time for reading the file in chunks. The performance is compared against HDF5, HDF5 LZF, HDF5 GZIP and NumPy.
+Here it is a small benchmark using `expelliarmus` on the file formats supported. Benchmarking is run on [this file](https://dataset.prophesee.ai/index.php/s/nVcLLdWAnNzrmII/download), converted from EVT3 to DAT and EVT2 using the `save()` method. The data shows the file size, read time for the full file and read time for reading the file in chunks and time windows. The performance is compared against HDF5, HDF5 LZF, HDF5 GZIP and NumPy.
 
 ![full_read](images/full_read.png)
 
