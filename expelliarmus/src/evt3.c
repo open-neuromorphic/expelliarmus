@@ -505,6 +505,7 @@ DLLEXPORT size_t cut_evt3(const char* fpath_in, const char* fpath_out, size_t ne
 				case EVT3_EXT_TRIGGER:
 				case EVT3_OTHERS:
 				case EVT3_CONTINUED_12:
+				case EVT3_CONTINUED_4:
 					break; 
 
 				default:
