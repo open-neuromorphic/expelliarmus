@@ -4,10 +4,16 @@
 #include <stdlib.h>
 #include <stdint.h>
 
+/**
+ * @brief Data types used for the event data.
+ */
 typedef int64_t timestamp_t;  
 typedef int16_t address_t; 
 typedef uint8_t polarity_t; 
 
+/**
+ * @brief Structure of an event in a recording.
+ */
 typedef struct event_s {
 	timestamp_t t; 
 	address_t x; 
@@ -15,6 +21,9 @@ typedef struct event_s {
 	polarity_t p; 
 } event_t; 
 
+/**
+ * @brief Additional information for the Python and C code about the event array.
+ */
 typedef struct {
 	size_t dim;
 	uint8_t is_chunk; 
@@ -24,6 +33,9 @@ typedef struct {
 	uint8_t finished; 
 } event_cargo_t; 
 
+/**
+ * @brief Macro to check that the event stream is monotonic in the timestamps.
+ */
 #define CHECK_TIMESTAMP_MONOTONICITY(timestamp, prev_timestamp){\
 	if ((timestamp) < (prev_timestamp))\
 		fprintf(stderr, "WARNING: the timestamps are not monotonic. Current: %ld; previous:%ld.\n", timestamp, prev_timestamp);\
