@@ -43,7 +43,6 @@ typedef struct {
  */
 DLLEXPORT void measure_evt2(const char*, evt2_cargo_t*, size_t);
 
-
 /** Function that counts the number of events to be read in the time window 
  *  duration specified.
  *  The number of events is used to allocate an external array of structures of
