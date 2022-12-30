@@ -5,15 +5,15 @@
 #include <string.h>
 
 size_t jump_header(FILE* fp_in, FILE* fp_out, uint8_t copy_file){
-	size_t bytes_done = 0; 
+	size_t bytes_read = 0; 
 	uint8_t c, header_begins; 
 	 do {
 		header_begins = 1; 
 	   	do { 
-			bytes_done += fread(&c, 1, 1, fp_in); 
+			bytes_read += fread(&c, 1, 1, fp_in); 
 			if (header_begins && c != HEADER_START){
 				CHECK_FSEEK(fseek(fp_in, -1, SEEK_CUR)); 
-				return --bytes_done; 
+				return --bytes_read; 
 			} else
 				header_begins = 0; 
 			if (copy_file)
