@@ -1,6 +1,8 @@
 #ifndef DAT_H
 #define DAT_H 
 
+// Library to handle DAT encoded binary files.
+
 #include "events.h"
 #include "wizard.h"
 
