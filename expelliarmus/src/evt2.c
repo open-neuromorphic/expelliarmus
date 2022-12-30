@@ -4,15 +4,21 @@
 #include <stdlib.h>
 #include <string.h>
 
-DLLEXPORT void measure_evt2(const char* fpath, evt2_cargo_t* cargo, size_t buff_size){
+DLLEXPORT void measure_evt2(const char* fpath, 
+                            evt2_cargo_t* cargo, 
+                            size_t buff_size){
 	FILE* fp = fopen(fpath, "rb"); 
 	MEAS_CHECK_FILE(fp, fpath, cargo); 
 
 	// Jumping over the headers.
 	if (cargo->events_info.start_byte == 0){
-		MEAS_CHECK_JUMP_HEADER((cargo->events_info.start_byte = jump_header(fp, NULL, 0U)), cargo); 	
+		MEAS_CHECK_JUMP_HEADER( (cargo->events_info.start_byte = 
+                                    jump_header(fp, NULL, 0U)), 
+                                cargo ); 	
 	} else {
-		MEAS_CHECK_FSEEK(fseek(fp, (long)cargo->events_info.start_byte, SEEK_SET), cargo); 
+		MEAS_CHECK_FSEEK(fseek( fp, 
+                                (long)cargo->events_info.start_byte, SEEK_SET), 
+                                cargo ); 
 	}
 
 	// Buffer to read the file.
@@ -54,15 +60,21 @@ DLLEXPORT void measure_evt2(const char* fpath, evt2_cargo_t* cargo, size_t buff_
 	return; 
 }
 
-DLLEXPORT void get_time_window_evt2(const char* fpath, evt2_cargo_t* cargo, size_t buff_size){
+DLLEXPORT void get_time_window_evt2(const char* fpath, 
+                                    evt2_cargo_t* cargo, 
+                                    size_t buff_size){
 	FILE* fp = fopen(fpath, "rb"); 
 	MEAS_CHECK_FILE(fp, fpath, cargo); 
 
 	// Jumping over the headers.
 	if (cargo->events_info.start_byte == 0){
-		MEAS_CHECK_JUMP_HEADER((cargo->events_info.start_byte = jump_header(fp, NULL, 0U)), cargo); 	
+		MEAS_CHECK_JUMP_HEADER( (cargo->events_info.start_byte = 
+                                    jump_header(fp, NULL, 0U)), 
+                                cargo); 	
 	} else {
-		MEAS_CHECK_FSEEK(fseek(fp, (long)cargo->events_info.start_byte, SEEK_SET), cargo); 
+		MEAS_CHECK_FSEEK(fseek( fp, 
+                                (long)cargo->events_info.start_byte, SEEK_SET), 
+                                cargo ); 
 	}
 
 	// Buffer to read the file.
@@ -81,14 +93,16 @@ DLLEXPORT void get_time_window_evt2(const char* fpath, evt2_cargo_t* cargo, size
 	uint8_t first_run=1, loop_condition_flag=1; 
 
 	// Reading the file.
-	while (loop_condition_flag && (values_read = fread(buff, sizeof(*buff), buff_size, fp)) > 0){
+	while ( loop_condition_flag && 
+            (values_read = fread(buff, sizeof(*buff), buff_size, fp)) > 0 ){
 		for (j=0; loop_condition_flag && j < values_read; j++){
 			// Getting the event type. 
 			event_type = (uint8_t) (buff[j] >> 28); 
 			switch (event_type){
 				case EVT2_CD_ON:
 				case EVT2_CD_OFF:
-					last_t = (time_high << 6) | ((uint64_t)((buff[j] >> 22) & mask_6b)); 
+					last_t = (time_high << 6) | 
+                            ((uint64_t)((buff[j] >> 22) & mask_6b)); 
 					dim++; 
 					if (first_run){
 						first_t = last_t;
@@ -119,12 +133,16 @@ DLLEXPORT void get_time_window_evt2(const char* fpath, evt2_cargo_t* cargo, size
 	return; 
 }
 
-DLLEXPORT int read_evt2(const char* fpath, event_t* arr, evt2_cargo_t* cargo, size_t buff_size){
+DLLEXPORT int read_evt2(const char* fpath, 
+                        event_t* arr, 
+                        evt2_cargo_t* cargo, 
+                        size_t buff_size){
 	FILE* fp = fopen(fpath, "rb"); 
 	CHECK_FILE(fp, fpath); 
 
 	if (cargo->events_info.start_byte == 0){
-		CHECK_JUMP_HEADER((cargo->events_info.start_byte = jump_header(fp, NULL, 0U))); 
+		CHECK_JUMP_HEADER(  (cargo->events_info.start_byte = 
+                            jump_header(fp, NULL, 0U)) ); 
 	} else {
 		CHECK_FSEEK(fseek(fp, (long)cargo->events_info.start_byte, SEEK_SET)); 
 	}
@@ -145,7 +163,8 @@ DLLEXPORT int read_evt2(const char* fpath, event_t* arr, evt2_cargo_t* cargo, si
 	timestamp_t timestamp=0; 
 
 	// Reading the file.
-	while (i < dim && (values_read = fread(buff, sizeof(*buff), buff_size, fp)) > 0){
+	while ( i < dim && 
+            (values_read = fread(buff, sizeof(*buff), buff_size, fp)) > 0){
 		for (j=0; i < dim && j < values_read; j++){
 			// Getting the event type. 
 			event_type = (uint8_t) (buff[j] >> 28); 
@@ -154,7 +173,9 @@ DLLEXPORT int read_evt2(const char* fpath, event_t* arr, evt2_cargo_t* cargo, si
 				case EVT2_CD_OFF:
 					// Getting 6LSBs of the time stamp. 
 					time_low = ((uint64_t)((buff[j] >> 22) & mask_6b)); 
-					timestamp = (timestamp_t)((cargo->time_high << 6) | time_low);
+					timestamp = (timestamp_t)(
+                                    (cargo->time_high << 6) | time_low
+                                );
 					CHECK_TIMESTAMP_MONOTONICITY(timestamp, cargo->last_t);
 					arr[i].t = timestamp; 
 					cargo->last_t = timestamp; 
@@ -191,9 +212,15 @@ DLLEXPORT int read_evt2(const char* fpath, event_t* arr, evt2_cargo_t* cargo, si
 	return 0; 
 }
 
-DLLEXPORT int save_evt2(const char* fpath, event_t* arr, evt2_cargo_t* cargo, size_t buff_size){
+DLLEXPORT int save_evt2(const char* fpath, 
+                        event_t* arr, 
+                        evt2_cargo_t* cargo, 
+                        size_t buff_size){
 	char header[200]; 
-	sprintf(header, "%c This EVT2 file has been generated through expelliarmus (https://github.com/fabhertz95/expelliarmus.git) %c%c evt 2.0 %c", (char)HEADER_START, (char)HEADER_END, (char)HEADER_START, (char)HEADER_END); 
+	sprintf(header, "%c This EVT2 file has been generated through expelliarmus \
+            (https://github.com/fabhertz95/expelliarmus.git) %c%c evt 2.0 %c",
+                   (char)HEADER_START, (char)HEADER_END, 
+                   (char)HEADER_START, (char)HEADER_END); 
 	const size_t header_len = strlen(header); 
 	FILE* fp; 
 	if (cargo->events_info.start_byte == 0){
@@ -222,14 +249,18 @@ DLLEXPORT int save_evt2(const char* fpath, event_t* arr, evt2_cargo_t* cargo, si
 			buff[j] = 0; 
 			// Extracting 28 MSBs of the time stamp.
 			time_high = (((uint32_t)arr[i].t>>6) & mask_28b); 
-			// If it is different from before, we add a EVT2_TIME_HIGH to the stream.
-			if (cargo->time_high != time_high || cargo->events_info.start_byte == header_len){
+			// If it is different from before, we add a EVT2_TIME_HIGH 
+            // to the stream.
+			if (cargo->time_high != time_high || 
+                cargo->events_info.start_byte == header_len){
 				buff[j] |= ((uint32_t)EVT2_TIME_HIGH) << 28; 
 				buff[j] |= time_high; 
 				cargo->time_high = time_high; 
 			} else {
 				// Event type. 
-				buff[j] |= ((uint32_t)(arr[i].p ? EVT2_CD_ON : EVT2_CD_OFF)) << 28; 
+				buff[j] |= ((uint32_t)(
+                            arr[i].p ? EVT2_CD_ON : EVT2_CD_OFF)
+                            ) << 28; 
 				// Time low.
 				buff[j] |= (((uint32_t) arr[i].t) & mask_6b) << 22; 
 				// X address.
@@ -246,7 +277,10 @@ DLLEXPORT int save_evt2(const char* fpath, event_t* arr, evt2_cargo_t* cargo, si
 	return 0; 
 }
 
-DLLEXPORT size_t cut_evt2(const char* fpath_in, const char* fpath_out, size_t new_duration, size_t buff_size){
+DLLEXPORT size_t cut_evt2(  const char* fpath_in, 
+                            const char* fpath_out, 
+                            size_t new_duration, 
+                            size_t buff_size ){
 	FILE* fp_in = fopen(fpath_in, "rb"); 
 	CUT_CHECK_FILE(fp_in, fpath_in); 
 	FILE* fp_out = fopen(fpath_out, "wb"); 
@@ -269,8 +303,12 @@ DLLEXPORT size_t cut_evt2(const char* fpath_in, const char* fpath_out, size_t ne
 	const uint32_t mask_28b = 0xFFFFFFFU, mask_6b=0x3FU; 
 	// Converting duration from milliseconds to microseconds.
 	new_duration *= 1000;
-	while ((timestamp-first_timestamp) < (uint64_t)new_duration && (values_read = fread(buff, sizeof(*buff), buff_size, fp_in)) > 0){
-		for (j=0; (timestamp-first_timestamp) < (uint64_t)new_duration && j<values_read; j++){
+	while ( (timestamp-first_timestamp) < (uint64_t)new_duration && 
+            (values_read = fread(buff, sizeof(*buff), buff_size, fp_in)) > 0 ){
+		for (j=0; 
+            (timestamp-first_timestamp) < (uint64_t)new_duration 
+                && j<values_read; 
+            j++){
 			// Getting the event type. 
 			event_type = (uint8_t) (buff[j] >> 28); 
 			switch (event_type){
