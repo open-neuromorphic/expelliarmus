@@ -41,6 +41,7 @@ The file to be read can be specified in three ways:
 - passing the `fpath` argument to the `Wizard` constructor at object creation time.
 - using the `set_file()` method.
 - passing the file path to the `read()` method.
+
 Let us use the second way.
 
 
@@ -53,14 +54,14 @@ Now we can use the `read()` method to read the binary file to a NumPy structured
 
 ```python
 arr = wizard.read()
-print(f"First events encoded as (t, x, y, p): {arr[0]}")
+print(f"First event encoded as (t, x, y, p): {arr[0]}")
 print(f"Number of events: {len(arr)}.")
-print(f"Sample duration: {(arr[-1]['t']-arr[0]['t'])//int(1e6)} s.")
+print(f"Recording duration: {(arr[-1]['t']-arr[0]['t'])//int(1e6)} s.")
 ```
 
-    First events encoded as (t, x, y, p): (5840504, 707, 297, 0)
+    First event encoded as (t, x, y, p): (5840504, 707, 297, 0)
     Number of events: 39297796.
-    Sample duration: 60 s.
+    Recording duration: 60 s.
 
 
 ## Reading in chunks
@@ -84,7 +85,7 @@ print(f"Chunk first event: {chunk[0]}.")
     Chunk first event: (5840504, 707, 297, 0).
 
 
-Let us try to read a `time_window` milliseconds window from the file:
+Let us read a chunk of at most `time_window` milliseconds duration from the file:
 
 
 ```python
@@ -131,14 +132,14 @@ First we change `wizard` encoding and, then, we read the DAT file to an array.
 wizard.set_encoding("dat")
 arr = wizard.read(fpath)
 
-print(f"Sample encoded as (t, x, y, p): {arr[0]}")
+print(f"First event encoded as (t, x, y, p): {arr[0]}")
 print(f"Number of events: {len(arr)}.")
-print(f"Sample duration: {(arr[-1]['t']-arr[0]['t'])/1e6:.2f} s.")
+print(f"Recording duration: {(arr[-1]['t']-arr[0]['t'])/1e6:.2f} s.")
 ```
 
-    Sample encoded as (t, x, y, p): (0, 237, 121, 1)
+    First event encoded as (t, x, y, p): (0, 237, 121, 1)
     Number of events: 54165303.
-    Sample duration: 5.00 s.
+    Recording duration: 5.00 s.
 
 
 Now we define a second `Wizard` object with EVT2 encoding and we use its `save()` method to convert the file from DAT to EVT2.
