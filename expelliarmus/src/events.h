@@ -1,6 +1,10 @@
 #ifndef EVENTS_H 
 #define EVENTS_H
 
+/** Library for events streams.
+ *  Data structures used to hold information about an event stream. 
+ */
+
 #include <stdlib.h>
 #include <stdint.h>
 
