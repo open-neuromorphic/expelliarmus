@@ -4,7 +4,7 @@
 [![codecov](https://codecov.io/gh/fabhertz95/expelliarmus/branch/develop/graph/badge.svg?token=Q0BMYGUSZQ)](https://codecov.io/gh/fabhertz95/expelliarmus)
 [![contributors](https://img.shields.io/github/contributors-anon/fabhertz95/expelliarmus)](https://github.com/fabhertz95/expelliarmus/pulse)
 [![Documentation Status](https://readthedocs.org/projects/expelliarmus/badge/?version=latest)](https://expelliarmus.readthedocs.io/en/latest/?badge=latest)
-[![Discord](https://img.shields.io/discord/852094154188259338)](https://discord.gg/JParSCNe5k)
+[![Discord](https://img.shields.io/discord/852094154188259338)](https://discord.gg/C9bzWgNmqk)
 
 
 A Python/C library for decoding DVS binary data formats to NumPy structured arrays.
