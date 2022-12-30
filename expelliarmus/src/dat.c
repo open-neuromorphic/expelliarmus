@@ -57,8 +57,7 @@ DLLEXPORT void get_time_window_dat(const char* fpath, dat_cargo_t* cargo, size_t
 	MEAS_CHECK_BUFF_ALLOCATION(buff, cargo); 
 	
 	size_t dim=0, values_read=0, j=0; 
-	uint64_t last_t = 0, time_ovfs = cargo->time_ovfs; 	
-	uint64_t first_t = 0;
+	uint64_t first_t = 0, last_t = 0, time_ovfs = cargo->time_ovfs; 	
 	uint64_t time_window = (uint64_t) cargo->events_info.time_window, t=0; 
 	uint8_t first_run=1, is_time_window = cargo->events_info.is_time_window; 
 	const uint64_t mask_32b=0xFFFFFFFFU;
