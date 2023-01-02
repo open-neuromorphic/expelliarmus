@@ -1,1 +1,1 @@
-include expelliarmus/src/wizard.h expelliarmus/src/wizard.c expelliarmus/src/events.h
+include expelliarmus/src/wizard.h expelliarmus/src/wizard.c expelliarmus/src/events.h expelliarmus/src/dat.h expelliarmus/src/evt2.h expelliarmus/src/evt3.h
