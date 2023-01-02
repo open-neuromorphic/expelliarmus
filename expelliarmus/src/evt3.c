@@ -361,15 +361,21 @@ DLLEXPORT int save_evt3(const char* fpath,
                         event_t* arr, 
                         evt3_cargo_t* cargo, 
                         size_t buff_size){
-	char header[200]; 
-	sprintf(header, "%c integrator_name Expelliarmus %c%c \
+	char header[300]; 
+	sprintf(header, "%c Date 1970-12-25 07:51:03 %c%c \
+evt 3.0 %c%c \
+firmware_version 0.0.0 %c%c \
+integrator_name Prophesee %c%c \
 plugin_name hal_plugin_gen41_evk3 %c%c \
 serial_number 00000307 %c%c \
-evt 3.0 %c",
-            (char)HEADER_START, (char)HEADER_END, 
-            (char)HEADER_START, (char)HEADER_END, 
-            (char)HEADER_START, (char)HEADER_END, 
-            (char)HEADER_START, (char)HEADER_END); 
+system_ID 48 %c",
+                   (char)HEADER_START, (char)HEADER_END, 
+                   (char)HEADER_START, (char)HEADER_END, 
+                   (char)HEADER_START, (char)HEADER_END, 
+                   (char)HEADER_START, (char)HEADER_END, 
+                   (char)HEADER_START, (char)HEADER_END, 
+                   (char)HEADER_START, (char)HEADER_END, 
+                   (char)HEADER_START, (char)HEADER_END); 
 	const size_t header_len = strlen(header); 
 	FILE* fp; 
 	if (cargo->events_info.start_byte == 0){
