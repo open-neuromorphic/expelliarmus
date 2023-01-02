@@ -216,9 +216,16 @@ DLLEXPORT int save_evt2(const char* fpath,
                         event_t* arr, 
                         evt2_cargo_t* cargo, 
                         size_t buff_size){
-	char header[200]; 
+	char header[300]; 
 	sprintf(header, "%c This EVT2 file has been generated through expelliarmus \
-            (https://github.com/fabhertz95/expelliarmus.git) %c%c evt 2.0 %c",
+https://github.com/open-neuromorphic/expelliarmus.git) %c%c \
+The information that follows is not true but needed for compatibility %c%c \
+integrator_name Prophesee %c%c \
+plugin_name hal_plugin_gen3_fx3 %c%c \
+evt 2.0 %c",
+                   (char)HEADER_START, (char)HEADER_END, 
+                   (char)HEADER_START, (char)HEADER_END, 
+                   (char)HEADER_START, (char)HEADER_END, 
                    (char)HEADER_START, (char)HEADER_END, 
                    (char)HEADER_START, (char)HEADER_END); 
 	const size_t header_len = strlen(header); 

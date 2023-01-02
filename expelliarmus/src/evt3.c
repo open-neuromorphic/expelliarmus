@@ -361,9 +361,16 @@ DLLEXPORT int save_evt3(const char* fpath,
                         event_t* arr, 
                         evt3_cargo_t* cargo, 
                         size_t buff_size){
-	char header[150]; 
+	char header[300]; 
 	sprintf(header, "%c This EVT3 file has been generated through expelliarmus \
-            (https://github.com/fabhertz95/expelliarmus.git) %c%c evt 3.0 %c",\
+https://github.com/open-neuromorphic/expelliarmus.git) %c%c \
+The information that follows is not true but needed for compatibility %c%c \
+integrator_name Prophesee %c%c \
+plugin_name hal_plugin_gen41_evk3 %c%c \
+evt 3.0 %c",
+            (char)HEADER_START, (char)HEADER_END, 
+            (char)HEADER_START, (char)HEADER_END, 
+            (char)HEADER_START, (char)HEADER_END, 
             (char)HEADER_START, (char)HEADER_END, 
             (char)HEADER_START, (char)HEADER_END); 
 	const size_t header_len = strlen(header); 

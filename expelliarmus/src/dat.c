@@ -168,10 +168,11 @@ DLLEXPORT int save_dat( const char* fpath,
                         event_t* arr, 
                         dat_cargo_t* cargo, 
                         size_t buff_size){
-	char header[200]; 
+	char header[300]; 
 	sprintf(header, "%c This DAT file has been generated through expelliarmus \
-                    (https://github.com/fabhertz95/expelliarmus.git) %c%c \
-                    Data file containing CD events %c%c Version 2 %c",
+(https://github.com/open-neuromorphic/expelliarmus.git) %c%c \
+Data file containing CD events %c%c \
+Version 2 %c",
                     (char)HEADER_START, (char)HEADER_END, 
                     (char)HEADER_START, (char)HEADER_END, 
                     (char)HEADER_START, (char)HEADER_END); 
