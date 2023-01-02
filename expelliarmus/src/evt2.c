@@ -220,10 +220,10 @@ DLLEXPORT int save_evt2(const char* fpath,
 	sprintf(header, "%c Date 1970-12-25 07:51:03 %c%c \
 evt 2.0 %c%c \
 firmware_version 0.0.0 %c%c \
-integrator_name Expelliarmus %c%c \
+integrator_name Prophesee %c%c \
 plugin_name hal_plugin_gen3_fx3 %c%c \
 serial_number 00000307 %c%c \
-system_ID 99 %c",
+system_ID 21 %c",
                    (char)HEADER_START, (char)HEADER_END, 
                    (char)HEADER_START, (char)HEADER_END, 
                    (char)HEADER_START, (char)HEADER_END, 
