@@ -275,3 +275,6 @@ Here it is a small benchmark using `expelliarmus` on the file formats supported.
 
 ## Contributing
 Please check our [documentation page](https://expelliarmus.readthedocs.io) for more details on contributing.
+
+## About
+This project has been created by [Fabrizio Ottati](https://fabrizio-ottati.github.io) and [Gregor Lenz](https://lenzgregor.com).
