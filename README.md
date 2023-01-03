@@ -20,6 +20,8 @@ You can install the library through `pip`:
 pip install expelliarmus 
 ```
 
+Thanks to @Tobias-Fischer, the package is also available on `conda-forge`!
+
 The package is tested on Windows, MacOS and Linux. Join us on [Discord](https://discord.gg/C9bzWgNmqk) to propose features or to signal bugs!
 
 ## Documentation
