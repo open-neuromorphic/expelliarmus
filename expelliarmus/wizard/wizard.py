@@ -145,6 +145,7 @@ class Wizard:
 
         :param fpath: path to the input file.
         :param chunk_size: size of the chunks ot be read.
+        :param do_reset: whether or not to reset the wizard after setting the chunk size.
         """
         self._chunk_size = check_chunk_size(chunk_size, self.encoding)
         if do_reset:
@@ -176,6 +177,7 @@ class Wizard:
         Sets the time window lenght.
 
         :param buff_size: the time window specified.
+        :param do_reset: whether or not to reset the wizard after setting the time window.
         """
         self._time_window = check_time_window(time_window)
         if do_reset:
