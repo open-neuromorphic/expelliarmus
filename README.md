@@ -7,7 +7,7 @@
 [![Discord](https://img.shields.io/discord/852094154188259338)](https://discord.gg/C9bzWgNmqk)
 
 
-A Python/C library for decoding DVS binary data formats to NumPy structured arrays.
+A Python package for decoding RAW and DAT files (Prophesee) to structured NumPy arrays of events.
 
 ## Supported formats
 - [DAT](https://docs.prophesee.ai/stable/data/file_formats/dat.html)
