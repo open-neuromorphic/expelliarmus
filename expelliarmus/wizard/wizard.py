@@ -138,7 +138,7 @@ class Wizard:
         self.reset()
         return
 
-    def set_chunk_size(self, chunk_size: int) -> None:
+    def set_chunk_size(self, chunk_size: int, do_reset: bool = True) -> None:
         """
         Function to sets the size of the chunks to be read.
         WARNING: due to the vectorized events in event files, the chunks can be longer that 'chunk_size' (at most 'chunk_size+12').
@@ -147,7 +147,8 @@ class Wizard:
         :param chunk_size: size of the chunks ot be read.
         """
         self._chunk_size = check_chunk_size(chunk_size, self.encoding)
-        self.reset()
+        if do_reset:
+            self.reset()
         return
 
     def set_encoding(self, encoding: Union[str, pathlib.Path]) -> None:
@@ -170,14 +171,15 @@ class Wizard:
         self.reset()
         return
 
-    def set_time_window(self, time_window: int) -> None:
+    def set_time_window(self, time_window: int, do_reset: bool = True) -> None:
         """
         Sets the time window lenght.
 
         :param buff_size: the time window specified.
         """
         self._time_window = check_time_window(time_window)
-        self.reset()
+        if do_reset:
+            self.reset()
         return
 
     def reset(self) -> None:
