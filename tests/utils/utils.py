@@ -52,7 +52,7 @@ def test_cut(
     encoding: str,
     fname_in: Union[str, pathlib.Path],
     fname_out: Union[str, pathlib.Path],
-    new_duration: int = 20,
+    new_duration: int = 20_000,
     sensor_size=(640, 480),
 ):
     assert isinstance(fname_in, str) or isinstance(fname_in, pathlib.Path)
@@ -94,7 +94,8 @@ def test_cut(
     ), "The lenght of the array does not coincide with the number of events returned by the C function."
     assert (
         arr["t"][-1] - arr["t"][0]
-    ) >= new_duration * 1000, f"Error: the actual duration of the recording is {(arr['t'][-1] - arr['t'][0])/1000:.2f} ms instead of {new_duration} ms."
+    ) >= new_duration, f"Error: the actual duration of the recording is {(arr['t'][-1] - arr['t'][0])} us instead of {new_duration} us."
+
     # Checking that the cut is consistent.
     _test_fields(ref_arr[:nevents_out], arr, sensor_size)
     nevents_out = wizard.cut(
@@ -106,7 +107,7 @@ def test_cut(
     ), "The lenght of the array does not coincide with the number of events returned by the C function."
     assert (
         arr["t"][-1] - arr["t"][0]
-    ) >= new_duration * 1000, f"Error: the actual duration of the recording is {(arr['t'][-1] - arr['t'][0])/1000:.2f} ms instead of {new_duration} ms."
+    ) >= new_duration, f"Error: the actual duration of the recording is {(arr['t'][-1] - arr['t'][0])} us instead of {new_duration} ms."
     # Checking that the cut is consistent.
     _test_fields(ref_arr[:nevents_out], arr, sensor_size)
     # Cleaning up.
@@ -213,7 +214,7 @@ def test_time_window(
         ):  # The last sample duration doesn't count.
             assert (
                 window["t"][-1] - window["t"][0]
-            ) >= time_window * 1000, f"ERROR: The time window length is not the one expected: arr_len -> {len(window)}, duration -> {window['t'][-1]-window['t'][0]}, expected -> {time_window*1000}, finished -> {wizard.cargo.events_info.finished}."
+            ) >= time_window, f"ERROR: The time window length is not the one expected: arr_len -> {len(window)}, duration -> {window['t'][-1]-window['t'][0]}, expected -> {time_window}, finished -> {wizard.cargo.events_info.finished}."
         _test_fields(
             ref_arr[window_offset : window_offset + len(window)], window, sensor_size
         )

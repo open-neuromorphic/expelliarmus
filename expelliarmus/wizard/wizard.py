@@ -38,7 +38,7 @@ class Wizard:
     :param fpath: the file to be read, either in chunks or fully.
     :param buff_size: the size of the buffer used to read the binary file.
     :param chunk_size: the chunk lenght when reading files in chunks.
-    :param time_window: the time window lenght in millisecond when reading files in chunks of milliseconds.
+    :param time_window: the time window length in microseconds when reading files in time chunks.
     """
 
     def __init__(
@@ -99,7 +99,7 @@ class Wizard:
     @property
     def time_window(self) -> int:
         """
-        The time window lenght, expressed in milliseconds.
+        The time window lenght, expressed in microseconds.
 
         :returns: the time window length.
         """
@@ -138,16 +138,18 @@ class Wizard:
         self.reset()
         return
 
-    def set_chunk_size(self, chunk_size: int) -> None:
+    def set_chunk_size(self, chunk_size: int, do_reset: bool = True) -> None:
         """
         Function to sets the size of the chunks to be read.
         WARNING: due to the vectorized events in event files, the chunks can be longer that 'chunk_size' (at most 'chunk_size+12').
 
         :param fpath: path to the input file.
         :param chunk_size: size of the chunks ot be read.
+        :param do_reset: whether or not to reset the wizard after setting the chunk size.
         """
         self._chunk_size = check_chunk_size(chunk_size, self.encoding)
-        self.reset()
+        if do_reset:
+            self.reset()
         return
 
     def set_encoding(self, encoding: Union[str, pathlib.Path]) -> None:
@@ -170,14 +172,16 @@ class Wizard:
         self.reset()
         return
 
-    def set_time_window(self, time_window: int) -> None:
+    def set_time_window(self, time_window: int, do_reset: bool = True) -> None:
         """
-        Sets the time window lenght.
+        Sets the time window length.
 
-        :param buff_size: the time window specified.
+        :param time_window: the time window specified [us].
+        :param do_reset: whether or not to reset the wizard after setting the time window.
         """
         self._time_window = check_time_window(time_window)
-        self.reset()
+        if do_reset:
+            self.reset()
         return
 
     def reset(self) -> None:
@@ -200,7 +204,7 @@ class Wizard:
 
         :param fpath_in: path to input file.
         :param fpath_out: path to output file.
-        :param new_duration: the desired duration, expressed in milliseconds.
+        :param new_duration: the desired duration, expressed in microseconds.
 
         :returns: the number of events encoded in the output file.
         """
@@ -300,7 +304,7 @@ class Wizard:
             raise ValueError("ERROR: An input file must be set.")
         self.cargo.events_info.is_chunk = 0
         self.cargo.events_info.is_time_window = 1
-        self.cargo.events_info.time_window = self.time_window * 1000
+        self.cargo.events_info.time_window = self.time_window
         while self.cargo.events_info.finished == 0:
             arr, self.cargo, status = c_read_time_window_wrapper(
                 encoding=self.encoding,

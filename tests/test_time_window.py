@@ -1,6 +1,6 @@
 from .utils import utils
 
-TIME_WINDOW = 1
+TIME_WINDOW = 1_000
 
 
 def test_dat_time_window():

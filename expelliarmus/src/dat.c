@@ -241,8 +241,6 @@ DLLEXPORT size_t cut_dat(const char* fpath_in,
 	size_t values_read=0, j=0, i=0; 
 	// Values to keep track of overflows and of first timestamp encountered.
 	uint64_t time_ovfs=0, timestamp=0, first_timestamp=0; 
-	// Converting duration from milliseconds to microseconds.
-	new_duration *= 1000; 
 	while ( (timestamp-first_timestamp) < (uint64_t)new_duration && 
             (values_read = fread(buff, sizeof(*buff), buff_size, fp_in)) > 0 ){
 		for (j=0; 
@@ -263,4 +261,3 @@ DLLEXPORT size_t cut_dat(const char* fpath_in,
 	fclose(fp_out); 
 	return i; 
 }
-

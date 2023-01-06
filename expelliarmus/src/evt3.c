@@ -491,8 +491,6 @@ DLLEXPORT size_t cut_evt3(  const char* fpath_in,
 	// Temporary values.
 	uint64_t first_timestamp=0, timestamp=0, time_high=0, time_high_ovfs=0, 
              time_low=0, time_low_ovfs=0; 
-	// Converting duration to microseconds.
-	new_duration *= 1000; 
 
 	while ( !get_out && 
             (values_read = fread(buff, sizeof(*buff), buff_size, fp_in)) > 0){
