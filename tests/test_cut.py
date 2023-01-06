@@ -1,7 +1,7 @@
 import expelliarmus
 from .utils import utils
 
-NEW_DURATION = 15
+NEW_DURATION = 15_000
 
 
 def test_dat_cutting():

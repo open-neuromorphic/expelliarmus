@@ -311,8 +311,6 @@ DLLEXPORT size_t cut_evt2(  const char* fpath_in,
 	uint64_t first_timestamp=0, timestamp=0, time_high=0, time_low=0;
 	// Masks to extract bits.
 	const uint32_t mask_28b = 0xFFFFFFFU, mask_6b=0x3FU; 
-	// Converting duration from milliseconds to microseconds.
-	new_duration *= 1000;
 	while ( (timestamp-first_timestamp) < (uint64_t)new_duration && 
             (values_read = fread(buff, sizeof(*buff), buff_size, fp_in)) > 0 ){
 		for (j=0; 
@@ -353,4 +351,3 @@ DLLEXPORT size_t cut_evt2(  const char* fpath_in,
 	free(buff); 
 	return i; 
 }
-

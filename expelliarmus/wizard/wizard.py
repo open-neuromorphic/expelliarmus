@@ -38,7 +38,7 @@ class Wizard:
     :param fpath: the file to be read, either in chunks or fully.
     :param buff_size: the size of the buffer used to read the binary file.
     :param chunk_size: the chunk lenght when reading files in chunks.
-    :param time_window: the time window lenght in millisecond when reading files in chunks of milliseconds.
+    :param time_window: the time window length in microseconds when reading files in time chunks.
     """
 
     def __init__(
@@ -99,7 +99,7 @@ class Wizard:
     @property
     def time_window(self) -> int:
         """
-        The time window lenght, expressed in milliseconds.
+        The time window lenght, expressed in microseconds.
 
         :returns: the time window length.
         """
@@ -204,7 +204,7 @@ class Wizard:
 
         :param fpath_in: path to input file.
         :param fpath_out: path to output file.
-        :param new_duration: the desired duration, expressed in milliseconds.
+        :param new_duration: the desired duration, expressed in microseconds.
 
         :returns: the number of events encoded in the output file.
         """
