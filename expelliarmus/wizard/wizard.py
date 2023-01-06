@@ -174,9 +174,9 @@ class Wizard:
 
     def set_time_window(self, time_window: int, do_reset: bool = True) -> None:
         """
-        Sets the time window lenght.
+        Sets the time window length.
 
-        :param buff_size: the time window specified.
+        :param time_window: the time window specified [us].
         :param do_reset: whether or not to reset the wizard after setting the time window.
         """
         self._time_window = check_time_window(time_window)
@@ -304,7 +304,7 @@ class Wizard:
             raise ValueError("ERROR: An input file must be set.")
         self.cargo.events_info.is_chunk = 0
         self.cargo.events_info.is_time_window = 1
-        self.cargo.events_info.time_window = self.time_window * 1000
+        self.cargo.events_info.time_window = self.time_window
         while self.cargo.events_info.finished == 0:
             arr, self.cargo, status = c_read_time_window_wrapper(
                 encoding=self.encoding,
