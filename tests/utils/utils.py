@@ -213,7 +213,7 @@ def test_time_window(
         ):  # The last sample duration doesn't count.
             assert (
                 window["t"][-1] - window["t"][0]
-            ) >= time_window * 1000, f"ERROR: The time window length is not the one expected: arr_len -> {len(window)}, duration -> {window['t'][-1]-window['t'][0]}, expected -> {time_window*1000}, finished -> {wizard.cargo.events_info.finished}."
+            ) >= time_window, f"ERROR: The time window length is not the one expected: arr_len -> {len(window)}, duration -> {window['t'][-1]-window['t'][0]}, expected -> {time_window}, finished -> {wizard.cargo.events_info.finished}."
         _test_fields(
             ref_arr[window_offset : window_offset + len(window)], window, sensor_size
         )
