@@ -52,11 +52,10 @@ typedef struct {
 } event_cargo_t; 
 
 // Macro to check that the event stream is monotonic in the timestamps.
-#define CHECK_TIMESTAMP_MONOTONICITY(t, prev_t){\
-	if (t < prev_t){\
-		fprintf(stderr, "WARNING: the timestamps are not monotonic.\n");\
-        fprintf(stderr, "Current: %ld; previous:%ld.\n", t, prev_t);\
-    }\
+inline int check_timestamps(timestamp_t t, timestamp_t prev_t) {
+    if (t < prev_t) 
+        return 1; 
+    return 0; 
 }
 
 #endif

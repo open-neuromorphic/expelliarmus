@@ -247,6 +247,7 @@ DLLEXPORT int read_evt3(const char* fpath,
 	// Temporary values to handle overflows.
 	uint64_t buff_tmp=0;
    	timestamp_t timestamp=0; 
+    uint8_t tsWarning = 0; 
 
 	// Reading the file.
 	while ( i < dim && 
@@ -313,8 +314,9 @@ DLLEXPORT int read_evt3(const char* fpath,
                                     ((cargo->time_high + 
                                         cargo->time_low_ovfs)<<12) +
                                     cargo->time_low);
-					CHECK_TIMESTAMP_MONOTONICITY(timestamp, 
-                                                cargo->last_event.t);
+					if (!tsWarning)
+                        tsWarning = check_timestamps(timestamp, 
+                                                    cargo->last_event.t);
 					arr[i].t = timestamp; 
 					cargo->last_event.t = timestamp; 
 					break; 
@@ -329,8 +331,9 @@ DLLEXPORT int read_evt3(const char* fpath,
                                     ((cargo->time_high + 
                                         cargo->time_low_ovfs)<<12) + 
                                     cargo->time_low);
-					CHECK_TIMESTAMP_MONOTONICITY(timestamp, 
-                                                cargo->last_event.t);
+					if (!tsWarning)
+                        tsWarning = check_timestamps(timestamp, 
+                                                    cargo->last_event.t);
 					arr[i].t = timestamp; 
 					cargo->last_event.t = timestamp; 
 					break; 
@@ -347,6 +350,8 @@ DLLEXPORT int read_evt3(const char* fpath,
 		}
 		byte_pt += j*sizeof(*buff); 
 	}
+    if (tsWarning)
+        fprintf(stderr, "WARNING: The timestamps are not monotonic.\n"); 
 	fclose(fp); 
 	free(buff); 
 
