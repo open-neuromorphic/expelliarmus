@@ -178,7 +178,7 @@ DLLEXPORT int read_evt2(const char* fpath,
                                 (cargo->time_high << 6) | time_low
                                 );
                     if (!tsWarning)
-					    tsWarning = (timestamp, cargo->last_t);
+					    tsWarning = check_timestamps(timestamp, cargo->last_t);
 					arr[i].t = timestamp; 
 					cargo->last_t = timestamp; 
 					// Getting event addresses.
