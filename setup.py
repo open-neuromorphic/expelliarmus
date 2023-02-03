@@ -34,7 +34,7 @@ setup(
     maintainer="Fabrizio Ottati, Gregor Lenz",
     maintainer_email="fabriziottati@gmail.com, mail@lenzgregor.com",
     url="https://github.com/open-neuromorphic/expelliarmus",
-    version="1.1.11",
+    version="1.1.12",
     long_description=long_description,
     long_description_content_type="text/markdown",
     packages=[
