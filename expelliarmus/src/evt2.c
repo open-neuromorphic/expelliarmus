@@ -161,6 +161,7 @@ DLLEXPORT int read_evt2(const char* fpath,
 	// Values to handle overflows.
 	uint64_t time_low=0;
 	timestamp_t timestamp=0; 
+    uint8_t tsWarning = 0; 
 
 	// Reading the file.
 	while ( i < dim && 
@@ -174,9 +175,10 @@ DLLEXPORT int read_evt2(const char* fpath,
 					// Getting 6LSBs of the time stamp. 
 					time_low = ((uint64_t)((buff[j] >> 22) & mask_6b)); 
 					timestamp = (timestamp_t)(
-                                    (cargo->time_high << 6) | time_low
+                                (cargo->time_high << 6) | time_low
                                 );
-					CHECK_TIMESTAMP_MONOTONICITY(timestamp, cargo->last_t);
+                    if (!tsWarning)
+					    tsWarning = (timestamp, cargo->last_t);
 					arr[i].t = timestamp; 
 					cargo->last_t = timestamp; 
 					// Getting event addresses.
@@ -202,6 +204,8 @@ DLLEXPORT int read_evt2(const char* fpath,
 		}
 		byte_pt += j*sizeof(*buff); 
 	}
+    if (tsWarning)
+        fprintf(stderr, "WARNING: The timestamps are not monotonic.\n"); 
 	fclose(fp); 
 	free(buff); 
 

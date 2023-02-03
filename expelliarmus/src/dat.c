@@ -128,6 +128,7 @@ DLLEXPORT int read_dat( const char* fpath,
 	// Masks to extract bits.
 	const uint64_t mask_4b=0xFU, mask_14b=0x3FFFU, mask_32b=0xFFFFFFFFU;
 	uint64_t lower=0, upper=0; 
+    uint8_t tsWarning = 0; 
 	
 	// Reading the file.
 	while ( i < dim && 
@@ -139,9 +140,9 @@ DLLEXPORT int read_dat( const char* fpath,
 			if (lower < cargo->last_t) // Overflow.
 				cargo->time_ovfs++; 
 			timestamp = (timestamp_t)((cargo->time_ovfs<<32) | lower); 
-			CHECK_TIMESTAMP_MONOTONICITY(timestamp, 
-                                        ((cargo->time_ovfs << 32) | 
-                                            cargo->last_t));
+            if (!tsWarning)
+			    tsWarning = check_timestamps(timestamp, 
+                                    ((cargo->time_ovfs << 32) |cargo->last_t));
 
 			arr[i].t = timestamp; 
 			cargo->last_t = lower; 
@@ -154,6 +155,9 @@ DLLEXPORT int read_dat( const char* fpath,
 		}
 		byte_pt += j*sizeof(*buff); 
 	}
+
+    if (tsWarning)
+        fprintf(stderr, "WARNING: The timestamps are not monotonic.\n"); 
 	free(buff); 
 	fclose(fp); 
 
