@@ -5,7 +5,7 @@
 [![contributors](https://img.shields.io/github/contributors-anon/fabhertz95/expelliarmus)](https://github.com/fabhertz95/expelliarmus/pulse)
 [![Documentation Status](https://readthedocs.org/projects/expelliarmus/badge/?version=latest)](https://expelliarmus.readthedocs.io/en/latest/?badge=latest)
 [![Discord](https://img.shields.io/discord/852094154188259338)](https://discord.gg/C9bzWgNmqk)
-
+[![Downloads](https://static.pepy.tech/badge/expelliarmus)](https://pepy.tech/project/expelliarmus)
 
 A Python package for decoding RAW and DAT files (Prophesee) to structured NumPy arrays of events.
 
